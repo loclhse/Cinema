@@ -1,0 +1,25 @@
+﻿using Infrastructure.Enums;
+
+namespace Application.ViewModel
+{
+    public class ReadEmployeeAccount
+    {
+        public int Id { get; set; } 
+
+        public string? Username { get; set; }
+
+        public string? Email { get; set; }
+
+        public int? Identitycart { get; set; }
+
+        public DateOnly? Dob { get; set; }
+
+        public string? FullName { get; set; }
+
+        public string? Phone { get; set; }
+
+        public string? Address { get; set; }
+
+        public Sex Sex { get; set; }
+    }
+}

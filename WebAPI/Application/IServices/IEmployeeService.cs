@@ -1,6 +1,6 @@
 ﻿namespace Application.IServices
 {
-    internal interface IEmployeeService
+    public interface IEmployeeService
     {
     }
 }
