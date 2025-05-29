@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class Movie
+public partial class Movie : BaseEntity
 {
-    public int MovieId { get; set; }
-
     public string? Title { get; set; }
 
     public string? Description { get; set; }

@@ -3,21 +3,18 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class Showtime
+public partial class Showtime : BaseEntity
 {
-    public int ShowtimeId { get; set; }
-
-    public int? MovieId { get; set; }
-
-    public int? RoomId { get; set; }
-
     public DateTime? StartTime { get; set; }
 
     public DateTime? EndTime { get; set; }
 
+    public int? MovieId { get; set; }
     public virtual Movie? Movie { get; set; }
 
     public virtual ICollection<MovieTicket> MovieTickets { get; set; } = new List<MovieTicket>();
 
+
+    public int? RoomId { get; set; }
     public virtual CinemaRoom? Room { get; set; }
 }

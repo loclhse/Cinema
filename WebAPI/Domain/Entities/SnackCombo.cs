@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class SnackCombo
+public partial class SnackCombo: BaseEntity
 {
-    public int ComboId { get; set; }
-
     public string? Name { get; set; }
 
     public decimal? Price { get; set; }

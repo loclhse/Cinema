@@ -1,6 +1,5 @@
-﻿using Infrastructure.Enums;
-using System;
-using System.Collections.Generic;
+﻿using Domain.Entities;
+using Infrastructure.Enums;
 
 namespace Infrastructure.Entities;
 
@@ -38,4 +37,6 @@ public partial class User : BaseEntity
     public virtual ICollection<Theater> Theaters { get; set; } = new List<Theater>();
 
     public virtual ICollection<TicketCancellationLog> TicketCancellationLogs { get; set; } = new List<TicketCancellationLog>();
+
+    public virtual ICollection<Employee> Employee { get; set; } = new HashSet<Employee>();
 }

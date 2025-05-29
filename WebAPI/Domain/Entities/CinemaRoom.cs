@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace Infrastructure.Entities;
 
-namespace Infrastructure.Entities;
-
-public partial class CinemaRoom
+public partial class CinemaRoom : BaseEntity
 {
-    public int RoomId { get; set; }
-
-    public int? TheaterId { get; set; }
-
     public string? Name { get; set; }
 
     public int? Capacity { get; set; }
@@ -17,5 +10,6 @@ public partial class CinemaRoom
 
     public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
 
+    public int? TheaterId { get; set; }
     public virtual Theater? Theater { get; set; }
 }

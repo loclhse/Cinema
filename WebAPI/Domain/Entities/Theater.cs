@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class Theater
+public partial class Theater : BaseEntity
 {
-    public int TheaterId { get; set; }
-
     public string? Name { get; set; }
 
     public string? Address { get; set; }

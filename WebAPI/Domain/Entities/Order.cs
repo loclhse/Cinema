@@ -3,12 +3,8 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class Order
+public partial class Order : BaseEntity
 {
-    public int OrderId { get; set; }
-
-    public int? UserId { get; set; }
-
     public DateTime? OrderTime { get; set; }
 
     public decimal? TotalAmount { get; set; }
@@ -21,5 +17,6 @@ public partial class Order
 
     public virtual ICollection<TicketCancellationLog> TicketCancellationLogs { get; set; } = new List<TicketCancellationLog>();
 
+    public int? UserId { get; set; }
     public virtual User? User { get; set; }
 }

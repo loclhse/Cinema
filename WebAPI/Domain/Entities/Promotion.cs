@@ -3,10 +3,8 @@ using System.Collections.Generic;
 
 namespace Infrastructure.Entities;
 
-public partial class Promotion
+public partial class Promotion : BaseEntity
 {
-    public int PromotionId { get; set; }
-
     public string? Title { get; set; }
 
     public string? Description { get; set; }
