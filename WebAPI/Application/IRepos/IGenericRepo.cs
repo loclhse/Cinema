@@ -1,10 +1,5 @@
-﻿using Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Domain;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.IRepos
 {
@@ -12,6 +7,7 @@ namespace Application.IRepos
     {
         Task AddAsync(TModel model);
         void Update(TModel model);
+        Task UpdateAsync(TModel model); // Removed 'async' modifier as it is not allowed in interface declarations  
         void Delete(TModel model);
         void SoftDelete(TModel model);
         Task<IEnumerable<TModel>> GetAllAsync();

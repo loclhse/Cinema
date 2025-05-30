@@ -1,4 +1,5 @@
 ﻿using Application.IRepos;
+using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -92,6 +93,18 @@ namespace Infrastructure.Repos
             }
 
             return await query.Where(x => !x.IsDeleted).FirstOrDefaultAsync(predicate);
+        }
+
+        public async Task UpdateAsync(TModel model)
+        {
+            if (model == null || model.IsDeleted== true)
+            {
+                throw new Exceptions.InfrastructureException(HttpStatusCode.BadRequest, "Data is not exist");
+            }
+
+            model.UpdateDate = DateTime.UtcNow;
+            _dbSet.Update(model);
+            await Task.CompletedTask;
         }
     }
 }

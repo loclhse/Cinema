@@ -1,7 +1,6 @@
-﻿using Domain.Entities;
-using Infrastructure.Enums;
+﻿using Domain.Enums;
 
-namespace Infrastructure.Entities;
+namespace Domain.Entities;
 
 public partial class User : BaseEntity
 {

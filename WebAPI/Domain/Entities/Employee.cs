@@ -1,7 +1,4 @@
-﻿using Infrastructure;
-using Infrastructure.Entities;
-
-namespace Domain.Entities
+﻿namespace Domain.Entities
 {
     public class Employee : BaseEntity
     {

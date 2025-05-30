@@ -1,6 +1,7 @@
 ﻿using Application.IRepos;
-using Infrastructure.Entities;
-
+using Domain.Entities;
+using Domain.Enums;
+using System.Data.Entity;
 namespace Infrastructure.Repos
 {
     public class UserRepo : GenericRepo<User>, IUserRepo
@@ -10,6 +11,30 @@ namespace Infrastructure.Repos
         public UserRepo(AppDbContext context) : base(context)
         {
             _appDBContext = context;
+        }
+
+        public async Task<IEnumerable<User>> GetAllEmployeeAccounts()
+        {
+            var accounts = _appDBContext.Users;
+            var employees = new List<User>();
+            for (int i = 0; i < accounts.Count(); i++)
+            {
+                if (accounts.ElementAt(i).role == Role.Employee)
+                {
+                    employees.Add(accounts.ElementAt(i));
+                }
+            }
+            return employees.AsEnumerable();
+        }
+
+        public Task<User?> GetEmployeeAccount(int id)
+        {
+            var employee = _appDBContext.Users.FirstOrDefaultAsync(u => u.Id == id && u.role == Role.Employee);
+            if (employee == null)
+            {
+                throw new Exception("Employee not found");
+            }
+            return employee;
         }
         // Add any specific methods for UserRepo here if needed
     }

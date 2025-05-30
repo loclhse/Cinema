@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Infrastructure.Entities;
+namespace Domain.Entities;
 
 public partial class MovieTicket : BaseEntity
 {
