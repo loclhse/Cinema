@@ -35,6 +35,10 @@ namespace Application.Services
                 {
                 throw new Exceptions.ApplicationException( HttpStatusCode.BadRequest,"Password and Email are required fields for creating an employee account.");
             }
+            if (await _unitOfWork.UserRepo.IsEmailExists(employeeAccount.Email))
+            {
+                throw new Exceptions.ApplicationException(HttpStatusCode.Conflict, "An account with this email already exists.");
+            }
             try
             {
                 var user = _mapper.Map<User>(employeeAccount);
@@ -43,11 +47,6 @@ namespace Application.Services
                 user.role = Domain.Enums.Role.Employee;
 
                 await _unitOfWork.UserRepo.AddAsync(user);
-                await _unitOfWork.SaveChangesAsync();
-
-                user.Username = $"employee-{user.Id}";
-
-                await _unitOfWork.UserRepo.UpdateAsync(user);
                 await _unitOfWork.SaveChangesAsync();
 
                 return user;

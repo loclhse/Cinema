@@ -6,5 +6,6 @@ namespace Application.IRepos
     {
         Task<User?> GetEmployeeAccount(int id);
         Task<IEnumerable<User>> GetAllEmployeeAccounts();
+        Task<bool> IsEmailExists(string email);
     }
 }

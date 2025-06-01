@@ -36,6 +36,10 @@ namespace Infrastructure.Repos
             }
             return employee;
         }
-        // Add any specific methods for UserRepo here if needed
+
+        public async Task<bool> IsEmailExists(string email)
+        {
+            return await _appDBContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+        }
     }
 }
