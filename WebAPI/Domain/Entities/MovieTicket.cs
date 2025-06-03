@@ -6,7 +6,7 @@ namespace Domain.Entities;
 public partial class MovieTicket : BaseEntity
 {
 
-    public int? ShowtimeId { get; set; }
+    public Guid? ShowtimeId { get; set; }
     public virtual Showtime? Showtime { get; set; }
 
     public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();

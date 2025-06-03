@@ -9,9 +9,9 @@ public partial class ScoreHistory : BaseEntity
 
     public string? Description { get; set; }
 
-    public int? TicketId { get; set; }
+    public Guid? TicketId { get; set; }
     public virtual OrderDetail? Ticket { get; set; }
 
-    public int? UserId { get; set; }
-    public virtual User? User { get; set; }
+    public Guid? UserId { get; set; }
+    public virtual AppUser? User { get; set; }
 }

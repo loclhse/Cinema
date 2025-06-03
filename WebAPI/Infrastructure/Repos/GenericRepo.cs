@@ -1,110 +1,102 @@
 ﻿using Application.IRepos;
-using Domain;
-using Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using System.Net;
+using Microsoft.EntityFrameworkCore.Query;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Infrastructure.Repos
+namespace Infrastructure.Repositories
 {
-    public class GenericRepo<TModel> : IGenericRepo<TModel> where TModel : BaseEntity
+    public class GenericRepo<T> : IGenericRepo<T> where T : class
     {
-        protected DbSet<TModel> _dbSet;
-
-        public GenericRepo(AppDbContext dbContext)
+        public readonly DbSet<T> _db;
+        public readonly AppDbContext _context;
+        
+        //Kiet
+        public GenericRepo(AppDbContext context)
         {
-            _dbSet = dbContext.Set<TModel>();
+            _context = context;
+            _db = _context.Set<T>();
         }
-
-        public async Task AddAsync(TModel model)
+        //Kiet
+        public async Task AddAsync(T entity)
         {
-            await _dbSet.AddAsync(model);
+            await _db.AddAsync(entity);
         }
-
-        public void Delete(TModel model)
+        //Kiet
+        public async Task<int> CountAsync() => await _db.CountAsync();
+        //Kiet
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter,
+                                               Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
+                                               int pageIndex = 1,
+                                               int pageSize = 5)
         {
-            _dbSet.Remove(model);
-        }
+            IQueryable<T> query = _db;
 
-        public async Task<IEnumerable<TModel>> GetAllAsync()
-        {
-            var result = _dbSet;
-            foreach (var item in result)
+
+            if (filter != null)
             {
-                if (item.IsDeleted)
-                {
-                    result.Remove(item);
-                }
-            }
-            return await result.ToListAsync();
-        }
-
-        public async Task<TModel> GetByIdAsync(int id)
-        {
-            TModel? model = await _dbSet.FindAsync(id);
-            if (model == null || model.IsDeleted == true)
-            {
-                throw new Exceptions.InfrastructureException(HttpStatusCode.BadRequest, $"{model} not found");
-            }
-            return model;
-        }
-
-        public void SoftDelete(TModel model)
-        {
-            model.IsDeleted = true;
-            model.UpdateDate = DateTime.UtcNow;
-        }
-
-        public void Update(TModel model)
-        {
-            if (model == null || model.IsDeleted == true)
-            {
-                throw new Exceptions.InfrastructureException(HttpStatusCode.BadRequest, "Data is not exist");
-            }
-            model.UpdateDate = DateTime.UtcNow;
-            _dbSet.Update(model);
-        }
-
-        public virtual IQueryable<TModel> GetAllQueryable(string includeProperties = "")
-        {
-            IQueryable<TModel> query = _dbSet;
-
-            if (!string.IsNullOrWhiteSpace(includeProperties))
-            {
-                foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    query = query.Include(includeProperty.Trim());
-                }
+                query = query.Where(filter);
             }
 
-            return query.Where(x => !x.IsDeleted);
-        }
+            //query.IgnoreQueryFilters();
 
-        public async Task<TModel> FindOneAsync(Expression<Func<TModel, bool>> predicate, string includeProperties = "")
-        {
-            IQueryable<TModel> query = _dbSet;
-
-            if (!string.IsNullOrWhiteSpace(includeProperties))
+            if (include != null)
             {
-                foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    query = query.Include(includeProperty.Trim());
-                }
+                query = include(query);
             }
-
-            return await query.Where(x => !x.IsDeleted).FirstOrDefaultAsync(predicate);
+            return await query
+                //.Skip((pageIndex - 1) * pageSize)
+                //.Take(pageSize)
+                .ToListAsync();
         }
-
-        public async Task UpdateAsync(TModel model)
+        //Kiet
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter) 
         {
-            if (model == null || model.IsDeleted== true)
+            if (filter != null)
             {
-                throw new Exceptions.InfrastructureException(HttpStatusCode.BadRequest, "Data is not exist");
+                return await _db.Where(filter).ToListAsync();
             }
+            return await _db.ToListAsync();
+        }
+        //Kiet
+        public async Task<T> GetAsync(System.Linq.Expressions.Expression<Func<T, bool>> filter)
+        {
+#nullable disable
+            IQueryable<T> query = _db;
+            return await query.FirstOrDefaultAsync(filter);
+#nullable restore
+        }
+        //Kiet
+        public async Task<T> GetAsync(System.Linq.Expressions.Expression<Func<T, bool>> filter, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
+        {
 
-            model.UpdateDate = DateTime.UtcNow;
-            _dbSet.Update(model);
-            await Task.CompletedTask;
+            IQueryable<T> query = _db;
+            if (include != null)
+            {
+                query = include(query);
+            }
+            return await query.FirstOrDefaultAsync(filter);
+
+        }
+        //Kiet
+        public async Task RemoveByIdAsync(object id)
+        {
+#nullable disable
+            T existing = await _db.FindAsync(id);
+#nullable restore
+            if (existing != null)
+            {
+                _db.Remove(existing);
+            }
+            else throw new Exception();
+        }
+        //Kiet
+        public async Task AddRangeAsync(List<T> entities)
+        {
+            await _db.AddRangeAsync(entities);
         }
     }
 }

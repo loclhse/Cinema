@@ -2,7 +2,7 @@
 
 namespace Domain.Entities;
 
-public partial class User : BaseEntity
+public partial class AppUser : BaseEntity
 {
 
     public string? Username { get; set; }
@@ -11,7 +11,7 @@ public partial class User : BaseEntity
 
     public string? Email { get; set; }
 
-    public int? Identitycart { get; set; }
+    public string? Identitycart { get; set; }
 
     public DateOnly? Dob { get; set; }
 

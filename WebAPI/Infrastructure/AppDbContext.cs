@@ -48,7 +48,7 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<TicketSeat> TicketSeats { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<AppUser> Users { get; set; }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

@@ -5,7 +5,7 @@ namespace Domain.Entities;
 
 public partial class OrderDetail : BaseEntity
 {
-    public int? ReferenceId { get; set; }
+    public Guid? ReferenceId { get; set; }
 
     public int? Quantity { get; set; }
 
@@ -13,7 +13,7 @@ public partial class OrderDetail : BaseEntity
 
     public int? BonusPoint { get; set; }
 
-    public int? OrderId { get; set; }
+    public Guid? OrderId { get; set; }
     public virtual Order? Order { get; set; }
 
     public virtual ICollection<ScoreHistory> ScoreHistories { get; set; } = new List<ScoreHistory>();

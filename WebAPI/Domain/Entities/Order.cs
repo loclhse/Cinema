@@ -17,6 +17,6 @@ public partial class Order : BaseEntity
 
     public virtual ICollection<TicketCancellationLog> TicketCancellationLogs { get; set; } = new List<TicketCancellationLog>();
 
-    public int? UserId { get; set; }
-    public virtual User? User { get; set; }
+    public Guid? UserId { get; set; }
+    public virtual AppUser? User { get; set; }
 }

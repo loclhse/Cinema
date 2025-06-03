@@ -5,7 +5,7 @@
         public string? Assign { get; set; }
         public int? Salary { get; set; }
 
-        public int? UserId { get; set; }
-        public virtual User? User { get; set; }
+        public Guid? UserId { get; set; }
+        public virtual AppUser? User { get; set; }
     }
 }
