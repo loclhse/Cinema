@@ -5,10 +5,11 @@ namespace Application
 {
     public interface IUnitOfWork
     {
-        IUserRepo UserRepo { get; }
+        IUserRepo Users { get; }
+        IAuthRepo Auth { get; }
 
-        public Task<int> SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
         IDbContextTransaction BeginTransaction();
-        Task<IDbContextTransaction> BeginTransactionAsync();
+        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
     }
 }

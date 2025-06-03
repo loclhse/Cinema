@@ -1,12 +1,14 @@
-﻿using Application.IRepos;
+﻿using Domain;
 using Infrastructure;
+using Application.IRepos;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Net;
+using Infrastructure.Exceptions;
 
 namespace Infrastructure.Repos
 {
-    public class GenericRepo<TModel> : IGenericRepo<TModel> where TModel : BaseEntity
+    public class GenericRepo<TModel> : IGenericRepo<TModel> where TModel : BaseEntity<Guid>
     {
         protected DbSet<TModel> _dbSet;
 
@@ -38,14 +40,12 @@ namespace Infrastructure.Repos
             return await result.ToListAsync();
         }
 
-        public async Task<TModel> GetByIdAsync(int id)
+        public async Task<TModel> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            TModel? model = await _dbSet.FindAsync(id);
-            if (model == null || model.IsDeleted == true)
-            {
-                throw new Exceptions.InfrastructureException(HttpStatusCode.BadRequest, $"{model} not found");
-            }
-            return model;
+            var entity = await _dbSet.FindAsync(new object[] { id }, ct);
+            if (entity == null || entity.IsDeleted)
+                throw new InfrastructureException(HttpStatusCode.BadRequest, "Data is not exist");
+            return entity;
         }
 
         public void SoftDelete(TModel model)
@@ -79,7 +79,7 @@ namespace Infrastructure.Repos
             return query.Where(x => !x.IsDeleted);
         }
 
-        public async Task<TModel> FindOneAsync(Expression<Func<TModel, bool>> predicate, string includeProperties = "")
+        public async Task<TModel?> FindOneAsync(Expression<Func<TModel, bool>> predicate, string includeProperties = "")
         {
             IQueryable<TModel> query = _dbSet;
 

@@ -1,9 +1,9 @@
 ﻿using Application.IRepos;
-using Infrastructure.Entities;
+using Domain.Entities;
 
 namespace Infrastructure.Repos
 {
-    public class UserRepo : GenericRepo<User>, IUserRepo
+    public class UserRepo : GenericRepo<AppUser>, IUserRepo
     {
         private readonly AppDbContext _appDBContext;
 
@@ -12,5 +12,6 @@ namespace Infrastructure.Repos
             _appDBContext = context;
         }
         // Add any specific methods for UserRepo here if needed
+
     }
 }

@@ -1,10 +1,13 @@
-﻿namespace Infrastructure
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Domain
 {
-    public class BaseEntity
+    public class BaseEntity<T>
     {
-        public int Id { get; set; }
-        public DateTime CreateDate { get; set; } = DateTime.Now;
-        public DateTime UpdateDate { get; set; } = DateTime.Now;
+        [Key]
+        public T Id { get; set; } = default!;
+        public DateTime CreateDate { get; set; } = DateTime.UtcNow;
+        public DateTime UpdateDate { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; } = false;
     }
 }

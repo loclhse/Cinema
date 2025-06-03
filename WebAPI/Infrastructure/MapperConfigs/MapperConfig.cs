@@ -10,9 +10,8 @@ namespace Infrastructure.MapperConfigs
         }
 
         private void MappingUser()
-        {
-            // Example mapping for User entity
-            // CreateMap<User, UserDto>().ReverseMap;
+        {  
+            
         }
     }
 }

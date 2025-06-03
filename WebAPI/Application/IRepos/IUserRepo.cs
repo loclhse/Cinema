@@ -1,8 +1,8 @@
-﻿using Infrastructure.Entities;
+﻿using Domain.Entities;
 
 namespace Application.IRepos
 {
-    public interface IUserRepo : IGenericRepo<User>
+    public interface IUserRepo : IGenericRepo<AppUser>
     {
     }
 }

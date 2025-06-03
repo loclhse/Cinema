@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Infrastructure.Entities;
+namespace Domain.Entities;
 
 public partial class MovieTicket
 {
-    public int MovieTicketId { get; set; }
+    //public int MovieTicketId { get; set; }
 
-    public int? ShowtimeId { get; set; }
+    //public int? ShowtimeId { get; set; }
 
-    public virtual Showtime? Showtime { get; set; }
+    //public virtual Showtime? Showtime { get; set; }
 
-    public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
+    //public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
 }
