@@ -6,7 +6,7 @@ namespace Application.IRepos
 {
     public interface IGenericRepo<T> where T : class
     {
-        //Kiet
+        //Kiet  
         Task<T> GetAsync(Expression<Func<T, bool>> filter);
         //Kiet
         Task AddAsync(T entity);

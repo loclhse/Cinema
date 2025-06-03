@@ -80,7 +80,8 @@ namespace Application.Services
             try
             {
                 var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
-                var response = _mapper.Map<List<UserResponse>>(employees);
+                
+                var response = _mapper.Map<List<EmployeeResponse>>(employees);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -95,7 +96,7 @@ namespace Application.Services
             try
             {
                 var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
-                var response = _mapper.Map<List<UserResponse>>(members);
+                var response = _mapper.Map<List<MemberResponse>>(members);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -114,7 +115,7 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Can not find the employee's detail");
                 }
-                var response = _mapper.Map<List<UserResponse>>(employee);
+                var response = _mapper.Map<List<EmployeeResponse>>(employee);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -133,7 +134,7 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Can not find the member's detail");
                 }
-                var response = _mapper.Map<List<UserResponse>>(member);
+                var response = _mapper.Map<List<MemberResponse>>(member);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -150,31 +151,31 @@ namespace Application.Services
                 if(searchKey == SearchKey.Identitycart)
                 {
                     var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.Identitycart.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
-                    if (employees == null)
+                    if (employees == null || !employees.Any())
                     {
                         return apiResp.SetNotFound("No employee found with the provided Identitycart.");
                     }
-                    var response = _mapper.Map<List<UserResponse>>(employees);
+                    var response = _mapper.Map<List<EmployeeResponse>>(employees);
                     return apiResp.SetOk(response);
                 }
                 else if (searchKey == SearchKey.PhoneNumeber)
                 {
                     var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.Phone.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
-                    if (employees == null)
+                    if (employees == null || !employees.Any())
                     {
                         return apiResp.SetNotFound("No employee found with the provided Phone Number.");
                     }
-                    var response = _mapper.Map<List<UserResponse>>(employees);
+                    var response = _mapper.Map<List<EmployeeResponse>>(employees);
                     return apiResp.SetOk(response);
                 }
                 else if (searchKey == SearchKey.Name)
                 {
                     var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.FullName.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
-                    if (employees == null)
+                    if (employees == null || !employees.Any())
                     {
                         return apiResp.SetNotFound("No employee found with the provided Name.");
                     }
-                    var response = _mapper.Map<List<UserResponse>>(employees);
+                    var response = _mapper.Map< List<EmployeeResponse>> (employees);
                     return apiResp.SetOk(response);
                 }
                 else
@@ -196,34 +197,34 @@ namespace Application.Services
                 //Search by Identitycart
                 if (searchKey == SearchKey.Identitycart)
                 {
-                    var members = await _unitOfWork.UserRepo.GetAsync(e => e.Identitycart.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
-                    if (members == null)
+                    var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.Identitycart.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
+                    if (members == null || !members.Any())
                     {
                         return apiResp.SetNotFound("No member found with the provided Identitycart.");
                     }
-                    var response = _mapper.Map<List<UserResponse>> (members);
+                    var response = _mapper.Map<List<MemberResponse>> (members);
                     return apiResp.SetOk(response);
                 }
                 //Search by Phone Number
                 else if (searchKey == SearchKey.PhoneNumeber)
                 {
                     var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.Phone.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
-                    if (members == null)
+                    if (members == null || !members.Any())
                     {
                         return apiResp.SetNotFound("No member found with the provided Phone Number.");
                     }
-                    var response = _mapper.Map<List<UserResponse>>(members);
+                    var response = _mapper.Map<List<MemberResponse>>(members);
                     return apiResp.SetOk(response);
                 }
                 //Search by Name
                 else if (searchKey == SearchKey.Name)
                 {
                     var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.FullName.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
-                    if (members == null)
+                    if (members == null || !members.Any())
                     {
                         return apiResp.SetNotFound("No member found with the provided Name.");
                     }
-                    var response = _mapper.Map<List<UserResponse>>(members);
+                    var response = _mapper.Map<List<MemberResponse>>(members);
                     return apiResp.SetOk(response);
                 }
                 else

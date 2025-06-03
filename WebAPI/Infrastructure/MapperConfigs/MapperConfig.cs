@@ -19,7 +19,8 @@ namespace Infrastructure.MapperConfigs
             CreateMap<AppUser,WriteEmloyeeAccount>().ReverseMap();
             CreateMap<MemberUpdateResquest, AppUser>().ReverseMap();
             CreateMap<EmployeeUpdateResquest, AppUser>().ReverseMap();
-            CreateMap<AppUser, UserResponse>().ReverseMap();
+            CreateMap<AppUser, MemberResponse>().ReverseMap();
+            CreateMap<AppUser, EmployeeResponse>().ReverseMap();
         }
     }
 }

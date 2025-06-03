@@ -20,11 +20,15 @@ public partial class AppUser : BaseEntity
     public string? Phone { get; set; }
 
     public string? Address { get; set; }
+    public string? Avatar { get; set; }
 
     public Sex Sex { get; set; }
 
     public Role role { get; set; }
 
+    public string? Assign { get; set; }
+    public double Salary { get; set; }
+    public string? position { get; set; }
     public virtual CustomerScore? CustomerScore { get; set; }
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
@@ -37,5 +41,4 @@ public partial class AppUser : BaseEntity
 
     public virtual ICollection<TicketCancellationLog> TicketCancellationLogs { get; set; } = new List<TicketCancellationLog>();
 
-    public virtual ICollection<Employee> Employee { get; set; } = new HashSet<Employee>();
 }

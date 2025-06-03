@@ -31,6 +31,12 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
+                    b.Property<string>("Assign")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Avatar")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -55,6 +61,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("text");
 
+                    b.Property<double>("Salary")
+                        .HasColumnType("double precision");
+
                     b.Property<int>("Sex")
                         .HasColumnType("integer");
 
@@ -62,6 +71,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Username")
+                        .HasColumnType("text");
+
+                    b.Property<string>("position")
                         .HasColumnType("text");
 
                     b.Property<int>("role")
@@ -133,37 +145,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CustomerScores");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Employee", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Assign")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("Salary")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Employee");
                 });
 
             modelBuilder.Entity("Domain.Entities.Movie", b =>
@@ -680,15 +661,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Employee", b =>
-                {
-                    b.HasOne("Domain.Entities.AppUser", "User")
-                        .WithMany("Employee")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Domain.Entities.MovieTicket", b =>
                 {
                     b.HasOne("Domain.Entities.Showtime", "Showtime")
@@ -830,8 +802,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.AppUser", b =>
                 {
                     b.Navigation("CustomerScore");
-
-                    b.Navigation("Employee");
 
                     b.Navigation("Orders");
 

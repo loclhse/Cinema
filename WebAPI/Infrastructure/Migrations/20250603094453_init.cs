@@ -77,8 +77,12 @@ namespace Infrastructure.Migrations
                     FullName = table.Column<string>(type: "text", nullable: true),
                     Phone = table.Column<string>(type: "text", nullable: true),
                     Address = table.Column<string>(type: "text", nullable: true),
+                    Avatar = table.Column<string>(type: "text", nullable: true),
                     Sex = table.Column<int>(type: "integer", nullable: false),
                     role = table.Column<int>(type: "integer", nullable: false),
+                    Assign = table.Column<string>(type: "text", nullable: true),
+                    Salary = table.Column<double>(type: "double precision", nullable: false),
+                    position = table.Column<string>(type: "text", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -131,28 +135,6 @@ namespace Infrastructure.Migrations
                     table.PrimaryKey("PK_CustomerScores", x => x.Id);
                     table.ForeignKey(
                         name: "FK_CustomerScores_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Employee",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Assign = table.Column<string>(type: "text", nullable: true),
-                    Salary = table.Column<int>(type: "integer", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Employee", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Employee_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id");
@@ -462,11 +444,6 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Employee_UserId",
-                table: "Employee",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MovieTickets_ShowtimeId",
                 table: "MovieTickets",
                 column: "ShowtimeId");
@@ -557,9 +534,6 @@ namespace Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "CustomerScores");
-
-            migrationBuilder.DropTable(
-                name: "Employee");
 
             migrationBuilder.DropTable(
                 name: "Payments");
