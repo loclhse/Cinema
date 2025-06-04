@@ -1,10 +1,16 @@
 ﻿using Application.IServices;
 using Application.ViewModel;
+using Application.ViewModel.Request;
+using Application.ViewModel.Response;
+using Application.ViewModels;
 using AutoMapper;
 using Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
+using System.Collections.Generic;
 using System.Net;
-
+using System.Reflection.Metadata;
+using static Application.IServices.IUserService;
 
 namespace Application.Services
 {
@@ -12,113 +18,271 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly ILogger<UserService> _logger;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<UserService> logger)
+
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+
         }
 
-        // *** Vì gộp employee account vào Appuser nên mấy method này xem xét nhe ***
 
-        public async Task<ReadEmployeeAccount?> GetEmployeeAccountByIdAsync(Guid id)
+
+
+        public async Task<ApiResp> DeleteAccountAsync(Guid id)
         {
-            var user = await _unitOfWork.UserRepo.GetEmployeeAccount(id);
-            return _mapper.Map<ReadEmployeeAccount>(user);
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var account = await _unitOfWork.UserRepo.GetAsync(e => e.IsDeleted == false && e.Id == id);
+                if (account == null)
+                {
+                    return apiResp.SetNotFound("Account does not exist!!");
+                }
+                account.IsDeleted = true;
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk("Delete Successfully");
+
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
         }
 
-        public async Task<List<ReadEmployeeAccount>> GetAllEmployeeAccountsAsync()
+
+
+        public async Task<ApiResp> GetAllEmployeesAsync()
         {
-            return await _unitOfWork.UserRepo.GetAllEmployeeAccounts()
-                .ContinueWith(task => task.Result.Select(user => _mapper.Map<ReadEmployeeAccount>(user)).ToList());
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.IsDeleted == false);
+                var employeesReal = new List<AppUser>();
+                foreach (var employee in employees)
+                {
+                    var check = await _unitOfWork.UserRepo.IsEmployeeAccount(employee.Id);
+                    if (check == 1)
+                    {
+                        employeesReal.Add(employee);
+                    }
+                }
+                if(!employeesReal.Any())
+                {
+                    return apiResp.SetNotFound("No employee found");
+                }
+                var response = _mapper.Map<List<EmployeeResponse>>(employeesReal);
+                return apiResp.SetOk(response);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
         }
 
-        //public async Task<AppUser> CreateEmployeeAccountAsync(WriteEmloyeeAccount employeeAccount)
-        //{
-        //    if (string.IsNullOrWhiteSpace(employeeAccount.Password) ||
-        //        string.IsNullOrEmpty(employeeAccount.Email))
-        //        {
-        //        throw new Exceptions.ApplicationException( HttpStatusCode.BadRequest,"Password and Email are required fields for creating an employee account.");
-        //    }
-        //    if (await _unitOfWork.UserRepo.IsEmailExists(employeeAccount.Email))
-        //    {
-        //        throw new Exceptions.ApplicationException(HttpStatusCode.Conflict, "An account with this email already exists.");
-        //    }
-        //    try
-        //    {
-        //        var user = _mapper.Map<AppUser>(employeeAccount);
-        //        user.Password = BCrypt.Net.BCrypt.HashPassword(employeeAccount.Password, workFactor: 12);
-        //        user.Username = employeeAccount.Email; // Assuming username is the same as email
-        //        user.role = Domain.Enums.Role.Employee;
+        public async Task<ApiResp> GetAllMembesAsync()
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var Cus = await _unitOfWork.UserRepo.GetAllAsync(e => e.IsDeleted == false);
+                var CusReal = new List<AppUser>();
+                foreach (var cus in Cus)
+                {
+                    var check = await _unitOfWork.UserRepo.IsCustomerAccount(cus.Id);
+                    if (check == 1)
+                    {
+                        CusReal.Add(cus);
+                    }
+                }
+                if(!CusReal.Any())
+                {
+                    return apiResp.SetNotFound("No customer found.");
+                }
+                var response = _mapper.Map<List<MemberResponse>>(CusReal);
+                return apiResp.SetOk(response);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
 
-        //        await _unitOfWork.UserRepo.AddAsync(user);
-        //        await _unitOfWork.SaveChangesAsync();
+        public async Task<ApiResp> GetEmployeeByIdAsync(Guid id)
+        {
+            var apiResp = new ApiResp();
+            try
+            { 
+                var employee = await _unitOfWork.UserRepo.GetAsync(c => c.Id == id && c.role == Domain.Enums.Role.Employee && c.IsDeleted == false);
+                if (employee == null)
+                {
+                    return apiResp.SetNotFound("Can not find the employee's detail");
+                }
+                var response = _mapper.Map<EmployeeResponse>(employee);
+                return apiResp.SetOk(response);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
 
-        //        return user;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "An error occurred while creating an employee account.");
-        //        throw;
-        //    }
-        //}
+        public async Task<ApiResp> GetMemberByIdAsync(Guid id)
+        {
+            var apiResp = new ApiResp();
+            try
+            {
+                var member = await _unitOfWork.UserRepo.GetAsync(c => c.Id == id && c.role == Domain.Enums.Role.Member && c.IsDeleted == false);
+                if (member == null)
+                {
+                    return apiResp.SetNotFound("Can not find the member's detail");
+                }
+                var response = _mapper.Map<MemberResponse>(member);
+                return apiResp.SetOk(response);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
 
-        //public async Task<bool> DeleteEmployeeAccountAsync(int id)
-        //{
-        //    var user = await _unitOfWork.UserRepo.GetEmployeeAccount(id);
-        //    if (user == null)
-        //    {
-        //        _logger.LogWarning("Attempted to delete a non-existing employee account with ID {Id}.", id);
-        //        return false;
-        //    }
-        //    try
-        //    {
-        //        _unitOfWork.UserRepo.SoftDelete(user);
-        //        await _unitOfWork.SaveChangesAsync();
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "An error occurred while deleting the employee account with ID {Id}.", id);
-        //        throw;
-        //    }
-        //}
+        public async Task<ApiResp> SearchEmployeeAsync(string searchValue, SearchKey searchKey)
+        {
+           ApiResp apiResp = new ApiResp();
+            try
+            {
+                if(searchKey == SearchKey.Identitycart)
+                {
+                    var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.Identitycart.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
+                    if (employees == null || !employees.Any())
+                    {
+                        return apiResp.SetNotFound("No employee found with the provided Identitycart.");
+                    }
+                    var response = _mapper.Map<List<EmployeeResponse>>(employees);
+                    return apiResp.SetOk(response);
+                }
+                else if (searchKey == SearchKey.PhoneNumeber)
+                {
+                    var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.Phone.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
+                    if (employees == null || !employees.Any())
+                    {
+                        return apiResp.SetNotFound("No employee found with the provided Phone Number.");
+                    }
+                    var response = _mapper.Map<List<EmployeeResponse>>(employees);
+                    return apiResp.SetOk(response);
+                }
+                else if (searchKey == SearchKey.Name)
+                {
+                    var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.FullName.Contains(searchValue) && e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
+                    if (employees == null || !employees.Any())
+                    {
+                        return apiResp.SetNotFound("No employee found with the provided Name.");
+                    }
+                    var response = _mapper.Map <List<EmployeeResponse>> (employees);
+                    return apiResp.SetOk(response);
+                }
+                else
+                {
+                    return apiResp.SetBadRequest("Invalid search key provided.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message) ;
+            }
+        }
 
-        //public async Task<User?> UpdateEmployeeAccountAsync(int id, WriteEmloyeeAccount employeeAccount)
-        //{
-        //   var user = _unitOfWork.UserRepo.GetEmployeeAccount(id);
-        //    if (user == null)
-        //    {
-        //        _logger.LogWarning("Attempted to update a non-existing employee account with ID {Id}.", id);
-        //        return await Task.FromResult<User?>(null);
-        //    }
-        //    try
-        //    {
-        //        user.Result.FullName = employeeAccount.FullName;
-        //        user.Result.Email = employeeAccount.Email;
-        //        user.Result.Phone = employeeAccount.Phone;
-        //        user.Result.Address = employeeAccount.Address;
-        //        user.Result.Identitycart = employeeAccount.Identitycart;
-        //        user.Result.Dob = employeeAccount.Dob;
-        //        user.Result.Sex = employeeAccount.Sex;
+        public async Task<ApiResp> SearchMemberAsync(string searchValue, SearchKey searchKey)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                //Search by Identitycart
+                if (searchKey == SearchKey.Identitycart)
+                {
+                    var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.Identitycart.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
+                    if (members == null || !members.Any())
+                    {
+                        return apiResp.SetNotFound("No member found with the provided Identitycart.");
+                    }
+                    var response = _mapper.Map<List<MemberResponse>> (members);
+                    return apiResp.SetOk(response);
+                }
+                //Search by Phone Number
+                else if (searchKey == SearchKey.PhoneNumeber)
+                {
+                    var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.Phone.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
+                    if (members == null || !members.Any())
+                    {
+                        return apiResp.SetNotFound("No member found with the provided Phone Number.");
+                    }
+                    var response = _mapper.Map<List<MemberResponse>>(members);
+                    return apiResp.SetOk(response);
+                }
+                //Search by Name
+                else if (searchKey == SearchKey.Name)
+                {
+                    var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.FullName.Contains(searchValue) && e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
+                    if (members == null || !members.Any())
+                    {
+                        return apiResp.SetNotFound("No member found with the provided Name.");
+                    }
+                    var response = _mapper.Map<List<MemberResponse>>(members);
+                    return apiResp.SetOk(response);
+                }
+                else
+                {
+                    return apiResp.SetBadRequest("Invalid search key provided.");
+                }
+            }
+            catch(Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
 
-        //        if (!string.IsNullOrWhiteSpace(employeeAccount.Password))
-        //        {
-        //            user.Result.Password = BCrypt.Net.BCrypt.HashPassword(employeeAccount.Password, workFactor: 12);
-        //        }
+        public async Task<ApiResp> UpdateEmployeeAsync(Guid id, EmployeeUpdateResquest employeeUpdateResquest)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var employee = await _unitOfWork.UserRepo.GetAsync(c => c.Id == id);
+                if (employee == null)
+                {
+                    return apiResp.SetNotFound("Can not find the employee's  detail");
+                }
+                _mapper.Map(employeeUpdateResquest, employee);
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk(" employee's details updated successfully");
 
-        //        _unitOfWork.UserRepo.Update(user.Result);
-        //        _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                return apiResp.SetBadRequest(e.Message);
+            }
+        }
 
-        //        return await Task.FromResult(user.Result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "An error occurred while updating the employee account with ID {Id}.", id);
-        //        throw;
-        //    }
-        //}
+        public async Task<ApiResp> UpdateMemberAsync(Guid id, MemberUpdateResquest memberUpdateResquest)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var member = await _unitOfWork.UserRepo.GetAsync(c => c.Id == id);
+                if (member == null)
+                {
+                    return apiResp.SetNotFound("Can not find the member's detail");
+                }
+                _mapper.Map(memberUpdateResquest, member);
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk("Member's details updated successfully");
+
+            }
+            catch (Exception e)
+            {
+                return apiResp.SetBadRequest(e.Message);
+            }
+        }
     }
+       
 }

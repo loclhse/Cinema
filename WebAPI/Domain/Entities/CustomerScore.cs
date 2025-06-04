@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class CustomerScore : BaseEntity<Guid>
+public partial class CustomerScore : BaseEntity
 {
     //public int ScoreId { get; set; }
 
@@ -16,5 +16,6 @@ public partial class CustomerScore : BaseEntity<Guid>
 
     //public DateTime? LastUpdated { get; set; }
 
-    //public virtual AppUsers? User { get; set; }
+    public Guid? UserId { get; set; }
+    public virtual AppUser? User { get; set; }
 }

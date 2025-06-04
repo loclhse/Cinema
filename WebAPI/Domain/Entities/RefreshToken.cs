@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class RefreshToken : BaseEntity<Guid>
+    public class RefreshToken : BaseEntity
     {
         public string Token { get; set; } = default!;
         public DateTime ExpiresAt { get; set; }

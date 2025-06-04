@@ -1,26 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class ScoreHistory
+public partial class ScoreHistory : BaseEntity
 {
-    //public int HistoryId { get; set; }
+    public int? Amount { get; set; }
 
-    //public int? UserId { get; set; }
+    public string? Description { get; set; }
 
-    //public int? TicketId { get; set; }
+    public Guid? TicketId { get; set; }
+    public virtual OrderDetail? Ticket { get; set; }
 
-    //public int? Amount { get; set; }
-
-    //public string? Description { get; set; }
-
-    //public DateTime? CreatedAt { get; set; }
-
-    //public virtual OrderDetail? Ticket { get; set; }
-
-    //public virtual AppUsers? User { get; set; }
+    public Guid? UserId { get; set; }
+    public virtual AppUser? User { get; set; }
 }

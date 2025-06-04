@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class MovieTicket : BaseEntity<Guid>
+public partial class MovieTicket : BaseEntity
 {
-    //public int MovieTicketId { get; set; }
+    public Guid MovieTicketId { get; set; }
 
-    //public int? ShowtimeId { get; set; }
+    public Guid? ShowtimeId { get; set; }
+    public virtual Showtime? Showtime { get; set; }
 
-    //public virtual Showtime? Showtime { get; set; }
-
-    //public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
+    public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
 }

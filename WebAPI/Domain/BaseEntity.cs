@@ -1,13 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Domain
+﻿namespace Domain
 {
-    public class BaseEntity<T>
+    public class BaseEntity
     {
-        [Key]
-        public T Id { get; set; } = default!;
-        public DateTime CreateDate { get; set; } = DateTime.UtcNow;
-        public DateTime UpdateDate { get; set; } = DateTime.UtcNow;
+        public Guid Id { get; set; }
+        public DateTime CreateDate { get; set; } = DateTime.Now;
+        public DateTime UpdateDate { get; set; } = DateTime.Now;
         public bool IsDeleted { get; set; } = false;
     }
 }

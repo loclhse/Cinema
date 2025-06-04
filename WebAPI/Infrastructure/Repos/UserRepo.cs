@@ -1,6 +1,7 @@
 ﻿using Application.IRepos;
 using Domain.Entities;
 using Infrastructure.Identity;
+using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -20,7 +21,77 @@ namespace Infrastructure.Repos
         {
             _appDbContext = context;
         }
+        public async Task<int> IsEmployeeAccount(Guid id)
+        {
+            int result = 0;
+            // 3. Kiểm tra xem ApplicationUser này có role "Staff" không
+            var userRoles = await _appDbContext.UserRoles
+                .Where(ur => ur.UserId == id)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
 
+            var employeeRole = await _appDbContext.Roles
+                .FirstOrDefaultAsync(r => r.Name == AppRoleNames.Employee);
+
+            if (employeeRole == null || !userRoles.Contains(employeeRole.Id))
+            {
+                result = 0; // Không phải là nhân viên
+            }
+            result = 1; // Là nhân viên
+            return result;
+        }
+
+        public async Task<int> IsCustomerAccount(Guid id)
+        {
+            int result = 0;
+            // 3. Kiểm tra xem ApplicationUser này có role "Cus" không
+            var userRoles = await _appDbContext.UserRoles
+                .Where(ur => ur.UserId == id)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            var CusRole = await _appDbContext.Roles
+                .FirstOrDefaultAsync(r => r.Name == AppRoleNames.Customer);
+
+            if (CusRole == null || !userRoles.Contains(CusRole.Id))
+            {
+                result = 0; // Không phải là cus
+            }
+            result = 1; // Là cus
+            return result;
+        }
+        //public async Task<List<ApplicationUser>> GetAllIUsersByRoleAsync(string roleName)
+        //{
+        //    // 1. Tìm role trong AspNetRoles
+        //    var role = await _appDbContext.Roles
+        //        .FirstOrDefaultAsync(r => r.Name == roleName);
+
+        //    if (role == null)
+        //    {
+        //        return new List<ApplicationUser>();
+        //    }
+
+        //    // 2. Lấy danh sách UserId của role đó
+        //    var userIdsInRole = await _appDbContext.UserRoles
+        //        .Where(ur => ur.RoleId == role.Id)
+        //        .Select(ur => ur.UserId)
+        //        .ToListAsync();
+
+        //    if (!userIdsInRole.Any())
+        //    {
+        //        return new List<ApplicationUser>();
+        //    }
+
+        //    // 3. Lọc từ AspNetUsers, include AppUser (profile), đồng thời chỉ lấy những AppUser không null và IsDeleted==false
+        //    var list = await _appDbContext.Users
+        //        .Include(u => u.AppUser)
+        //        .Where(u => userIdsInRole.Contains(u.Id)
+        //                    && u.AppUser != null
+        //                    && !u.AppUser.IsDeleted)
+        //        .ToListAsync();
+
+        //    return list;
+        //}
         /// <summary>
         /// Lấy toàn bộ các tài khoản nhân viên (role = "Employee"), trả về list AppUser.
         /// </summary>
