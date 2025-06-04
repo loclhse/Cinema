@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using Application.ViewModel;
+using AutoMapper;
+using Domain.Entities;
 
 namespace Infrastructure.MapperConfigs
 {
@@ -9,9 +11,10 @@ namespace Infrastructure.MapperConfigs
             MappingUser();
         }
 
-        private void MappingUser()
-        {  
-            
+        public void MappingUser()
+        {
+            CreateMap<AppUser,ReadEmployeeAccount>().ReverseMap();
+            CreateMap<AppUser,WriteEmloyeeAccount>().ReverseMap();
         }
     }
 }

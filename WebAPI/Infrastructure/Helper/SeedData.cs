@@ -12,7 +12,7 @@ namespace Infrastructure.Helper
     {
         public static async Task SeedRolesAsync(RoleManager<AppRole> roleManager)
         {
-            var roles = new[] { "Admin", "Staff", "Member", "Guest" };
+            var roles = new[] { "Admin", "Employee", "Member", "Guest" };
 
             foreach (var role in roles)
             {

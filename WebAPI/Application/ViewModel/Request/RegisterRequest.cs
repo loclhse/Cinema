@@ -17,7 +17,7 @@ namespace Application.ViewModel.Request
         public string? Phone { get; set; }
         public string? Address { get; set; }
         public Sex Sex { get; set; }
-        public int? IdentityCard { get; set; }
+        public string? IdentityCard { get; set; }
         public string Role { get; set; } = "Guest";
     }
 }

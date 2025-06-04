@@ -13,7 +13,7 @@ public partial class AppUser : BaseEntity<Guid>
     public string? Phone { get; set; }
     public string? Address { get; set; }
     public Sex Sex { get; set; }
-    public int? IdentityCard { get; set; }
+    public string? IdentityCard { get; set; }
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 

@@ -9,8 +9,8 @@ namespace Infrastructure.Identity
     public class AppRoleNames
     {
         public const string Admin = "Admin";
-        public const string Staff = "Staff";
+        public const string Employee = "Employee";
         public const string Member = "Member";
-        public const string Guest = "Guest";      
+        public const string Customer = "Customer";
     }
 }

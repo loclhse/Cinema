@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class Movie
+public partial class Movie : BaseEntity<Guid>
 {
     //public int MovieId { get; set; }
 

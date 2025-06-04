@@ -9,16 +9,16 @@ namespace Infrastructure
     {
         public readonly AppDbContext _context;
 
-        public IUserRepo Users { get; }
+        public IUserRepo UserRepo { get; }
 
-        public IAuthRepo Auth { get; }
+        public IAuthRepo AuthRepo { get; }
 
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo)
         {
             _context = context;
-            Users = userRepo;
-            Auth = authRepo;
+            UserRepo = userRepo;
+            AuthRepo = authRepo;
 
         }
 

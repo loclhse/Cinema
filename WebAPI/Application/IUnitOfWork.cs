@@ -5,8 +5,8 @@ namespace Application
 {
     public interface IUnitOfWork
     {
-        IUserRepo Users { get; }
-        IAuthRepo Auth { get; }
+        IUserRepo UserRepo { get; }
+        IAuthRepo AuthRepo { get; }
 
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();

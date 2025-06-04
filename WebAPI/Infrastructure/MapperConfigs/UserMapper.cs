@@ -78,6 +78,7 @@ namespace Infrastructure.MapperConfigs
         {
             return new LoginResponse
             {
+                Id = domainUser.Id,
                 FullName = appUser.FullName,
                 Email = domainUser.Email,
                 Dob = appUser.Dob,

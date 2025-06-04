@@ -67,8 +67,8 @@ namespace Infrastructure
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             #endregion
-            // 6. Đăng ký AutoMapper (scan toàn bộ assembly của Infrastructure để tìm Profile)
-            //services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             return services;
         }

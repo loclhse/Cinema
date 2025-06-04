@@ -63,7 +63,7 @@ namespace Infrastructure.Services
             try
             {
                 // 4. Tạo ApplicationUser (AspNetUsers) từ DomainUser
-                var createResult = await _uow.Auth.CreateUserAsync(domainUser, req.Password);
+                var createResult = await _uow.AuthRepo.CreateUserAsync(domainUser, req.Password);
                 if (!createResult.Succeeded)
                 {
                     var errors = string.Join("; ", createResult.Errors);
@@ -79,11 +79,11 @@ namespace Infrastructure.Services
                 var validRoles = new[]
                 {
                     AppRoleNames.Admin,
-                    AppRoleNames.Staff,
+                    AppRoleNames.Employee,
                     AppRoleNames.Member,
-                    AppRoleNames.Guest
+                    AppRoleNames.Customer
                 };
-                var matchedRole = validRoles.FirstOrDefault(r => string.Equals(r, req.Role?.Trim(), StringComparison.OrdinalIgnoreCase)) ??AppRoleNames.Member;
+                var matchedRole = validRoles.FirstOrDefault(r => string.Equals(r, req.Role?.Trim(), StringComparison.OrdinalIgnoreCase)) ??AppRoleNames.Customer;
 
                 if (!validRoles.Contains(matchedRole))
                 {
@@ -92,7 +92,7 @@ namespace Infrastructure.Services
                 }
 
                 // 6. Gán role cho user
-                var addRoleResult = await _uow.Auth.AddUserToRoleAsync(newUserId, matchedRole);
+                var addRoleResult = await _uow.AuthRepo.AddUserToRoleAsync(newUserId, matchedRole);
                 if (!addRoleResult.Succeeded)
                 {
                     var roleErrors = string.Join("; ", addRoleResult.Errors);
@@ -100,7 +100,7 @@ namespace Infrastructure.Services
                 }
 
                 // 7. Thêm AppUser (business)
-                await _uow.Users.AddAsync(appUser);
+                await _uow.UserRepo.AddAsync(appUser);
 
                 // 8. Lưu tất cả thay đổi: 
                 // - Tất cả SaveChanges của CreateUserAsync và AddToRoleAsync đều nằm trong cùng transaction.
@@ -126,13 +126,13 @@ namespace Infrastructure.Services
         {
             // 1. Lấy DomainUser (Identity), AppUser (business) và roles
             // domainUser
-            var (domainUser, appUser, roles) = await _uow.Auth.GetUserWithRolesAndProfileAsync(req.UserName);
+            var (domainUser, appUser, roles) = await _uow.AuthRepo.GetUserWithRolesAndProfileAsync(req.UserName);
 
             if (domainUser == null || appUser == null)
                 throw new InvalidOperationException("Account does not exist");
 
             // 2. Check mật khẩu
-            var passwordValid = await _uow.Auth.CheckPasswordAsync(req.UserName, req.Password);
+            var passwordValid = await _uow.AuthRepo.CheckPasswordAsync(req.UserName, req.Password);
             if (!passwordValid)
                 throw new InvalidOperationException("Incorrect username or password");
 
@@ -143,11 +143,11 @@ namespace Infrastructure.Services
             var (refreshTokenValue, refreshExpireAt, refreshTokenEntity) = await _tokenGen.GenerateRefreshTokenAsync(domainUser.Id);
 
             // 5. Lưu RefreshToken entity vào DB
-            await _uow.Auth.AddRefreshTokenAsync(refreshTokenEntity);
+            await _uow.AuthRepo.AddRefreshTokenAsync(refreshTokenEntity);
             await _uow.SaveChangesAsync();
 
             // 6. Lấy role chính (nếu cần trả cho client)
-            var roleName = roles.FirstOrDefault() ?? AppRoleNames.Guest;
+            var roleName = roles.FirstOrDefault() ?? AppRoleNames.Customer;
 
             // 7. Trả về LoginResponse (DomainUser đã có sẵn, AppUser, role, accessToken, refreshToken)
             return domainUser.ToLoginResponse(
@@ -161,12 +161,12 @@ namespace Infrastructure.Services
         public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
         {
             // 1. Lấy RefreshToken entity cũ
-            var existing = await _uow.Auth.GetRefreshTokenAsync(refreshToken);
+            var existing = await _uow.AuthRepo.GetRefreshTokenAsync(refreshToken);
             if (existing == null || existing.Revoked || existing.ExpiresAt < DateTime.UtcNow)
                 throw new InvalidOperationException("Refresh token is invalid or expired");
 
             // 2. Lấy DomainUser + roles bằng UserId
-            var (domainUser, roles) = await _uow.Auth.GetUserWithRolesAsyncById(existing.UserId);
+            var (domainUser, roles) = await _uow.AuthRepo.GetUserWithRolesAsyncById(existing.UserId);
             if (domainUser == null)
                 throw new InvalidOperationException("User does not exist");
 
@@ -174,13 +174,13 @@ namespace Infrastructure.Services
             var (newAccessToken, newAccessExpire) = await _tokenGen.GenerateAccessTokenAsync(domainUser, roles);
 
             // 4. Thu hồi RefreshToken cũ
-            await _uow.Auth.RevokeRefreshTokenAsync(existing);
+            await _uow.AuthRepo.RevokeRefreshTokenAsync(existing);
 
             // 5. Sinh RefreshToken mới
             var (newRefreshValue, newRefreshExpireAt, newRefreshEntity) = await _tokenGen.GenerateRefreshTokenAsync(domainUser.Id);
 
             // 6. Lưu entity mới vào DB
-            await _uow.Auth.AddRefreshTokenAsync(newRefreshEntity);
+            await _uow.AuthRepo.AddRefreshTokenAsync(newRefreshEntity);
             await _uow.SaveChangesAsync();
 
             // 7. Trả về AuthResponse (bao gồm cả các expiration nếu bạn muốn)
@@ -198,7 +198,7 @@ namespace Infrastructure.Services
             try
             {
                 // Tìm user bằng Id
-                var user = await _uow.Users.GetAsync(x => x.Id == userId);
+                var user = await _uow.UserRepo.GetAsync(x => x.Id == userId);
                 if (user == null)
                 {
                     _logger.LogWarning("User not found with ID: {UserId}", userId);
@@ -219,7 +219,7 @@ namespace Infrastructure.Services
                 }
 
                 // Đổi mật khẩu
-                var result = await _uow.Auth.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
+                var result = await _uow.AuthRepo.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
 
                 if (!result.Succeeded)
                 {
@@ -248,7 +248,7 @@ namespace Infrastructure.Services
             try
             {
                 // 1. Đưa access token vào blacklist
-                var blacklistResult = await _uow.Auth.AddBlacklistedTokenAsync(accessToken);
+                var blacklistResult = await _uow.AuthRepo.AddBlacklistedTokenAsync(accessToken);
                 if (!blacklistResult.Succeeded)
                 {
                     return blacklistResult;
@@ -257,11 +257,11 @@ namespace Infrastructure.Services
                 // 2. Nếu có refresh token thì thu hồi
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    var token = await _uow.Auth.GetRefreshTokenAsync(refreshToken);
+                    var token = await _uow.AuthRepo.GetRefreshTokenAsync(refreshToken);
 
                     if (token != null)
                     {
-                        await _uow.Auth.RevokeRefreshTokenAsync(token);
+                        await _uow.AuthRepo.RevokeRefreshTokenAsync(token);
                     }
                 }
 
@@ -280,7 +280,7 @@ namespace Infrastructure.Services
         }
         public async Task<bool> IsAccessTokenBlacklistedAsync(string accessToken)
         {
-            var check = await _uow.Auth.IsTokenBlacklistedAsync(accessToken);
+            var check = await _uow.AuthRepo.IsTokenBlacklistedAsync(accessToken);
             return check;
         }
 
