@@ -18,6 +18,7 @@ namespace Application.IServices
         Task<ApiResp> DeleteEmployeeAsync(Guid id);
         Task<ApiResp> SearchEmployeeAsync(string searchValue, SearchKey searchKey);
         Task<ApiResp> SearchMemberAsync(string searchValue , SearchKey searchKey);
+  
 
         public enum SearchKey
         {
