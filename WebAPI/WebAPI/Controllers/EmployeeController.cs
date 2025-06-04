@@ -42,11 +42,6 @@ namespace WebAPI.Controllers
             var result = await _userService.DeleteEmployeeAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
-        [HttpGet("SearchEmployee")]
-        public async Task<IActionResult> SearchEmployee(string searchValue, SearchKey searchKey)
-        {
-            var result = await _userService.SearchEmployeeAsync(searchValue, searchKey);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
-        }
+
     }
 }

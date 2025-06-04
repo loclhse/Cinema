@@ -45,13 +45,5 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
-
-        [HttpGet("SearchMember")]
-        public async Task<IActionResult> SearchMember(string searchValue, SearchKey searchKey)
-        {
-            var result = await _userService.SearchMemberAsync(searchValue, searchKey);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
-        }
-
     }
 }

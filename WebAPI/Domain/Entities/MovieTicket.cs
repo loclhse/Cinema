@@ -8,10 +8,10 @@ namespace Domain.Entities;
 
 public partial class MovieTicket : BaseEntity
 {
-    public Guid MovieTicketId { get; set; }
+    //public int MovieTicketId { get; set; }
 
-    public Guid? ShowtimeId { get; set; }
-    public virtual Showtime? Showtime { get; set; }
+    //public Guid? ShowtimeId { get; set; }
+    //public virtual Showtime? Showtime { get; set; }
 
-    public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
+    //public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
 }

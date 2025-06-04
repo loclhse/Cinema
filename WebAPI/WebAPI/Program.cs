@@ -92,6 +92,7 @@ namespace WebAPI
                     p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             });
 
+            var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
             {

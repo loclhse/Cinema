@@ -15,7 +15,7 @@ namespace Application.ViewModel.Response
 
         public string? Email { get; set; }
 
-        public string? Identitycart { get; set; }
+        public string? IdentityCard { get; set; }
 
         public DateOnly? Dob { get; set; }
 

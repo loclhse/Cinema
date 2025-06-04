@@ -16,6 +16,6 @@ public partial class CustomerScore : BaseEntity
 
     //public DateTime? LastUpdated { get; set; }
 
-    public Guid? UserId { get; set; }
-    public virtual AppUser? User { get; set; }
+    //public Guid? UserId { get; set; }
+    //public virtual AppUser? User { get; set; }
 }

@@ -12,10 +12,10 @@ namespace Application.ViewModel
     {
         public HttpStatusCode StatusCode { get; private set; }
         public bool IsSuccess { get; private set; }
-        public string ErrorMessage { get; private set; }
-        public object Result { get; private set; }
+        public string? ErrorMessage { get; private set; }
+        public object? Result { get; private set; }
 
-        public ApiResp SetOk(object result = null)
+        public ApiResp SetOk(object? result = null) // Changed 'object' to 'object?' to allow null values  
         {
             IsSuccess = true;
             StatusCode = HttpStatusCode.OK;
@@ -23,7 +23,7 @@ namespace Application.ViewModel
             return this;
         }
 
-        public ApiResp SetNotFound(object result = null, string message = null)
+        public ApiResp SetNotFound(object? result = null, string? message = null) // Changed 'object' and 'string' to nullable types  
         {
             IsSuccess = false;
             StatusCode = HttpStatusCode.NotFound;
@@ -35,7 +35,7 @@ namespace Application.ViewModel
             return this;
         }
 
-        public ApiResp SetBadRequest(object result = null, string message = null)
+        public ApiResp SetBadRequest(object? result = null, string? message = null) // Changed 'object' and 'string' to nullable types  
         {
             IsSuccess = false;
             StatusCode = HttpStatusCode.BadRequest;
@@ -47,7 +47,7 @@ namespace Application.ViewModel
             return this;
         }
 
-        public ApiResp SetApiResponse(HttpStatusCode statusCode, bool isSuccess, string message = null, object result = null)
+        public ApiResp SetApiResponse(HttpStatusCode statusCode, bool isSuccess, string? message = null, object? result = null) // Changed 'string' and 'object' to nullable types  
         {
             IsSuccess = isSuccess;
             StatusCode = statusCode;

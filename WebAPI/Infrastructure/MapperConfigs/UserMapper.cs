@@ -54,7 +54,7 @@ namespace Infrastructure.MapperConfigs
             return new RegisterResponse
             {
                 UserName = domainUser.UserName,
-                FullName = appUser.FullName,
+                FullName = appUser.FullName ?? string.Empty,
                 Email = domainUser.Email,
                 Dob = appUser.Dob,
                 Phone = appUser.Phone,
@@ -79,7 +79,7 @@ namespace Infrastructure.MapperConfigs
             return new LoginResponse
             {
                 Id = domainUser.Id,
-                FullName = appUser.FullName,
+                FullName = appUser.FullName ?? string.Empty,
                 Email = domainUser.Email,
                 Dob = appUser.Dob,
                 Phone = appUser.Phone,

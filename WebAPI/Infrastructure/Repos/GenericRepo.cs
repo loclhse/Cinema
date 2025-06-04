@@ -78,7 +78,9 @@ namespace Infrastructure.Repositories
             {
                 query = include(query);
             }
+#pragma warning disable CS8603 // Possible null reference return.
             return await query.FirstOrDefaultAsync(filter);
+#pragma warning restore CS8603 // Possible null reference return.
 
         }
         //Kiet

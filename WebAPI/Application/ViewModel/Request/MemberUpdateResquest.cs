@@ -9,9 +9,9 @@ namespace Application.ViewModel.Request
 {
     public class MemberUpdateResquest
     {
-        public string? Username { get; set; }
+        public string? UserName { get; set; }
 
-        public string? Identitycart { get; set; }
+        public string? IdentityCard { get; set; }
 
         public DateOnly? Dob { get; set; }
 

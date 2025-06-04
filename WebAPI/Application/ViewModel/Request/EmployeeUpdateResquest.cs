@@ -11,7 +11,7 @@ namespace Application.ViewModel.Request
     {
         public string? Username { get; set; }
 
-        public string? Identitycart { get; set; }
+        public string? IdentityCard { get; set; }
 
         public DateOnly? Dob { get; set; }
 
@@ -25,6 +25,6 @@ namespace Application.ViewModel.Request
         public string? Avatar { get; set; }
         public string? Assign { get; set; }
         public double Salary { get; set; }
-
+        public string? Position { get; set; }
     }
 }
