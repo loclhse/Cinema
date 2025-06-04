@@ -14,6 +14,7 @@ namespace Application.Exceptions
         public ApplicationException(HttpStatusCode statusCode, string message) : base(message)
         {
             StatusCode = (int)statusCode;
+            ErrorCode = message;
         }
         public ApplicationException(HttpStatusCode statusCode, string errorCode, string message) : base(message)
         {

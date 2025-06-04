@@ -1,15 +1,24 @@
-﻿namespace Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public partial class CinemaRoom : BaseEntity
+namespace Domain.Entities;
+
+public partial class CinemaRoom
 {
-    public string? Name { get; set; }
+    //public int RoomId { get; set; }
 
-    public int? Capacity { get; set; }
+    //public int? TheaterId { get; set; }
 
-    public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
+    //public string? Name { get; set; }
 
-    public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
+    //public int? Capacity { get; set; }
 
-    public int? TheaterId { get; set; }
-    public virtual Theater? Theater { get; set; }
+    //public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
+
+    //public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
+
+    //public virtual Theater? Theater { get; set; }
 }

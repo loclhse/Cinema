@@ -5,10 +5,10 @@ namespace Application.IServices
 {
     public interface IUserService
     {
-        Task<User> CreateEmployeeAccountAsync(WriteEmloyeeAccount employeeAccount);
+        //Task<AppUser> CreateEmployeeAccountAsync(WriteEmloyeeAccount employeeAccount);
         Task<List<ReadEmployeeAccount>> GetAllEmployeeAccountsAsync();
-        Task<ReadEmployeeAccount?> GetEmployeeAccountByIdAsync(int id);
-        Task<User?> UpdateEmployeeAccountAsync(int id, WriteEmloyeeAccount employeeAccount);
-        Task<bool> DeleteEmployeeAccountAsync(int id);
+        Task<ReadEmployeeAccount?> GetEmployeeAccountByIdAsync(Guid id);
+        //Task<AppUser?> UpdateEmployeeAccountAsync(Guid id, WriteEmloyeeAccount employeeAccount);
+        //Task<bool> DeleteEmployeeAccountAsync(Guid id);
     }
 }

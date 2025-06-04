@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enums
+namespace Application.ViewModel.Request
 {
-    public enum Role
+    public class LogoutRequest
     {
-        Admin,
-        Member,
-        Employee
+        public string? RefreshToken { get; set; }
     }
 }

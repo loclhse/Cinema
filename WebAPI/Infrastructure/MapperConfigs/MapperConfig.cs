@@ -13,8 +13,8 @@ namespace Infrastructure.MapperConfigs
 
         public void MappingUser()
         {
-            CreateMap<User,ReadEmployeeAccount>().ReverseMap();
-            CreateMap<User,WriteEmloyeeAccount>().ReverseMap();
+            CreateMap<AppUser,ReadEmployeeAccount>().ReverseMap();
+            CreateMap<AppUser,WriteEmloyeeAccount>().ReverseMap();
         }
     }
 }

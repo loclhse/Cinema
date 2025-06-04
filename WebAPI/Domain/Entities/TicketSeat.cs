@@ -1,10 +1,20 @@
-﻿namespace Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public partial class TicketSeat :BaseEntity
+namespace Domain.Entities;
+
+public partial class TicketSeat
 {
-    public int? MovieTicketId { get; set; }
-    public virtual MovieTicket? MovieTicket { get; set; }
+    //public int TicketSeatId { get; set; }
 
-    public int? SeatId { get; set; }
-    public virtual Seat? Seat { get; set; }
+    //public int? MovieTicketId { get; set; }
+
+    //public int? SeatId { get; set; }
+
+    //public virtual MovieTicket? MovieTicket { get; set; }
+
+    //public virtual Seat? Seat { get; set; }
 }

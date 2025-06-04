@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class Seat : BaseEntity
+public partial class Seat
 {
-    public string? SeatNumber { get; set; }
+    //public int SeatId { get; set; }
 
-    public int? RoomId { get; set; }
-    public virtual CinemaRoom? Room { get; set; }
+    //public int? RoomId { get; set; }
 
-    public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
+    //public string? SeatNumber { get; set; }
+
+    //public virtual CinemaRoom? Room { get; set; }
+
+    //public virtual ICollection<TicketSeat> TicketSeats { get; set; } = new List<TicketSeat>();
 }

@@ -2,10 +2,10 @@
 
 namespace Application.IRepos
 {
-    public interface IUserRepo : IGenericRepo<User>
+    public interface IUserRepo : IGenericRepo<AppUser>
     {
-        Task<User?> GetEmployeeAccount(int id);
-        Task<IEnumerable<User>> GetAllEmployeeAccounts();
+        Task<AppUser?> GetEmployeeAccount(Guid id);
+        Task<IEnumerable<AppUser>> GetAllEmployeeAccounts();
         Task<bool> IsEmailExists(string email);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Application;
 using Application.IRepos;
+using Infrastructure.Repos;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Infrastructure
@@ -7,14 +8,18 @@ namespace Infrastructure
     public class UnitOfWork : IUnitOfWork
     {
         public readonly AppDbContext _context;
-        public readonly IUserRepo _userRepo;
 
-        public IUserRepo UserRepo => _userRepo;
+        public IUserRepo UserRepo { get; }
 
-        public UnitOfWork(AppDbContext context, IUserRepo userRepo)
+        public IAuthRepo AuthRepo { get; }
+
+        public UnitOfWork(AppDbContext context, IUserRepo userRepo,
+            IAuthRepo authRepo)
         {
             _context = context;
-            _userRepo = userRepo;
+            UserRepo = userRepo;
+            AuthRepo = authRepo;
+
         }
 
         public async Task<int> SaveChangesAsync()
@@ -31,7 +36,5 @@ namespace Infrastructure
         {
             return await _context.Database.BeginTransactionAsync();
         }
-
-
     }
 }
