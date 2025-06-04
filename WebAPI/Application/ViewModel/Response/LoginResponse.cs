@@ -17,7 +17,7 @@ namespace Application.ViewModel.Response
         public string? Address { get; set; }
         public Sex Sex { get; set; }
         public string? IdentityCard { get; set; }
-        public string? Role { get; set; } = "Guest";
+        public string? Role { get; set; } = "Customer";
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime RefreshTokenExpiryTime { get; set; }
