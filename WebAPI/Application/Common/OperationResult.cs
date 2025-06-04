@@ -22,9 +22,9 @@ namespace Application.Common
         }
 
         public static OperationResult Success()
-            => new OperationResult(true);
+            => new(true);
 
         public static OperationResult Failed(IEnumerable<string> errors)
-            => new OperationResult(false, errors.ToArray());
+            => new(false, errors.ToArray());
     }
 }

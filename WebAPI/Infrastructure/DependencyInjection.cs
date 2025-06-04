@@ -14,6 +14,7 @@ using Application.Services;
 using Application;
 using Infrastructure.Service;
 using Infrastructure.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure
 {
@@ -33,6 +34,7 @@ namespace Infrastructure
 
             //Bind JwtSettings
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
             // 2. Cấu hình ASP.NET Identity với ApplicationUser là IdentityUser<Guid>
             services.AddIdentity<ApplicationUser, AppRole>(options =>
@@ -47,6 +49,8 @@ namespace Infrastructure
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+            services.AddHttpContextAccessor();
 
             #region Repositories
             // 3. Đăng ký Repositories

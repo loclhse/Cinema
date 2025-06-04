@@ -22,9 +22,9 @@ namespace Infrastructure
 
         }
 
-        public async Task<int> SaveChangesAsync(CancellationToken ct = default)
+        public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync(ct);
+            return await _context.SaveChangesAsync();
         }
 
         public IDbContextTransaction BeginTransaction()
@@ -32,9 +32,9 @@ namespace Infrastructure
             return _context.Database.BeginTransaction();
         }
 
-        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
-            return await _context.Database.BeginTransactionAsync(ct);
+            return await _context.Database.BeginTransactionAsync();
         }
     }
 }

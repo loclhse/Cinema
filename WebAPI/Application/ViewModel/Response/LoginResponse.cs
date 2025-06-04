@@ -19,5 +19,6 @@ namespace Application.ViewModel.Response
         public string? Role { get; set; } = "Guest";
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+        public DateTime RefreshTokenExpiryTime { get; set; }
     }
 }

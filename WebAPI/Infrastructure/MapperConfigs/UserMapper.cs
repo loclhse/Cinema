@@ -73,7 +73,8 @@ namespace Infrastructure.MapperConfigs
             AppUser appUser,
             string role,
             string accessToken,
-            string refreshToken)
+            string refreshToken,
+            DateTime refreshTokenExpiryTime)
         {
             return new LoginResponse
             {
@@ -86,7 +87,8 @@ namespace Infrastructure.MapperConfigs
                 IdentityCard = appUser.IdentityCard,
                 Role = role,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                RefreshTokenExpiryTime = refreshTokenExpiryTime
             };
         }
     }

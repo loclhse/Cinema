@@ -10,6 +10,7 @@ using Domain.Entities;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Repos
 {
@@ -23,16 +24,18 @@ namespace Infrastructure.Repos
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext _dbContext;
+        private readonly ILogger<AuthRepo> _logger;
 
-        public AuthRepo(UserManager<ApplicationUser> userManager, AppDbContext dbContext)
+        public AuthRepo(UserManager<ApplicationUser> userManager, AppDbContext dbContext, ILogger<AuthRepo> logger)
         {
             _userManager = userManager;
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         #region User (DomainUser ↔ ApplicationUser) Methods
 
-        public async Task<OperationResult> CreateUserAsync(DomainUser user, string password, CancellationToken ct = default)
+        public async Task<OperationResult> CreateUserAsync(DomainUser user, string password)
         {
             // 1. Map DomainUser → ApplicationUser
             var identityUser = new ApplicationUser
@@ -55,12 +58,12 @@ namespace Infrastructure.Repos
             return OperationResult.Success();
         }
 
-        public async Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName, CancellationToken ct = default)
+        public async Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName)
         {
             // 1. Tìm ApplicationUser theo Id
             var identityUser = await _userManager.FindByIdAsync(userId.ToString());
             if (identityUser == null)
-                return OperationResult.Failed(new[] { "User not found." });
+                return OperationResult.Failed(["User not found."]);
             // 2. Thêm role cho user
             var result = await _userManager.AddToRoleAsync(identityUser, roleName);
             if (!result.Succeeded)
@@ -72,12 +75,12 @@ namespace Infrastructure.Repos
             return OperationResult.Success();
         }
 
-        public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName, CancellationToken ct = default)
+        public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName)
         {
             // 1. Tìm ApplicationUser theo UserName
             var identityUser = await _userManager.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserName == userName, ct);
+                .FirstOrDefaultAsync(u => u.UserName == userName);
 
             if (identityUser == null)
                 return (null, Array.Empty<string>());
@@ -97,7 +100,7 @@ namespace Infrastructure.Repos
             return (domainUser, roles);
         }
 
-        public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsyncById(Guid userId, CancellationToken ct = default)
+        public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsyncById(Guid userId)
         {
             // 1. Tìm ApplicationUser theo Id
             var identityUser = await _userManager.FindByIdAsync(userId.ToString());
@@ -119,12 +122,12 @@ namespace Infrastructure.Repos
             return (domainUser, roles);
         }
 
-        public async Task<bool> CheckPasswordAsync(string userName, string password, CancellationToken ct = default)
+        public async Task<bool> CheckPasswordAsync(string userName, string password)
         {
             // 1. Tìm ApplicationUser theo UserName
             var identityUser = await _userManager.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.UserName == userName, ct);
+                .FirstOrDefaultAsync(u => u.UserName == userName);
 
             if (identityUser == null)
                 return false;
@@ -133,12 +136,45 @@ namespace Infrastructure.Repos
             return await _userManager.CheckPasswordAsync(identityUser, password);
         }
 
-        public async Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileAsync(string userName, CancellationToken ct)
+        public async Task<OperationResult> ChangePasswordAsync(Guid id, string oldPassword, string newPassword)
+        {
+            try
+            {
+                // 1. Find user by ID (no need for AsNoTracking since we're updating)
+                var user = await _userManager.FindByIdAsync(id.ToString());
+                if (user == null)
+                {
+                    _logger.LogWarning("User with ID {UserId} not found", id);
+                    return OperationResult.Failed(["User not found"]);
+                }
+
+                // 2. Change password
+                var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+                if (!result.Succeeded)
+                {
+                    var errors = result.Errors.Select(e => e.Description).ToArray();
+                    _logger.LogWarning("Password change failed for user {UserId}. Errors: {Errors}",
+                        id, string.Join(", ", errors));
+                    return OperationResult.Failed(errors);
+                }
+
+                _logger.LogInformation("Password changed successfully for user {UserId}", id);
+                return OperationResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing password for user {UserId}", id);
+                return OperationResult.Failed(["An unexpected error occurred while changing password"]);
+            }
+        }
+
+        public async Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileAsync(string userName)
         {
             // 1. Lấy ApplicationUser (Identity) kèm AppUser (profile) từ DB
             var identityUser = await _userManager.Users
                 .Include(u => u.AppUser)
-                .FirstOrDefaultAsync(u => u.UserName == userName, cancellationToken: ct);
+                .FirstOrDefaultAsync(u => u.UserName == userName);
 
             if (identityUser == null)
                 throw new InvalidOperationException("User not found");
@@ -161,11 +197,11 @@ namespace Infrastructure.Repos
             return (domainUser, appUser, roles);
         }
 
-        public async Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileByIdAsync(Guid userId, CancellationToken ct)
+        public async Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileByIdAsync(Guid userId)
         {
             var identityUser = await _userManager.Users
                 .Include(u => u.AppUser)
-                .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken: ct);
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (identityUser == null)
                 throw new InvalidOperationException("User not found");
@@ -188,25 +224,62 @@ namespace Infrastructure.Repos
 
         #region RefreshToken (Domain) Methods
 
-        public async Task AddRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct = default)
+        public async Task AddRefreshTokenAsync(RefreshToken refreshToken)
         {
-            await _dbContext.RefreshTokens.AddAsync(refreshToken, ct);
+            await _dbContext.RefreshTokens.AddAsync(refreshToken);
         }
 
-        public Task<RefreshToken?> GetRefreshTokenAsync(string token, CancellationToken ct = default)
+        public Task<RefreshToken?> GetRefreshTokenAsync(string token)
         {
             return _dbContext.RefreshTokens
                              .AsNoTracking()
-                             .FirstOrDefaultAsync(rt => rt.Token == token, ct)!;
+                             .FirstOrDefaultAsync(rt => rt.Token == token)!;
         }
 
-        public Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken ct = default)
+        public Task RevokeRefreshTokenAsync(RefreshToken token)
         {
             token.RevokedAt = DateTime.UtcNow;
             _dbContext.RefreshTokens.Update(token);
             return Task.CompletedTask;
         }
 
+        public async Task<OperationResult> AddBlacklistedTokenAsync(string token)
+        {
+            try
+            {
+                // Kiểm tra xem token đã tồn tại chưa
+                var existingBlacklistedToken = await _dbContext.BlacklistedTokens
+                    .FirstOrDefaultAsync(bt => bt.Token == token);
+
+                if (existingBlacklistedToken != null)
+                {
+                    // Token đã ở trong blacklist, coi như thành công
+                    return OperationResult.Success();
+                }
+
+                var blacklistedToken = new BlacklistedToken
+                {
+                    Id = Guid.NewGuid(),
+                    Token = token,
+                    BlacklistedAt = DateTime.UtcNow
+                };
+
+                await _dbContext.BlacklistedTokens.AddAsync(blacklistedToken);
+                return OperationResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding blacklisted token: {Token}", token);
+                return OperationResult.Failed(["Failed to add token to blacklist"]);
+            }
+        }
+
+        public async Task<bool> IsTokenBlacklistedAsync(string token)
+        {
+            return await _dbContext.BlacklistedTokens
+                .AsNoTracking()
+                .AnyAsync(t => t.Token == token);
+        }
         #endregion
     }
 }

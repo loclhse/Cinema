@@ -8,8 +8,8 @@ namespace Application
         IUserRepo Users { get; }
         IAuthRepo Auth { get; }
 
-        Task<int> SaveChangesAsync(CancellationToken ct = default);
+        Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
-        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
+        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

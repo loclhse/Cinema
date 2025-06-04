@@ -23,32 +23,38 @@ namespace Application.IRepos
         /// DomainUser chỉ chứa Id, UserName, Email, Phone. Mật khẩu truyền riêng.
         /// Trả về OperationResult: nếu Failed, có thể lấy Errors để hiển thị.
         /// </summary>
-        Task<OperationResult> CreateUserAsync(DomainUser user, string password, CancellationToken ct = default);
+        Task<OperationResult> CreateUserAsync(DomainUser user, string password);
 
         /// <summary>
         /// Gắn role mới cho một user (đồng thời tạo ApplicationUser phía Infrastructure).
         /// Trả về OperationResult: nếu Failed, có thể lấy Errors để hiển thị.
         /// </summary>
-        Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName, CancellationToken ct = default);
+        Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName);
 
 
         /// <summary>
         /// Lấy DomainUser + danh sách roles (string[]) theo userName.
         /// Nếu không tìm thấy, trả về (null, empty array).
         /// </summary>
-        Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName, CancellationToken ct = default);
+        Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName);
 
         /// <summary>
         /// Lấy DomainUser + danh sách roles (string[]) theo userId.
         /// Nếu không tìm thấy, trả về (null, empty array).
         /// </summary>
-        Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsyncById(Guid userId, CancellationToken ct = default);
+        Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsyncById(Guid userId);
 
         /// <summary>
         /// Kiểm tra mật khẩu (password) với userName cụ thể.
         /// Trả về true nếu đúng, false nếu sai hoặc user không tồn tại.
         /// </summary>
-        Task<bool> CheckPasswordAsync(string userName, string password, CancellationToken ct = default);
+        Task<bool> CheckPasswordAsync(string userName, string password);
+
+        /// <summary>
+        /// Kiểm tra mật khẩu (password) với userName cụ thể.
+        /// Thay đổi password
+        /// </summary>
+        Task<OperationResult> ChangePasswordAsync(Guid id, string oldPassword, string newPassword);
 
 
         // ----- Phần liên quan đến RefreshToken (Domain.Entities.RefreshToken) -----
@@ -56,22 +62,26 @@ namespace Application.IRepos
         /// <summary>
         /// Thêm một RefreshToken (chưa SaveChanges).
         /// </summary>
-        Task AddRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct = default);
+        Task AddRefreshTokenAsync(RefreshToken refreshToken);
 
         /// <summary>
         /// Lấy RefreshToken entity (Domain) theo token string. Nếu không tìm thấy, trả về null.
         /// </summary>
-        Task<RefreshToken?> GetRefreshTokenAsync(string refreshToken, CancellationToken ct = default);
+        Task<RefreshToken?> GetRefreshTokenAsync(string refreshToken);
 
         /// <summary>
         /// Thu hồi (revoke) một RefreshToken (chỉ set RevokedAt, chưa SaveChanges).
         /// </summary>
-        Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken ct = default);
+        Task RevokeRefreshTokenAsync(RefreshToken token);
 
         // Trả về DomainUser (chứa Identity fields), AppUser (profile), cùng danh sách role
-        Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileAsync(string userName, CancellationToken ct);
+        Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileAsync(string userName);
 
         // Nếu cần get theo Id:
-        Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileByIdAsync(Guid userId, CancellationToken ct);
+        Task<(DomainUser? domainUser, AppUser? appUser, List<string> roles)> GetUserWithRolesAndProfileByIdAsync(Guid userId);
+
+        Task<OperationResult> AddBlacklistedTokenAsync(string token);
+
+        Task<bool> IsTokenBlacklistedAsync(string token);
     }
 }

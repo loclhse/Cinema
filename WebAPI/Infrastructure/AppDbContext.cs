@@ -54,6 +54,8 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public virtual DbSet<AppUser > AppUsers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+    public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
