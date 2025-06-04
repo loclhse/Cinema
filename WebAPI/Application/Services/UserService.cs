@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using System.Collections.Generic;
 using System.Net;
+using System.Reflection.Metadata;
 using static Application.IServices.IUserService;
 
 namespace Application.Services
@@ -28,22 +29,20 @@ namespace Application.Services
 
 
 
-        public async Task<ApiResp> DeleteEmployeeAsync(Guid id)
+
+        public async Task<ApiResp> DeleteAccountAsync(Guid id)
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                var employee = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Employee);
-               foreach (var emp in employee)
+                var account = await _unitOfWork.UserRepo.GetAsync(e => e.IsDeleted == false && e.Id == id);
+                if (account == null)
                 {
-                    if (emp.Id == id)
-                    {
-                        emp.IsDeleted = true;
-                        await _unitOfWork.SaveChangesAsync();
-                        return apiResp.SetOk("Employee deleted successfully.");
-                    }
+                    return apiResp.SetNotFound("Account does not exist!!");
                 }
-                return apiResp.SetNotFound("Employee not found.");
+                account.IsDeleted = true;
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk("Delete Successfully");
 
             }
             catch (Exception ex)
@@ -52,38 +51,28 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> DeleteMemberAsync(Guid id)
-        {
-            ApiResp apiResp = new ApiResp();
-            try
-            {
-                var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Member);
-                foreach (var mem in members)
-                {
-                    if (mem.Id == id)
-                    {
-                        mem.IsDeleted = true;
-                        await _unitOfWork.SaveChangesAsync();
-                        return apiResp.SetOk("Member deleted successfully.");
-                    }
-                }
-                return apiResp.SetNotFound("Member not found.");
 
-            }
-            catch (Exception ex)
-            {
-                return apiResp.SetBadRequest(ex.Message);
-            }
-        }
 
         public async Task<ApiResp> GetAllEmployeesAsync()
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Employee && e.IsDeleted == false);
-                
-                var response = _mapper.Map<List<EmployeeResponse>>(employees);
+                var employees = await _unitOfWork.UserRepo.GetAllAsync(e => e.IsDeleted == false);
+                var employeesReal = new List<AppUser>();
+                foreach (var employee in employees)
+                {
+                    var check = await _unitOfWork.UserRepo.IsEmployeeAccount(employee.Id);
+                    if (check == 1)
+                    {
+                        employeesReal.Add(employee);
+                    }
+                }
+                if(!employeesReal.Any())
+                {
+                    return apiResp.SetNotFound("No employee found");
+                }
+                var response = _mapper.Map<List<EmployeeResponse>>(employeesReal);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -97,8 +86,21 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                var members = await _unitOfWork.UserRepo.GetAllAsync(e => e.role == Domain.Enums.Role.Member && e.IsDeleted == false);
-                var response = _mapper.Map<List<MemberResponse>>(members);
+                var Cus = await _unitOfWork.UserRepo.GetAllAsync(e => e.IsDeleted == false);
+                var CusReal = new List<AppUser>();
+                foreach (var cus in Cus)
+                {
+                    var check = await _unitOfWork.UserRepo.IsCustomerAccount(cus.Id);
+                    if (check == 1)
+                    {
+                        CusReal.Add(cus);
+                    }
+                }
+                if(!CusReal.Any())
+                {
+                    return apiResp.SetNotFound("No customer found.");
+                }
+                var response = _mapper.Map<List<MemberResponse>>(CusReal);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -117,7 +119,7 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Can not find the employee's detail");
                 }
-                var response = _mapper.Map<List<EmployeeResponse>>(employee);
+                var response = _mapper.Map<EmployeeResponse>(employee);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -136,7 +138,7 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Can not find the member's detail");
                 }
-                var response = _mapper.Map<List<MemberResponse>>(member);
+                var response = _mapper.Map<MemberResponse>(member);
                 return apiResp.SetOk(response);
             }
             catch (Exception ex)
@@ -177,7 +179,7 @@ namespace Application.Services
                     {
                         return apiResp.SetNotFound("No employee found with the provided Name.");
                     }
-                    var response = _mapper.Map< List<EmployeeResponse>> (employees);
+                    var response = _mapper.Map <List<EmployeeResponse>> (employees);
                     return apiResp.SetOk(response);
                 }
                 else

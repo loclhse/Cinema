@@ -25,6 +25,6 @@ namespace Application.ViewModel.Request
         public string? Avatar { get; set; }
         public string? Assign { get; set; }
         public double Salary { get; set; }
-        public string? position { get; set; }
+
     }
 }

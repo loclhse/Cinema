@@ -1,14 +1,12 @@
 ﻿using Domain.Enums;
+using System;
+using System.Collections.Generic;
 
 namespace Domain.Entities;
 
 public partial class AppUser : BaseEntity
 {
-
-    public string? Username { get; set; }
-
-    public string? Password { get; set; }
-
+    //Khóa chính Shared-PK (Shared với ApplicationUser.Id)
     public string? Email { get; set; }
 
     public string? Identitycart { get; set; }
@@ -23,12 +21,9 @@ public partial class AppUser : BaseEntity
     public string? Avatar { get; set; }
 
     public Sex Sex { get; set; }
-
-    public Role role { get; set; }
-
     public string? Assign { get; set; }
-    public double Salary { get; set; }
-    public string? position { get; set; }
+    public double? Salary { get; set; }
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public virtual CustomerScore? CustomerScore { get; set; }
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();

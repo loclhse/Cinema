@@ -29,6 +29,5 @@ namespace Application.ViewModel.Response
         public Sex Sex { get; set; }
         public string? Assign { get; set; }
         public double Salary { get; set; }
-        public string? position { get; set; }
     }
 }

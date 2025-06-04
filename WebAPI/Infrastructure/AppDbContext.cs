@@ -1,9 +1,12 @@
 ﻿using Domain.Entities;
+using Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
-public partial class AppDbContext : DbContext
+public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, Guid>
 {
     public AppDbContext()
     {
@@ -42,13 +45,22 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<SnackComboItem> SnackComboItems { get; set; }
 
+    public virtual DbSet<AppUser > AppUsers { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+    public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        // Áp dụng tất cả các IEntityTypeConfiguration<T> trong cùng assembly
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
     public virtual DbSet<Theater> Theaters { get; set; }
 
     public virtual DbSet<TicketCancellationLog> TicketCancellationLogs { get; set; }
 
     public virtual DbSet<TicketSeat> TicketSeats { get; set; }
-
-    public virtual DbSet<AppUser> Users { get; set; }
-
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
