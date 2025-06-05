@@ -1,4 +1,4 @@
-﻿using Application.Domain;      // DomainUser
+﻿    using Application.Domain;      // DomainUser
 using Domain.Entities;         // AppUser
 using System;
 using System.Collections.Generic;
@@ -16,6 +16,11 @@ namespace Application.IRepos
         Task<IEnumerable<AppUser>> GetAllMemberAccountsAsync();
         Task<IEnumerable<AppUser>> GetAllCustomerAccountsAsync();
 
+        Task<IEnumerable<AppUser>> GetAllEmployeeAccountsDeletedAsync();
+        Task<IEnumerable<AppUser>> GetAllMemberAccountsDeletedAsync();
+        Task<IEnumerable<AppUser>> GetAllCustomerAccountsDeletedAsync();
+
+        Task<AppUser?> GetDeletedEmployeeAccountAsync(Guid id);
         Task<AppUser?> GetEmployeeAccountAsync(Guid id);
         Task<AppUser?> GetMemberAccountAsync(Guid id);
 

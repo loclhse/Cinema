@@ -5,12 +5,16 @@ using Application.ViewModel;
 using Application.ViewModel.Request;
 using Application.ViewModel.Response;
 using AutoMapper;
-using Domain.Entities; 
+using Domain.Entities;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using static Application.IServices.IUserService;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services
 {
@@ -232,5 +236,51 @@ namespace Application.Services
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
+
+        public async Task<ApiResp> GetDeletedAccountsAsync()
+        {
+            var apiresponse = new ApiResp();
+            try
+            {
+                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee);
+                var list = await _uow.UserRepo.GetAllEmployeeAccountsDeletedAsync();
+                var rs = _mapper.Map<List<EmployeeResponse>>(BuildJoin(ids, list));
+                return apiresponse.SetOk(rs);
+
+            }catch(Exception ex)
+            {
+                return apiresponse.SetNotFound(ex.Message);
+            }
+        }
+
+        public async Task<ApiResp> RestoreAccountAsync(Guid id)
+        {
+            var apiresponse = new ApiResp();
+            try
+            {
+                var idUser = (await _uow.UserRepo
+                                 .GetIdentityUsersByRoleAsync(RoleNames.Employee))
+                                 .FirstOrDefault(i => i.Id == id);
+                var dlEmp = _uow.UserRepo.GetDeletedEmployeeAccountAsync(id);
+
+                if (idUser == null || dlEmp == null)
+                {
+                    return apiresponse.SetNotFound("Member not found.");
+                }
+                 var account = await _uow.UserRepo.GetAsync(a => a.Id == idUser.Id); 
+                  account.IsDeleted = false;
+                  await _uow.SaveChangesAsync();
+                return apiresponse.SetOk("Restore Successfully!!!!");
+
+            }
+            catch (Exception ex)
+            {
+                return apiresponse.SetBadRequest(ex.Message);
+            }
+      }
+
+     
     }
 }
+
+//view list 

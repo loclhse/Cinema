@@ -1,4 +1,5 @@
-﻿using Application.ViewModel;
+﻿using Application.Domain;
+using Application.ViewModel;
 using Application.ViewModel.Request;
 using Application.ViewModels;
 using Domain.Entities;
@@ -18,6 +19,8 @@ namespace Application.IServices
         Task<ApiResp> DeleteEmployeeAsync(Guid id);
         Task<ApiResp> SearchCustomers(string value, SearchKey searchKey);
         Task<ApiResp> SearchEmployees(string value, SearchKey searchKey);
+        Task<ApiResp> GetDeletedAccountsAsync();
+        Task<ApiResp> RestoreAccountAsync(Guid id);
 
 
         public enum SearchKey
@@ -26,5 +29,8 @@ namespace Application.IServices
             PhoneNumeber,
             Name,
         }
+
     }
 }
+
+
