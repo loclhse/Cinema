@@ -8,10 +8,10 @@ namespace Application.IRepos
 {
     public interface IUserRepo : IGenericRepo<AppUser>
     {
-        /* ===== Identity projections (DomainUser) ===== */
+        /* Identity projections (DomainUser) */
         Task<List<DomainUser>> GetIdentityUsersByRoleAsync(string roleName);
 
-        /* ===== AppUser helpers ===== */
+        /* AppUser helpers */
         Task<IEnumerable<AppUser>> GetAllEmployeeAccountsAsync();
         Task<IEnumerable<AppUser>> GetAllMemberAccountsAsync();
         Task<IEnumerable<AppUser>> GetAllCustomerAccountsAsync();

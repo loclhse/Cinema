@@ -19,13 +19,13 @@ namespace Infrastructure.Repos
             _db = ctx;
         }
 
-        /* ---------- PRIVATE: lấy RoleId ---------- */
+        /* PRIVATE: lấy RoleId */
         private Task<Guid?> GetRoleIdAsync(string roleName) =>
             _db.Roles.Where(r => r.Name == roleName)
                      .Select(r => (Guid?)r.Id)   // IdentityRole<Guid>  
                      .FirstOrDefaultAsync();
 
-        /* ---------- 1. Projection: DomainUser ---------- */
+        /*1. Projection: DomainUser */
         public async Task<List<DomainUser>> GetIdentityUsersByRoleAsync(string roleName)
         {
             var roleId = await GetRoleIdAsync(roleName);
@@ -45,7 +45,7 @@ namespace Infrastructure.Repos
                             .ToListAsync();
         }
 
-        /* ---------- 2. Danh sách AppUser theo role ---------- */
+        /* 2. Danh sách AppUser theo role */
         public async Task<IEnumerable<AppUser>> GetAllEmployeeAccountsAsync() =>
             await GetAllByRoleAsync(AppRoleNames.Employee);
 
@@ -93,7 +93,7 @@ namespace Infrastructure.Repos
                             .FirstOrDefaultAsync();
         }
 
-        /* ---------- 4. Check email ---------- */
+        /* 4. Check email */
         public async Task<bool> IsEmailExists(string email) =>
             await _db.Users
                      .Include(u => u.AppUser)
