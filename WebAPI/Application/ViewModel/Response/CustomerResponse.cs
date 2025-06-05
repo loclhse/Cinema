@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.ViewModel.Response
 {
-    public class MemberResponse
+    public class CustomerResponse
     {
         public Guid Id { get; set; }
         public string? Username { get; set; }

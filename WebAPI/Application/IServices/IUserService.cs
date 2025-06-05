@@ -8,15 +8,17 @@ namespace Application.IServices
 {
     public interface IUserService
     {
-        Task<ApiResp> GetAllMembesAsync();
-        Task<ApiResp> GetMemberByIdAsync(Guid id);
-        Task<ApiResp> UpdateMemberAsync(Guid id, MemberUpdateResquest memberUpdateResquest);
-        Task<ApiResp> DeleteMemberAsync(Guid id);
+        Task<ApiResp> GetAllCustomersAsync();
+        Task<ApiResp> GetCustomerByIdAsync(Guid id);
+        Task<ApiResp> UpdateCustomerAsync(Guid id, MemberUpdateResquest memberUpdateResquest);
+        Task<ApiResp> DeleteCustomerAsync(Guid id);
         Task<ApiResp> GetAllEmployeesAsync();
         Task<ApiResp> GetEmployeeByIdAsync(Guid id);
         Task<ApiResp> UpdateEmployeeAsync(Guid id, EmployeeUpdateResquest employeeUpdateResquest);
         Task<ApiResp> DeleteEmployeeAsync(Guid id);
-  
+        Task<ApiResp> SearchCustomers(string value, SearchKey searchKey);
+        Task<ApiResp> SearchEmployees(string value, SearchKey searchKey);
+
 
         public enum SearchKey
         {
