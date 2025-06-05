@@ -1,5 +1,6 @@
 ﻿using Application.IServices;
 using Application.ViewModel.Request;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
 using System.Net.WebSockets;
@@ -12,6 +13,21 @@ namespace WebAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+
+        [HttpGet("test-auth")]
+        public IActionResult TestAuth()
+        {
+            try
+            {
+                // Kiểm tra xem Firebase Auth có hoạt động không
+                var auth = FirebaseAuth.DefaultInstance;
+                return Ok("Firebase Authentication đã được cấu hình thành công!");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Lỗi: {ex.Message}");
+            }
+        }
 
         public UserController(IUserService userService)
         {
