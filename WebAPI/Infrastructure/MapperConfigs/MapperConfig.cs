@@ -21,7 +21,7 @@ namespace Infrastructure.MapperConfigs
             CreateMap<AppUser, WriteEmloyeeAccount>().ReverseMap();
             CreateMap<MemberUpdateResquest, AppUser>().ReverseMap();
             CreateMap<EmployeeUpdateResquest, AppUser>().ReverseMap();
-            CreateMap<AppUser, MemberResponse>().ReverseMap();
+            CreateMap<AppUser, CustomerResponse>().ReverseMap();
             CreateMap<AppUser, EmployeeResponse>().ReverseMap();
 
             // map từ ApplicationUser (đã có AppUser) sang DTO
@@ -43,7 +43,7 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Position, m => m.MapFrom(s => s.Profile.Position))
                 .ForAllMembers(o => o.Condition((src, dest, srcMember) => srcMember != null));
 
-            CreateMap<IdentityWithProfile, MemberResponse>()
+            CreateMap<IdentityWithProfile, CustomerResponse>()
                 // Identity
                 .ForMember(d => d.Id, m => m.MapFrom(s => s.Profile.Id))
                 .ForMember(d => d.Username, m => m.MapFrom(s => s.Identity.UserName))

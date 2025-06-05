@@ -106,21 +106,21 @@ namespace Application.Services
 
         /* MEMBER */
 
-        public async Task<ApiResp> GetAllMembesAsync()
+        public async Task<ApiResp> GetAllCustomersAsync()
         {
             var resp = new ApiResp();
             try
             {
-                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Member);
-                var prof = await _uow.UserRepo.GetAllMemberAccountsAsync();
+                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer);
+                var prof = await _uow.UserRepo.GetAllCustomerAccountsAsync();
 
-                var dto = _mapper.Map<List<MemberResponse>>(BuildJoin(ids, prof));
+                var dto = _mapper.Map<List<CustomerResponse>>(BuildJoin(ids, prof));
                 return resp.SetOk(dto);
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
 
-        public async Task<ApiResp> GetMemberByIdAsync(Guid id)
+        public async Task<ApiResp> GetCustomerByIdAsync(Guid id)
         {
             var resp = new ApiResp();
             try
@@ -133,7 +133,7 @@ namespace Application.Services
                 if (idUser == null || profile == null)
                     return resp.SetNotFound("Member not found.");
 
-                var dto = _mapper.Map<MemberResponse>(
+                var dto = _mapper.Map<CustomerResponse>(
                               new IdentityWithProfile { Identity = idUser, Profile = profile });
 
                 return resp.SetOk(dto);
@@ -141,7 +141,7 @@ namespace Application.Services
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
 
-        public async Task<ApiResp> DeleteMemberAsync(Guid id)
+        public async Task<ApiResp> DeleteCustomerAsync(Guid id)
         {
             var resp = new ApiResp();
             try
@@ -156,7 +156,7 @@ namespace Application.Services
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
 
-        public async Task<ApiResp> UpdateMemberAsync(Guid id, MemberUpdateResquest req)
+        public async Task<ApiResp> UpdateCustomerAsync(Guid id, MemberUpdateResquest req)
         {
             var resp = new ApiResp();
             try
@@ -170,6 +170,67 @@ namespace Application.Services
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
+        public async Task<ApiResp> SearchCustomers(string value, SearchKey searchKey)
+        {
+            var resp = new ApiResp();
+            try
+            {
+                var customers = await _uow.UserRepo.GetAllCustomerAccountsAsync();
+                IEnumerable<AppUser> result;
+                switch (searchKey)
+                {
+                    case SearchKey.IdentityCard:
+                        result = customers.Where(c => c.IdentityCard.Contains(value));
+                        break;
+                    case SearchKey.PhoneNumeber:
+                        result = customers.Where(c => c.Phone.Contains(value));
+                        break;
+                    case SearchKey.Name:
+                        result = customers.Where(c => c.FullName.Contains(value));
+                        break;
+                    default:
+                        return resp.SetBadRequest("Invalid search key.");
+                }
+                if (!result.Any())
+                    return resp.SetNotFound("No customers found.");
+                var responses = _mapper.Map<List<CustomerResponse>>(result);
+                return resp.SetOk(responses);
+            }
+            catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
+        }
+        public async Task<ApiResp> SearchEmployees(string value, SearchKey searchKey)
+        {
+            var resp = new ApiResp();
+            try
+            {
+                var employees = await _uow.UserRepo.GetAllEmployeeAccountsAsync();
+                IEnumerable<AppUser> result;
+                switch (searchKey)
+                {
+                    case SearchKey.IdentityCard:
+                        result = employees.Where(c => c.IdentityCard.Contains(value));
+                        break;
+                    case SearchKey.PhoneNumeber:
+                        result = employees.Where(c => c.Phone.Contains(value));
+                        break;
+                    case SearchKey.Name:
+                        result = employees.Where(c => c.FullName.Contains(value));
+                        break;
+                    default:
+                        return resp.SetBadRequest("Invalid search key.");
+                
+                }
+                var responses = _mapper.Map<List<EmployeeResponse>>(result);
+                if (!result.Any()) 
+                { 
+                    return resp.SetNotFound("No employees found."); 
+                }
+                return resp.SetOk(responses);
+                     
+                
 
+            }
+            catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
+        }
     }
 }

@@ -17,33 +17,39 @@ namespace WebAPI.Controllers
         {
             _userService = userService;
         }
-        [HttpGet("GetAllMember")]
-        public async Task<IActionResult> GetAllMember()
+        [HttpGet("GetAllCustomers")]
+        public async Task<IActionResult> GetAllCustomers()
         {
-            var result = await _userService.GetAllMembesAsync();
+            var result = await _userService.GetAllCustomersAsync();
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
-        [HttpGet("GetMemberById/{id}")]
-        public async Task<IActionResult> GetMemberById(Guid id)
+        [HttpGet("GetCustomerById/{id}")]
+        public async Task<IActionResult> GetCustomerById(Guid id)
         {
-            var result = await _userService.GetMemberByIdAsync(id);
+            var result = await _userService.GetCustomerByIdAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
-        [HttpPut("UpdateMember/{id}")]
-        public async Task<IActionResult> UpdateMember(Guid id, MemberUpdateResquest request)
+        [HttpPut("UpdateCustomer/{id}")]
+        public async Task<IActionResult> UpdateCustomer(Guid id, MemberUpdateResquest request)
         {
-            var result = await _userService.UpdateMemberAsync(id, request);
+            var result = await _userService.UpdateCustomerAsync(id, request);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
-        [HttpDelete("DeleteMember/{id}")]
-        public async Task<IActionResult> DeleteMember(Guid id)
+        [HttpDelete("DeleteCustomer/{id}")]
+        public async Task<IActionResult> DeleteCustomer(Guid id)
         {
-            var result = await _userService.DeleteMemberAsync(id);
+            var result = await _userService.DeleteCustomerAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
-
+        [HttpGet("SearchCustomer")]
+        public async Task<IActionResult> SearchCustomer(string value, SearchKey searchKey)
+        {
+            var result = await _userService.SearchCustomers(value, searchKey);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+        
     }
 }
