@@ -55,6 +55,7 @@ namespace Infrastructure.Repos
         public async Task<IEnumerable<AppUser>> GetAllCustomerAccountsAsync() =>
             await GetAllByRoleAsync(AppRoleNames.Customer);
 
+        //lay cac role co IsDeleted = false
         private async Task<IEnumerable<AppUser>> GetAllByRoleAsync(string roleName)
         {
             var roleId = await GetRoleIdAsync(roleName);
@@ -64,6 +65,31 @@ namespace Infrastructure.Repos
                             .Include(u => u.AppUser)
                             .Where(u => u.AppUser != null &&
                                         !u.AppUser.IsDeleted &&
+                                        _db.UserRoles.Any(ur => ur.UserId == u.Id &&
+                                                                ur.RoleId == roleId))
+                            .Select(u => u.AppUser!)
+                            .ToListAsync();
+        }
+
+        public async Task<IEnumerable<AppUser>> GetAllEmployeeAccountsDeletedAsync() =>
+            await GetAllByRoleDeletedAsync(AppRoleNames.Employee);
+
+        public async Task<IEnumerable<AppUser>> GetAllMemberAccountsDeletedAsync() =>
+            await GetAllByRoleDeletedAsync(AppRoleNames.Member);
+
+        public async Task<IEnumerable<AppUser>> GetAllCustomerAccountsDeletedAsync() =>
+            await GetAllByRoleDeletedAsync(AppRoleNames.Customer);
+
+        //lay cac role co IsDeleted = true (da bi xoa mem)
+        private async Task<IEnumerable<AppUser>> GetAllByRoleDeletedAsync(string roleName)
+        {
+            var roleId = await GetRoleIdAsync(roleName);
+            if (roleId == null) return Enumerable.Empty<AppUser>();
+
+            return await _db.Users
+                            .Include(u => u.AppUser)
+                            .Where(u => u.AppUser != null &&
+                                        u.AppUser.IsDeleted &&
                                         _db.UserRoles.Any(ur => ur.UserId == u.Id &&
                                                                 ur.RoleId == roleId))
                             .Select(u => u.AppUser!)
@@ -87,6 +113,26 @@ namespace Infrastructure.Repos
                             .Where(u => u.AppUser != null &&
                                         u.AppUser.Id == id &&
                                         !u.AppUser.IsDeleted &&
+                                        _db.UserRoles.Any(ur => ur.UserId == u.Id &&
+                                                                ur.RoleId == roleId))
+                            .Select(u => u.AppUser!)
+                            .FirstOrDefaultAsync();
+        }
+
+        //lay employee da bi xoa
+        public Task<AppUser?> GetDeletedEmployeeAccountAsync(Guid id) =>
+            GetByRoleAndIdAsync(id, AppRoleNames.Employee);
+
+        private async Task<AppUser?> GetDeletedByRoleAndIdAsync(Guid id, string roleName)
+        {
+            var roleId = await GetRoleIdAsync(roleName);
+            if (roleId == null) return null;
+
+            return await _db.Users
+                            .Include(u => u.AppUser)
+                            .Where(u => u.AppUser != null &&
+                                        u.AppUser.Id == id &&
+                                        u.AppUser.IsDeleted &&
                                         _db.UserRoles.Any(ur => ur.UserId == u.Id &&
                                                                 ur.RoleId == roleId))
                             .Select(u => u.AppUser!)

@@ -1,4 +1,6 @@
-﻿using Application.IServices;
+﻿using Application.Domain;
+using Application.IServices;
+using Application.Services;
 using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
@@ -50,6 +52,10 @@ namespace WebAPI.Controllers
             var result = await _userService.SearchCustomers(value, searchKey);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+
         
+
+
     }
 }
+
