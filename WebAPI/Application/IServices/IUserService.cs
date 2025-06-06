@@ -21,6 +21,7 @@ namespace Application.IServices
         Task<ApiResp> SearchEmployees(string value, SearchKey searchKey);
         Task<ApiResp> GetDeletedAccountsAsync();
         Task<ApiResp> RestoreAccountAsync(Guid id);
+        Task<ApiResp> SearchIsDeleteEmployees(string value, SearchKey searchKey);
 
 
         public enum SearchKey

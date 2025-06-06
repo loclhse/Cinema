@@ -278,9 +278,34 @@ namespace Application.Services
                 return apiresponse.SetBadRequest(ex.Message);
             }
       }
-
-     
-    }
+        public async Task<ApiResp> SearchIsDeleteEmployees(string value, SearchKey searchKey)
+        {
+            var resp = new ApiResp();
+            try
+            {
+                var employees = await _uow.UserRepo.GetAllEmployeeAccountsDeletedAsync();
+                IEnumerable<AppUser> result;
+                switch (searchKey)
+                {
+                    case SearchKey.IdentityCard:
+                        result = employees.Where(c => c.IdentityCard.Contains(value));
+                        break;
+                    case SearchKey.PhoneNumeber:
+                        result = employees.Where(c => c.Phone.Contains(value));
+                        break;
+                    case SearchKey.Name:
+                        result = employees.Where(c => c.FullName.Contains(value));
+                        break;
+                    default:
+                        return resp.SetBadRequest("Invalid search key.");
+                }
+                if (!result.Any())
+                    return resp.SetNotFound("No employees found.");
+                var responses = _mapper.Map<List<EmployeeResponse>>(result);
+                return resp.SetOk(responses);
+            }
+            catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
+        }
+     }
 }
 
-//view list 
