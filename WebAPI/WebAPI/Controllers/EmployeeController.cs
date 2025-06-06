@@ -63,5 +63,11 @@ namespace WebAPI.Controllers
             var result = await _userService.RestoreAccountAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [HttpGet("SearchIsDeleteEmployee")]
+        public async Task<IActionResult> SearchIsDeleteEmployee(string value, SearchKey searchKey)
+        {
+            var result = await _userService.SearchIsDeleteEmployees(value, searchKey);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
     }
 }
