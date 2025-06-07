@@ -119,6 +119,10 @@ namespace Application.Services
                 var prof = await _uow.UserRepo.GetAllCustomerAccountsAsync();
 
                 var dto = _mapper.Map<List<CustomerResponse>>(BuildJoin(ids, prof));
+                if (dto == null)
+                {
+                    return resp.SetNotFound("Not found any Customer");
+                }
                 return resp.SetOk(dto);
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
@@ -247,6 +251,10 @@ namespace Application.Services
                 var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee);
                 var list = await _uow.UserRepo.GetAllEmployeeAccountsDeletedAsync();
                 var rs = _mapper.Map<List<EmployeeResponse>>(BuildJoin(ids, list));
+                if(!rs.Any())
+                {
+                    return apiresponse.SetNotFound("Not found any Deleted Employee");
+                }
                 return apiresponse.SetOk(rs);
 
             }catch(Exception ex)
@@ -264,12 +272,16 @@ namespace Application.Services
                                  .GetIdentityUsersByRoleAsync(RoleNames.Employee))
                                  .FirstOrDefault(i => i.Id == id);
                 var dlEmp = _uow.UserRepo.GetDeletedEmployeeAccountAsync(id);
+                if(dlEmp == null)
+                {
+                    return apiresponse.SetNotFound("Not found this Employee");
+                }
 
                 if (idUser == null || dlEmp == null)
                 {
                     return apiresponse.SetNotFound("Member not found.");
                 }
-                 var account = await _uow.UserRepo.GetAsync(a => a.Id == idUser.Id); 
+                 var account = await _uow.UserRepo.GetAsync(a => a.Id == idUser.Id);
                   account.IsDeleted = false;
                   await _uow.SaveChangesAsync();
                 return apiresponse.SetOk("Restore Successfully!!!!");

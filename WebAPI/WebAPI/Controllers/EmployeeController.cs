@@ -50,7 +50,7 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
-        [HttpGet("GetDeletedAccounts")]
+        [HttpGet("GetAllDeletedAccounts")]
         public async Task<IActionResult> GetDeletedAccounts()
         {
             var result = await _userService.GetDeletedAccountsAsync();
