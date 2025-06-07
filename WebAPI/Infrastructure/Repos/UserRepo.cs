@@ -100,6 +100,8 @@ namespace Infrastructure.Repos
         public Task<AppUser?> GetEmployeeAccountAsync(Guid id) =>
             GetByRoleAndIdAsync(id, AppRoleNames.Employee);
 
+        public Task<AppUser?> GetCustomerAccountAsync(Guid id) =>
+           GetByRoleAndIdAsync(id, AppRoleNames.Customer);
         public Task<AppUser?> GetMemberAccountAsync(Guid id) =>
             GetByRoleAndIdAsync(id, AppRoleNames.Member);
 

@@ -11,7 +11,7 @@ namespace Application.IServices
     {
         Task<ApiResp> GetAllCustomersAsync();
         Task<ApiResp> GetCustomerByIdAsync(Guid id);
-        Task<ApiResp> UpdateCustomerAsync(Guid id, MemberUpdateResquest memberUpdateResquest);
+        Task<ApiResp> UpdateCustomerAsync(Guid id, CustomerUpdateResquest customerUpdateResquest);
         Task<ApiResp> DeleteCustomerAsync(Guid id);
         Task<ApiResp> GetAllEmployeesAsync();
         Task<ApiResp> GetEmployeeByIdAsync(Guid id);

@@ -19,7 +19,7 @@ namespace Infrastructure.MapperConfigs
         {
             CreateMap<AppUser, ReadEmployeeAccount>().ReverseMap();
             CreateMap<AppUser, WriteEmloyeeAccount>().ReverseMap();
-            CreateMap<MemberUpdateResquest, AppUser>().ReverseMap();
+            CreateMap<CustomerUpdateResquest, AppUser>().ReverseMap();
             CreateMap<EmployeeUpdateResquest, AppUser>().ReverseMap();
             CreateMap<AppUser, CustomerResponse>().ReverseMap();
             CreateMap<AppUser, EmployeeResponse>().ReverseMap();
