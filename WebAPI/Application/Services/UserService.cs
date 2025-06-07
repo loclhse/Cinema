@@ -130,12 +130,12 @@ namespace Application.Services
             try
             {
                 var idUser = (await _uow.UserRepo
-                                   .GetIdentityUsersByRoleAsync(RoleNames.Member))
+                                   .GetIdentityUsersByRoleAsync(RoleNames.Customer))
                                    .FirstOrDefault(i => i.Id == id);
-                var profile = await _uow.UserRepo.GetMemberAccountAsync(id);
+                var profile = await _uow.UserRepo.GetCustomerAccountAsync(id);
 
                 if (idUser == null || profile == null)
-                    return resp.SetNotFound("Member not found.");
+                    return resp.SetNotFound("Customer not found.");
 
                 var dto = _mapper.Map<CustomerResponse>(
                               new IdentityWithProfile { Identity = idUser, Profile = profile });
@@ -150,27 +150,27 @@ namespace Application.Services
             var resp = new ApiResp();
             try
             {
-                var profile = await _uow.UserRepo.GetMemberAccountAsync(id);
-                if (profile == null) return resp.SetNotFound("Member not found.");
+                var profile = await _uow.UserRepo.GetCustomerAccountAsync(id);
+                if (profile == null) return resp.SetNotFound("Customer not found.");
 
                 profile.IsDeleted = true;
                 await _uow.SaveChangesAsync();
-                return resp.SetOk("Member deleted.");
+                return resp.SetOk("Customer deleted.");
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
 
-        public async Task<ApiResp> UpdateCustomerAsync(Guid id, MemberUpdateResquest req)
+        public async Task<ApiResp> UpdateCustomerAsync(Guid id, CustomerUpdateResquest req)
         {
             var resp = new ApiResp();
             try
             {
-                var profile = await _uow.UserRepo.GetMemberAccountAsync(id);
-                if (profile == null) return resp.SetNotFound("Member not found.");
+                var profile = await _uow.UserRepo.GetCustomerAccountAsync(id);
+                if (profile == null) return resp.SetNotFound("Customer not found.");
 
                 _mapper.Map(req, profile);
                 await _uow.SaveChangesAsync();
-                return resp.SetOk("Member updated.");
+                return resp.SetOk("Customer updated.");
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
@@ -179,6 +179,7 @@ namespace Application.Services
             var resp = new ApiResp();
             try
             {
+                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer);
                 var customers = await _uow.UserRepo.GetAllCustomerAccountsAsync();
                 IEnumerable<AppUser> result;
                 switch (searchKey)
@@ -197,7 +198,7 @@ namespace Application.Services
                 }
                 if (!result.Any())
                     return resp.SetNotFound("No customers found.");
-                var responses = _mapper.Map<List<CustomerResponse>>(result);
+                var responses = _mapper.Map<List<CustomerResponse>>(BuildJoin(ids,result));
                 return resp.SetOk(responses);
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
@@ -208,6 +209,7 @@ namespace Application.Services
             try
             {
                 var employees = await _uow.UserRepo.GetAllEmployeeAccountsAsync();
+                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee);
                 IEnumerable<AppUser> result;
                 switch (searchKey)
                 {
@@ -224,7 +226,7 @@ namespace Application.Services
                         return resp.SetBadRequest("Invalid search key.");
                 
                 }
-                var responses = _mapper.Map<List<EmployeeResponse>>(result);
+                var responses = _mapper.Map<List<EmployeeResponse>>(BuildJoin(ids, result));
                 if (!result.Any()) 
                 { 
                     return resp.SetNotFound("No employees found."); 
@@ -284,6 +286,7 @@ namespace Application.Services
             try
             {
                 var employees = await _uow.UserRepo.GetAllEmployeeAccountsDeletedAsync();
+                var ids = await _uow.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee);
                 IEnumerable<AppUser> result;
                 switch (searchKey)
                 {
@@ -301,7 +304,7 @@ namespace Application.Services
                 }
                 if (!result.Any())
                     return resp.SetNotFound("No employees found.");
-                var responses = _mapper.Map<List<EmployeeResponse>>(result);
+                var responses = _mapper.Map<List<EmployeeResponse>>(BuildJoin(ids,result));
                 return resp.SetOk(responses);
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }

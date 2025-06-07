@@ -34,7 +34,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPut("UpdateCustomer/{id}")]
-        public async Task<IActionResult> UpdateCustomer(Guid id, MemberUpdateResquest request)
+        public async Task<IActionResult> UpdateCustomer(Guid id, CustomerUpdateResquest request)
         {
             var result = await _userService.UpdateCustomerAsync(id, request);
             return result.IsSuccess ? Ok(result) : NotFound(result);

@@ -23,6 +23,7 @@ namespace Application.IRepos
         Task<AppUser?> GetDeletedEmployeeAccountAsync(Guid id);
         Task<AppUser?> GetEmployeeAccountAsync(Guid id);
         Task<AppUser?> GetMemberAccountAsync(Guid id);
+        Task<AppUser?> GetCustomerAccountAsync(Guid id);
 
         Task<bool> IsEmailExists(string email);
     }
