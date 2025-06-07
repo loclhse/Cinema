@@ -1,4 +1,6 @@
-﻿using Application.IServices;
+﻿using Application.Domain;
+using Application.IServices;
+using Application.Services;
 using Application.ViewModel.Request;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +35,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPut("UpdateCustomer/{id}")]
-        public async Task<IActionResult> UpdateCustomer(Guid id, MemberUpdateResquest request)
+        public async Task<IActionResult> UpdateCustomer(Guid id, CustomerUpdateResquest request)
         {
             var result = await _userService.UpdateCustomerAsync(id, request);
             return result.IsSuccess ? Ok(result) : NotFound(result);
@@ -51,6 +53,10 @@ namespace WebAPI.Controllers
             var result = await _userService.SearchCustomers(value, searchKey);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+
         
+
+
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using Application.IServices;
+﻿using Application.Domain;
+using Application.IServices;
 using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -46,6 +47,26 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> SearchEmployee(string value, SearchKey searchKey)
         {
             var result = await _userService.SearchEmployees(value, searchKey);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+
+        [HttpGet("GetDeletedAccounts")]
+        public async Task<IActionResult> GetDeletedAccounts()
+        {
+            var result = await _userService.GetDeletedAccountsAsync();
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+
+        [HttpPut("RestoreAccount/{id}")]
+        public async Task<IActionResult> RestoreAccount(Guid id)
+        {
+            var result = await _userService.RestoreAccountAsync(id);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+        [HttpGet("SearchIsDeleteEmployee")]
+        public async Task<IActionResult> SearchIsDeleteEmployee(string value, SearchKey searchKey)
+        {
+            var result = await _userService.SearchIsDeleteEmployees(value, searchKey);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
     }
