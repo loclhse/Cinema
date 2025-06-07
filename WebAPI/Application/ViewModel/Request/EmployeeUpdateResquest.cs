@@ -9,7 +9,6 @@ namespace Application.ViewModel.Request
 {
     public class EmployeeUpdateResquest
     {
-        public string? Username { get; set; }
 
         public string? IdentityCard { get; set; }
 

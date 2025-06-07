@@ -58,6 +58,7 @@ namespace Infrastructure
             services.AddScoped<IAuthRepo, AuthRepo>();
             services.AddScoped<IOtpValidRepo, OtpValidRepo>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IMemberService, MemberService>();
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
