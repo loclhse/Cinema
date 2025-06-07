@@ -37,6 +37,7 @@ namespace Infrastructure.MapperConfigs
                 FullName = req.FullName,
                 Dob = req.Dob,
                 Phone = req.Phone,
+                Email = req.Email,
                 Address = req.Address,
                 Sex = req.Sex,
                 IdentityCard = req.IdentityCard

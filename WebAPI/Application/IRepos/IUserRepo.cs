@@ -25,6 +25,9 @@ namespace Application.IRepos
         Task<AppUser?> GetMemberAccountAsync(Guid id);
         Task<AppUser?> GetCustomerAccountAsync(Guid id);
 
+        Task<AppUser?> GetDeletedByRoleAndIdAsync(Guid id, string roleName);
+
         Task<bool> IsEmailExists(string email);
+        Task<AppUser?> GetUserByEmailAsync(string toEmail);
     }
 }

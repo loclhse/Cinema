@@ -90,7 +90,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("changepassword/{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest pass, Guid id)
         {
             if (!ModelState.IsValid)
@@ -101,7 +101,14 @@ namespace WebAPI.Controllers
             try
             {
                 var result = await _authService.ChangePasswordAsync(pass, id);
-                return Ok(new { message = result });
+                if (result.Succeeded)
+                {
+                    return Ok(new { message = result });
+                }
+                else
+                {
+                    return BadRequest(new { error = result });
+                }
             }
             catch (ArgumentException ex)
             {
@@ -169,5 +176,30 @@ namespace WebAPI.Controllers
 
             return Ok(new { message = "Logout successful" });
         }
+
+        [HttpPost("reset-password/{id}")]
+        public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordRequest model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var result = await _authService.ResetPasswordAsync(id, model);
+                return Ok(new { message = result });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Log the exception here
+                return StatusCode(500, new { error = "An error occurred while resetting password." });
+            }
+        }
+
+
     }
 }

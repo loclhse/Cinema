@@ -20,18 +20,18 @@ namespace WebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            FirebaseApp.Create(new AppOptions()
-            {
-                Credential = GoogleCredential.FromFile("D:\\downloads\\OJT_BE\\team03_be\\WebAPI\\WebAPI\\student-51e6a-firebase-adminsdk-ix2ag-c9ca6c389c.json")
-            });
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                Console.WriteLine("FirebaseApp khởi tạo thất bại!");
-            }
-            else
-            {
-                Console.WriteLine("FirebaseApp khởi tạo thành công!");
-            }
+            //FirebaseApp.Create(new AppOptions()
+            //{
+            //    Credential = GoogleCredential.FromFile("D:\\downloads\\OJT_BE\\team03_be\\WebAPI\\WebAPI\\student-51e6a-firebase-adminsdk-ix2ag-c9ca6c389c.json")
+            //});
+            //if (FirebaseApp.DefaultInstance == null)
+            //{
+            //    Console.WriteLine("FirebaseApp khởi tạo thất bại!");
+            //}
+            //else
+            //{
+            //    Console.WriteLine("FirebaseApp khởi tạo thành công!");
+            //}
 
             // Infrastructure DI (một lần)
             builder.Services.AddInfrastructureServices(builder.Configuration);

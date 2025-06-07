@@ -125,7 +125,7 @@ namespace Infrastructure.Repos
         public Task<AppUser?> GetDeletedEmployeeAccountAsync(Guid id) =>
             GetByRoleAndIdAsync(id, AppRoleNames.Employee);
 
-        private async Task<AppUser?> GetDeletedByRoleAndIdAsync(Guid id, string roleName)
+        public async Task<AppUser?> GetDeletedByRoleAndIdAsync(Guid id, string roleName)
         {
             var roleId = await GetRoleIdAsync(roleName);
             if (roleId == null) return null;
@@ -148,5 +148,11 @@ namespace Infrastructure.Repos
                      .AnyAsync(u => u.Email == email &&
                                     u.AppUser != null &&
                                     !u.AppUser.IsDeleted);
+
+        public Task<AppUser?> GetUserByEmailAsync(string toEmail)
+        {
+            return _db.AppUsers
+                     .FirstOrDefaultAsync(u => u.Email == toEmail);
+        }
     }
 }
