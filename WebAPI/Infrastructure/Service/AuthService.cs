@@ -35,19 +35,22 @@ namespace Infrastructure.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public AuthService(
            IUnitOfWork uow,
            IJwtTokenGenerator tokenGen,
            IConfiguration configuration,
            ILogger<AuthService> logger,
-           SignInManager<ApplicationUser> signInManager)
+           SignInManager<ApplicationUser> signInManager,
+           UserManager<ApplicationUser> userManager)
         {
             _uow = uow;
             _tokenGen = tokenGen;
             _configuration = configuration;
             _logger = logger; // No change needed here after fixing the type
             _signInManager = signInManager;
+            _userManager = userManager;
         }
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest req)
@@ -284,5 +287,75 @@ namespace Infrastructure.Services
             return check;
         }
 
+        public async Task<OperationResult> ResetPasswordAsync(Guid id, ResetPasswordRequest model)
+        {
+            try
+            {
+                // Validate input password
+                if (string.IsNullOrWhiteSpace(model.NewPassword))
+                {
+                    _logger.LogWarning("New password is null or empty for user ID: {UserId}", id);
+                    return OperationResult.Failed(["New password cannot be null or empty."]);
+                }
+
+                // Await the async method
+                var user = await _userManager.FindByIdAsync(id.ToString());
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId}", id);
+                    return OperationResult.Failed(["User not found."]);
+                }
+
+                // Option 1: Direct reset (admin function - bypasses current password)
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("Password reset successfully for user ID: {UserId}", id);
+
+                    // Optional: Update security stamp to invalidate existing tokens
+                    await _userManager.UpdateSecurityStampAsync(user);
+
+                    return OperationResult.Success();
+                }
+                else
+                {
+                    var errors = result.Errors.Select(e => e.Description).ToArray();
+                    _logger.LogWarning("Password reset failed for user ID: {UserId}. Errors: {Errors}",
+                                      id, string.Join(", ", errors));
+                    return OperationResult.Failed(errors);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while resetting password for user ID: {UserId}", id);
+                return OperationResult.Failed(["An error occurred while resetting password."]);
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra mã OTP (còn hạn và đúng) dựa trên email (hoặc userId) và mã pin.
+        /// </summary>
+        public async Task<bool> VerifyOtpAsync(string email, string pin)
+        {
+            // 1. Lấy user theo email
+            var user = await _uow.UserRepo.GetUserByEmailAsync(email);
+            if (user == null)
+                throw new InvalidOperationException("Email does not exist.");
+
+            // 2. Lấy OTP còn hiệu lực
+            var otp = await _uow.OtpValidRepo.GetValidOtpAsync(user.Id, pin);
+            if (otp == null)
+                return false;
+
+            // 3. (Tùy chọn) Xoá OTP sau khi sử dụng hoặc đánh dấu đã dùng
+            //    Ví dụ: xoá luôn để tránh dùng lại
+            await _uow.OtpValidRepo.RemoveByIdAsync(otp.Id);
+            await _uow.SaveChangesAsync();
+            var checkOtp = await _uow.OtpValidRepo.GetValidOtpAsync(user.Id, pin);
+            if (checkOtp == null) return true;
+            else return false;
+        }
     }
 }

@@ -100,5 +100,11 @@ namespace Infrastructure.Repos
                      .AnyAsync(u => u.Email == email &&
                                     u.AppUser != null &&
                                     !u.AppUser.IsDeleted);
+
+        public Task<AppUser?> GetUserByEmailAsync(string toEmail)
+        {
+            return _db.AppUsers
+                     .FirstOrDefaultAsync(u => u.Email == toEmail);
+        }
     }
 }

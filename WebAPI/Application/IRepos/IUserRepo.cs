@@ -20,5 +20,6 @@ namespace Application.IRepos
         Task<AppUser?> GetMemberAccountAsync(Guid id);
 
         Task<bool> IsEmailExists(string email);
+        Task<AppUser?> GetUserByEmailAsync(string toEmail);
     }
 }

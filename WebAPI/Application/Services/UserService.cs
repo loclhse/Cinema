@@ -180,13 +180,13 @@ namespace Application.Services
                 switch (searchKey)
                 {
                     case SearchKey.IdentityCard:
-                        result = customers.Where(c => c.IdentityCard.Contains(value));
+                        result = customers.Where(c => c.IdentityCard != null && c.IdentityCard.Contains(value));
                         break;
                     case SearchKey.PhoneNumeber:
-                        result = customers.Where(c => c.Phone.Contains(value));
+                        result = customers.Where(c => c.Phone != null && c.Phone.Contains(value));
                         break;
                     case SearchKey.Name:
-                        result = customers.Where(c => c.FullName.Contains(value));
+                        result = customers.Where(c => c.FullName != null && c.FullName.Contains(value));
                         break;
                     default:
                         return resp.SetBadRequest("Invalid search key.");
@@ -208,27 +208,23 @@ namespace Application.Services
                 switch (searchKey)
                 {
                     case SearchKey.IdentityCard:
-                        result = employees.Where(c => c.IdentityCard.Contains(value));
+                        result = employees.Where(c => c.IdentityCard != null && c.IdentityCard.Contains(value));
                         break;
                     case SearchKey.PhoneNumeber:
-                        result = employees.Where(c => c.Phone.Contains(value));
+                        result = employees.Where(c => c.Phone != null && c.Phone.Contains(value));
                         break;
                     case SearchKey.Name:
-                        result = employees.Where(c => c.FullName.Contains(value));
+                        result = employees.Where(c => c.FullName != null && c.FullName.Contains(value));
                         break;
                     default:
                         return resp.SetBadRequest("Invalid search key.");
-                
                 }
                 var responses = _mapper.Map<List<EmployeeResponse>>(result);
-                if (!result.Any()) 
-                { 
-                    return resp.SetNotFound("No employees found."); 
+                if (!result.Any())
+                {
+                    return resp.SetNotFound("No employees found.");
                 }
                 return resp.SetOk(responses);
-                     
-                
-
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }

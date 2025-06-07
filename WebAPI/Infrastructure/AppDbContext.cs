@@ -49,6 +49,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
+    public DbSet<OtpValid> OtpValids { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

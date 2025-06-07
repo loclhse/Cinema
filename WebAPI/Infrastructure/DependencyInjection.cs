@@ -56,6 +56,7 @@ namespace Infrastructure
             // 3. Đăng ký Repositories
             services.AddScoped<IUserRepo, UserRepo>();
             services.AddScoped<IAuthRepo, AuthRepo>();
+            services.AddScoped<IOtpValidRepo, OtpValidRepo>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
@@ -66,6 +67,7 @@ namespace Infrastructure
             // 5. Đăng ký Application Services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IEmailService, EmailService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
