@@ -51,6 +51,10 @@ namespace Application.Services
                 var prof = await _uow.UserRepo.GetAllEmployeeAccountsAsync();
 
                 var dto = _mapper.Map<List<EmployeeResponse>>(BuildJoin(ids, prof));
+                if (dto == null || !dto.Any())
+                {
+                    return resp.SetNotFound("Not found any Employee");
+                }
                 return resp.SetOk(dto);
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
@@ -119,7 +123,7 @@ namespace Application.Services
                 var prof = await _uow.UserRepo.GetAllCustomerAccountsAsync();
 
                 var dto = _mapper.Map<List<CustomerResponse>>(BuildJoin(ids, prof));
-                if (dto == null)
+                if (dto == null || !dto.Any())
                 {
                     return resp.SetNotFound("Not found any Customer");
                 }
