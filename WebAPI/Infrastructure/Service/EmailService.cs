@@ -111,7 +111,7 @@ namespace Infrastructure.Service
             await _uow.SaveChangesAsync();
 
 
-            string subject = "CareSkin - Password Reset Confirmation";
+            string subject = "FCinema - Password Reset Confirmation";
             string body = $@"
             <html>
             <head>
@@ -226,15 +226,15 @@ namespace Infrastructure.Service
                             </div>
 
                             <div style='text-align: center; margin: 30px 0;'>
-                                <a href='http://careskinbeauty.shop/reset-password' class='action-button'>Reset Password</a>
+                                <a href='http://FCinema.com/contact' class='action-button'>Reset Password</a>
                             </div>
                         </div>
                 
                         <div class='footer'>
-                            <p>&copy; {DateTime.Now.Year} CareSkin Beauty Shop. All rights reserved.</p>
+                            <p>&copy; {DateTime.Now.Year} FCinema. All rights reserved.</p>
                             <p>This email was sent automatically, please do not reply.</p>
                             <div style='margin-top: 15px;'>
-                                <p>Contact to us: <a href='http://careskinbeauty.shop/contact' style='color: #059669; font-weight: 600; text-decoration: underline;'>click here</a></p>
+                                <p>Contact to us: <a href='http://FCinema.com/contact' style='color: #059669; font-weight: 600; text-decoration: underline;'>click here</a></p>
                             </div>
                         </div>
                     </div>
