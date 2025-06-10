@@ -3,6 +3,7 @@ using Application.IServices;
 using Application.Services;
 using Application.ViewModel.Request;
 using FirebaseAdmin.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
 using System.Net.WebSockets;
@@ -20,6 +21,8 @@ namespace WebAPI.Controllers
         {
             _userService = userService;
         }
+
+        [Authorize(Roles = "Admin,Employee")]
         [HttpGet("GetAllCustomers")]
         public async Task<IActionResult> GetAllCustomers()
         {
@@ -34,6 +37,7 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
+
         [HttpPut("UpdateCustomer/{id}")]
         public async Task<IActionResult> UpdateCustomer(Guid id, CustomerUpdateResquest request)
         {
@@ -47,6 +51,7 @@ namespace WebAPI.Controllers
             var result = await _userService.DeleteCustomerAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [Authorize(Roles = "Admin,Employee")]
         [HttpGet("SearchCustomer")]
         public async Task<IActionResult> SearchCustomer(string value, SearchKey searchKey)
         {
