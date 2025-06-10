@@ -9,8 +9,8 @@ namespace Domain.Entities
     public class SeatSchedule : BaseEntity
     {
         public Guid? SeatId { get; set; }
-        public virtual Seat? Seat { get; set; }
         public Guid? ShowtimeId { get; set; }
+        public virtual Seat? Seat { get; set; }
         public virtual Showtime? Showtime { get; set; }
         public bool IsAvailable { get; set; } = true;
     }

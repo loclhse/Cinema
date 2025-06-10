@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class MovieGenre
+    public class MovieGenre : BaseEntity
     {
         public Guid MovieId { get; set; }
-        public Movie? Movie { get; set; }
         public Guid GenreId { get; set; }
-        public Genre? Genre { get; set; }
+        public virtual Genre? Genre { get; set; }
+        public virtual Movie? Movie { get; set; }
     }
 }
