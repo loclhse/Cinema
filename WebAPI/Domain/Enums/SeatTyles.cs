@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Domain.Enums
 {
-    internal class SeatTyles
+    public enum SeatTyles
     {
+        Couple,
+        Single,
+        VIP
+
     }
 }
