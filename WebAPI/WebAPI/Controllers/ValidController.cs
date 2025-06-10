@@ -50,9 +50,9 @@ namespace WebAPI.Controllers
             {
                 bool isValid = await _authService.VerifyOtpAsync(request.Email, request.Pin);
                 if (!isValid)
-                    return BadRequest(new { error = "OTP không hợp lệ hoặc đã hết hạn." });
+                    return BadRequest(new { error = "OTP is invalid or expired." });
 
-                return Ok(new { message = "OTP hợp lệ." });
+                return Ok(new { message = "OTP is valid." });
             }
             catch (InvalidOperationException ex)
             {
@@ -60,7 +60,7 @@ namespace WebAPI.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(500, new { error = "Đã có lỗi xảy ra khi xác thực OTP." });
+                return StatusCode(500, new { error = "An error occurred while verifying OTP." });
             }
         }
     }

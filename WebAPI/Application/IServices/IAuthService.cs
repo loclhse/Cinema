@@ -23,7 +23,7 @@ namespace Application.IServices
         Task<OperationResult> ChangePasswordAsync(ChangePasswordRequest model, Guid id);
         Task <OperationResult> LogoutAsync(string accessToken, string? refreshToken);
         Task<bool> IsAccessTokenBlacklistedAsync(string accessToken);
-        Task<OperationResult> ResetPasswordAsync(Guid id, ResetPasswordRequest model);
+        Task<OperationResult> ResetPasswordAsync(string email, ResetPasswordRequest model);
         Task<bool> VerifyOtpAsync(string email, string pin);
     }
 }

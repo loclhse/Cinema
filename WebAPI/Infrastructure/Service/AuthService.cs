@@ -287,52 +287,59 @@ namespace Infrastructure.Services
             return check;
         }
 
-        public async Task<OperationResult> ResetPasswordAsync(Guid id, ResetPasswordRequest model)
+        public async Task<OperationResult> ResetPasswordAsync(string email, ResetPasswordRequest model)
         {
             try
             {
-                // Validate input password
-                if (string.IsNullOrWhiteSpace(model.NewPassword))
+                // 1. Validate input
+                if (string.IsNullOrWhiteSpace(email))
                 {
-                    _logger.LogWarning("New password is null or empty for user ID: {UserId}", id);
-                    return OperationResult.Failed(["New password cannot be null or empty."]);
+                    _logger.LogWarning("ResetPasswordAsync called with empty email.");
+                    return OperationResult.Failed(new[] { "Email is required." });
                 }
 
-                // Await the async method
-                var user = await _userManager.FindByIdAsync(id.ToString());
+                if (model == null || string.IsNullOrWhiteSpace(model.NewPassword))
+                {
+                    _logger.LogWarning("ResetPasswordAsync called with invalid model for email: {Email}", email);
+                    return OperationResult.Failed(new[] { "New password cannot be null or empty." });
+                }
+
+                // 2. Find user
+                var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
-                    _logger.LogWarning("User not found with ID: {UserId}", id);
-                    return OperationResult.Failed(["User not found."]);
+                    _logger.LogWarning("User not found with email: {Email}", email);
+                    return OperationResult.Failed(new[] { "User not found." });
                 }
 
-                // Option 1: Direct reset (admin function - bypasses current password)
-                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+                // 3. Generate reset token and attempt password reset
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
 
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("Password reset successfully for user ID: {UserId}", id);
-
-                    // Optional: Update security stamp to invalidate existing tokens
-                    await _userManager.UpdateSecurityStampAsync(user);
-
-                    return OperationResult.Success();
-                }
-                else
+                if (!result.Succeeded)
                 {
                     var errors = result.Errors.Select(e => e.Description).ToArray();
-                    _logger.LogWarning("Password reset failed for user ID: {UserId}. Errors: {Errors}",
-                                      id, string.Join(", ", errors));
+                    _logger.LogWarning(
+                        "Password reset failed for email {Email}. Errors: {Errors}",
+                        email,
+                        string.Join(", ", errors)
+                    );
                     return OperationResult.Failed(errors);
                 }
+
+                // 4. Update security stamp to invalidate existing tokens/session
+                await _userManager.UpdateSecurityStampAsync(user);
+                _logger.LogInformation("Password reset successfully for email: {Email}", email);
+
+                return OperationResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while resetting password for user ID: {UserId}", id);
-                return OperationResult.Failed(["An error occurred while resetting password."]);
+                _logger.LogError(ex, "Unexpected error resetting password for email: {Email}", email);
+                return OperationResult.Failed(new[] { "An unexpected error occurred while resetting the password." });
             }
         }
+
 
         /// <summary>
         /// Kiểm tra mã OTP (còn hạn và đúng) dựa trên email (hoặc userId) và mã pin.

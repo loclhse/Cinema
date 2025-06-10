@@ -177,8 +177,8 @@ namespace WebAPI.Controllers
             return Ok(new { message = "Logout successful" });
         }
 
-        [HttpPost("reset-password/{id}")]
-        public async Task<IActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordRequest model)
+        [HttpPost("reset-password/{email}")]
+        public async Task<IActionResult> ResetPassword(string email, [FromBody] ResetPasswordRequest model)
         {
             if (!ModelState.IsValid)
             {
@@ -186,7 +186,7 @@ namespace WebAPI.Controllers
             }
             try
             {
-                var result = await _authService.ResetPasswordAsync(id, model);
+                var result = await _authService.ResetPasswordAsync(email, model);
                 return Ok(new { message = result });
             }
             catch (ArgumentException ex)
