@@ -13,7 +13,5 @@ public partial class Showtime : BaseEntity
     public virtual Movie? Movie { get; set; }
 
     //public virtual ICollection<MovieTicket> MovieTickets { get; set; } = new List<MovieTicket>();
-    public Guid? RoomId { get; set; }
-    public virtual CinemaRoom? Room { get; set; }
     public virtual ICollection<SeatSchedule> SeatSchedules { get; set; } = new List<SeatSchedule>();
 }

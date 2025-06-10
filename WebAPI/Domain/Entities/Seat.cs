@@ -8,8 +8,8 @@ public partial class Seat : BaseEntity
 {
     public string? SeatName { get; set; } 
     public SeatTyles SeatType { get; set; } 
-    public Guid? RoomId { get; set; }
-    public virtual CinemaRoom? Room { get; set; }
+    public Guid? CinemaRoomId { get; set; }
+    public virtual CinemaRoom? CinemaRoom { get; set; }
     public bool IsAvailable { get; set; } = true;
     public char? Col{ get; set; }
     public int? Row { get; set; }
