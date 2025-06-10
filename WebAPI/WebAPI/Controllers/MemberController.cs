@@ -1,4 +1,5 @@
 ﻿using Application.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -14,6 +15,7 @@ namespace WebAPI.Controllers
             _memberService = memberService;
         }
 
+        [Authorize(Roles = "Employee,Admin")]
         [HttpGet("GetAllMember")]
         public async Task<IActionResult> getAllMember()
         {
