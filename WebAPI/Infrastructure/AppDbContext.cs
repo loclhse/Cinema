@@ -17,11 +17,14 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     {
     }
 
-    //public virtual DbSet<CinemaRoom> CinemaRooms { get; set; }
+    public virtual DbSet<CinemaRoom> CinemaRooms { get; set; }
 
     //public virtual DbSet<CustomerScore> CustomerScores { get; set; }
+    public virtual DbSet<Genre> Genres { get; set; } 
 
-    //public virtual DbSet<Movie> Movies { get; set; }
+    public virtual DbSet<Movie> Movies { get; set; }
+
+    public virtual DbSet<MovieGenre> MovieGenres { get; set; }
 
     //public virtual DbSet<MovieTicket> MovieTickets { get; set; }
 
@@ -31,13 +34,15 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     //public virtual DbSet<Payment> Payments { get; set; }
 
-    //public virtual DbSet<Promotion> Promotions { get; set; }
+    public virtual DbSet<Promotion> Promotions { get; set; }
 
     //public virtual DbSet<ScoreHistory> ScoreHistories { get; set; }
 
-    //public virtual DbSet<Seat> Seats { get; set; }
+    public virtual DbSet<Seat> Seats { get; set; }
 
-    //public virtual DbSet<Showtime> Showtimes { get; set; }
+    public virtual DbSet<SeatSchedule> SeatSchedules { get; set; }
+
+    public virtual DbSet<Showtime> Showtimes { get; set; }
 
     //public virtual DbSet<Snack> Snacks { get; set; }
 
@@ -45,7 +50,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     //public virtual DbSet<SnackComboItem> SnackComboItems { get; set; }
 
-    public virtual DbSet<AppUser > AppUsers { get; set; }
+    public virtual DbSet<AppUser> AppUsers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
@@ -58,10 +63,5 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
         // Áp dụng tất cả các IEntityTypeConfiguration<T> trong cùng assembly
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
-    //public virtual DbSet<Theater> Theaters { get; set; }
-
-    //public virtual DbSet<TicketCancellationLog> TicketCancellationLogs { get; set; }
-
-    //public virtual DbSet<TicketSeat> TicketSeats { get; set; }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

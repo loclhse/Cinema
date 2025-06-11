@@ -1,6 +1,7 @@
 ﻿using Application.Domain;
 using Application.IServices;
 using Application.ViewModel.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static Application.IServices.IUserService;
@@ -14,15 +15,17 @@ namespace WebAPI.Controllers
         private readonly IUserService _userService;
 
         public EmployeeController(IUserService userService)
-        {
+        { 
             _userService = userService;
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAllEmployee")]
         public async Task<IActionResult> GetAllEmployee()
         {
             var result = await _userService.GetAllEmployeesAsync();
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+
 
         [HttpGet("GetEmployeeById/{id}")]
         public async Task<IActionResult> GetEmployeeById(Guid id)
@@ -37,12 +40,15 @@ namespace WebAPI.Controllers
             var result = await _userService.UpdateEmployeeAsync(id, request);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [Authorize(Roles = "Admin")]
         [HttpDelete("DeleteEmployee/{id}")]
         public async Task<IActionResult> DeleteEmployee(Guid id)
         {
             var result = await _userService.DeleteEmployeeAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet("SearchEmployee")]
         public async Task<IActionResult> SearchEmployee(string value, SearchKey searchKey)
         {
@@ -50,6 +56,7 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAllDeletedAccounts")]
         public async Task<IActionResult> GetDeletedAccounts()
         {
@@ -57,12 +64,14 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("RestoreAccount/{id}")]
         public async Task<IActionResult> RestoreAccount(Guid id)
         {
             var result = await _userService.RestoreAccountAsync(id);
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet("SearchIsDeleteEmployee")]
         public async Task<IActionResult> SearchIsDeleteEmployee(string value, SearchKey searchKey)
         {

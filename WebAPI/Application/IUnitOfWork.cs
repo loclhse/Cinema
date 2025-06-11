@@ -6,9 +6,12 @@ namespace Application
     public interface IUnitOfWork
     {
         IUserRepo UserRepo { get; }
+        
         IAuthRepo AuthRepo { get; }
+        
         IOtpValidRepo OtpValidRepo { get; }
 
+        IMovieRepo MovieRepo { get; }
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();

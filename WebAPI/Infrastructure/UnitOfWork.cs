@@ -12,16 +12,21 @@ namespace Infrastructure
         public IUserRepo UserRepo { get; }
 
         public IAuthRepo AuthRepo { get; }
+
+        public IMovieRepo MovieRepo { get; }
+        
         public IOtpValidRepo OtpValidRepo { get; }
 
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
-            IOtpValidRepo otpValidRepo)
+            IOtpValidRepo otpValidRepo,
+            IMovieRepo movieRepo)
         {
             _context = context;
             UserRepo = userRepo;
             AuthRepo = authRepo;
             OtpValidRepo = otpValidRepo;
+            MovieRepo=movieRepo; 
         }
 
         public async Task<int> SaveChangesAsync()
