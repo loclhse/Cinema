@@ -20,8 +20,8 @@ namespace Infrastructure
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo,
-            IPromotionRepo promotionRepo)
-            IOtpValidRepo otpValidRepo,IMovieRepo movieRepo, IGenreRepo genre)
+            IPromotionRepo promotionRepo,
+            IMovieRepo movieRepo, IGenreRepo genre)
         {
             _context = context;
             UserRepo = userRepo;
