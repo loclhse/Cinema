@@ -15,14 +15,19 @@ namespace Infrastructure
         public IMovieRepo MovieRepo { get; }
         public IGenreRepo GenreRepo { get; }
 
+        public IPromotionRepo PromotionRepo { get; }
+
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
+            IOtpValidRepo otpValidRepo,
+            IPromotionRepo promotionRepo)
             IOtpValidRepo otpValidRepo,IMovieRepo movieRepo, IGenreRepo genre)
         {
             _context = context;
             UserRepo = userRepo;
             AuthRepo = authRepo;
             OtpValidRepo = otpValidRepo;
+            PromotionRepo = promotionRepo;
             MovieRepo = movieRepo;
             GenreRepo = genre;
         }
