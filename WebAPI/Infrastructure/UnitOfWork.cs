@@ -21,19 +21,9 @@ namespace Infrastructure
         public ICinemaRoomRepo CinemaRoomRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
-
-        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
-        
         public IGenreRepo GenreRepo { get; }
-
         public IPromotionRepo PromotionRepo { get; }
-
-        public UnitOfWork(AppDbContext context, IUserRepo userRepo,
-            IAuthRepo authRepo,
-            IOtpValidRepo otpValidRepo,
-            IPromotionRepo promotionRepo,
-            IMovieRepo movieRepo, IGenreRepo genre)
-           
+        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
         {
             _context = context;
             UserRepo = new UserRepo(context);
@@ -42,6 +32,9 @@ namespace Infrastructure
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypeConfigRepo = new SeatTypePriceRepo(context);
+            MovieRepo = new MovieRepo(context);
+            GenreRepo = new GenreRepo(context);
+            PromotionRepo = new PromotionRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
