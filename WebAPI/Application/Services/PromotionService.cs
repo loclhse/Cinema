@@ -86,5 +86,22 @@ namespace Application.Services
                 return apiResp.SetBadRequest(ex.Message) ;
             }
         }
+
+        public async Task<ApiResp> GetAllPromotion()
+        {
+            ApiResp rp = new ApiResp();
+            try
+            {
+                var promo = await _uow.PromotionRepo.GetAllPromotion();
+                if(!promo.Any())
+                {
+                    return rp.SetNotFound("Not found any Promotion");
+                }
+                return rp.SetOk(promo);
+            }catch(Exception ex)
+            {
+                return rp.SetBadRequest(ex.Message) ;
+            }
+        }
     }
 }

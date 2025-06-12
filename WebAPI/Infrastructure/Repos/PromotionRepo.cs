@@ -16,6 +16,12 @@ namespace Infrastructure.Repos
         {
         }
 
+        public async Task<IEnumerable<Promotion>> GetAllPromotion()
+        {
+            var rs = await _db.Where(p => p.IsDeleted == false).ToListAsync();
+            return rs;
+        }
+
         public async Task<Promotion> GetPromotionById(Guid id)
         {
             var rs = await _db.Where(p => p.Id == id && !p.IsDeleted).FirstOrDefaultAsync();
