@@ -10,18 +10,26 @@ namespace Infrastructure
         public readonly AppDbContext _context;
 
         public IUserRepo UserRepo { get; }
-
         public IAuthRepo AuthRepo { get; }
         public IOtpValidRepo OtpValidRepo { get; }
+        public IMovieRepo MovieRepo { get; }
+        public IGenreRepo GenreRepo { get; }
+
+        public IPromotionRepo PromotionRepo { get; }
 
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
-            IOtpValidRepo otpValidRepo)
+            IOtpValidRepo otpValidRepo,
+            IPromotionRepo promotionRepo,
+            IMovieRepo movieRepo, IGenreRepo genre)
         {
             _context = context;
             UserRepo = userRepo;
             AuthRepo = authRepo;
             OtpValidRepo = otpValidRepo;
+            PromotionRepo = promotionRepo;
+            MovieRepo = movieRepo;
+            GenreRepo = genre;
         }
 
         public async Task<int> SaveChangesAsync()
