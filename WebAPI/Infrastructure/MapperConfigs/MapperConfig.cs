@@ -23,6 +23,17 @@ namespace Infrastructure.MapperConfigs
             CreateMap<EmployeeUpdateResquest, AppUser>().ReverseMap();
             CreateMap<AppUser, CustomerResponse>().ReverseMap();
             CreateMap<AppUser, EmployeeResponse>().ReverseMap();
+            CreateMap<CinemaRoom, CinemaRoomCreateRequest>().ReverseMap();
+            CreateMap<CinemaRoom, CinemaRoomUpdateRequest>()
+                .ReverseMap()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<CinemaRoom, CinemaRoomResponse>().ReverseMap();
+            CreateMap<Seat, SeatCreateRequest>().ReverseMap();
+            CreateMap<Seat, SeatUpdateRequest>().ReverseMap();
+            CreateMap<Seat, SeatResponse>().ReverseMap();
+            CreateMap<SeatTypePrice, SeatTypePriceCreateRequest>().ReverseMap();
+            CreateMap<SeatTypePrice, SeatTypePriceUpdateRequest>().ReverseMap();
+            CreateMap<SeatTypePrice, SeatTypePriceResponse>().ReverseMap();
             CreateMap<Promotion, EditPromotionRequest>().ReverseMap();
             CreateMap<Promotion, PromotionResponse>().ReverseMap();
             CreateMap<Genre, GenreResponse>().ReverseMap();
@@ -30,14 +41,14 @@ namespace Infrastructure.MapperConfigs
             CreateMap<Movie,MovieResponse>().ReverseMap();
             CreateMap<MovieRequest, Movie>().ReverseMap();
 
-            // map từ ApplicationUser (đã có AppUser) sang DTO
+            // map từ ApplicationUser (đã có AppUser) sang DTO  
             CreateMap<IdentityWithProfile, EmployeeResponse>()
-                // Identity
+                // Identity  
                 .ForMember(d => d.Id, m => m.MapFrom(s => s.Profile.Id))
                 .ForMember(d => d.Username, m => m.MapFrom(s => s.Identity.UserName))
                 .ForMember(d => d.Email, m => m.MapFrom(s => s.Identity.Email))
                 .ForMember(d => d.Phone, m => m.MapFrom(s => s.Identity.Phone))
-                // Profile
+                // Profile  
                 .ForMember(d => d.IdentityCard, m => m.MapFrom(s => s.Profile.IdentityCard))
                 .ForMember(d => d.Dob, m => m.MapFrom(s => s.Profile.Dob))
                 .ForMember(d => d.FullName, m => m.MapFrom(s => s.Profile.FullName))
@@ -50,12 +61,12 @@ namespace Infrastructure.MapperConfigs
                 .ForAllMembers(o => o.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<IdentityWithProfile, CustomerResponse>()
-                // Identity
+                // Identity  
                 .ForMember(d => d.Id, m => m.MapFrom(s => s.Profile.Id))
                 .ForMember(d => d.Username, m => m.MapFrom(s => s.Identity.UserName))
                 .ForMember(d => d.Email, m => m.MapFrom(s => s.Identity.Email))
                 .ForMember(d => d.Phone, m => m.MapFrom(s => s.Identity.Phone))
-                // Profile
+                // Profile  
                 .ForMember(d => d.IdentityCard, m => m.MapFrom(s => s.Profile.IdentityCard))
                 .ForMember(d => d.Dob, m => m.MapFrom(s => s.Profile.Dob))
                 .ForMember(d => d.FullName, m => m.MapFrom(s => s.Profile.FullName))

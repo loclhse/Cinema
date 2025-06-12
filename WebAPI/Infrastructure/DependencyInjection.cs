@@ -58,6 +58,9 @@ namespace Infrastructure
             services.AddScoped<IAuthRepo, AuthRepo>();
             services.AddScoped<IOtpValidRepo, OtpValidRepo>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<ISeatRepo, SeatRepo>();
+            services.AddScoped<ICinemaRoomRepo, CinemaRoomRepo>();
+            services.AddScoped<ISeatTypePriceRepo, SeatTypePriceRepo>();
             services.AddScoped<IPromotionRepo, PromotionRepo>();
 
             services.AddScoped<IGenreRepo, GenreRepo>();
@@ -73,6 +76,10 @@ namespace Infrastructure
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IMemberService, MemberService>();
+            services.AddScoped<ISeatService, SeatService>();
+            services.AddScoped<ICinemaRoomService, CinemaRoomService>();
+            services.AddScoped<ISeatTypePriceService, SeatTypePriceService>();
             services.AddScoped<IMemberService, MemberService>();
             services.AddScoped<IGenreService, GenreService>();
             services.AddScoped<IMovieService, MovieService>();

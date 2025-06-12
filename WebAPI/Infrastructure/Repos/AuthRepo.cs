@@ -55,7 +55,7 @@ namespace Infrastructure.Repos
                 return OperationResult.Failed(errors);
             }
 
-            return OperationResult.Success();
+            return OperationResult.Success([]);
         }
 
         public async Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName)
@@ -72,7 +72,7 @@ namespace Infrastructure.Repos
                 var errors = result.Errors.Select(e => e.Description);
                 return OperationResult.Failed(errors);
             }
-            return OperationResult.Success();
+            return OperationResult.Success([]);
         }
 
         public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName)
@@ -160,7 +160,7 @@ namespace Infrastructure.Repos
                 }
 
                 _logger.LogInformation("Password changed successfully for user {UserId}", id);
-                return OperationResult.Success();
+                return OperationResult.Success([]);
             }
             catch (Exception ex)
             {
@@ -254,7 +254,7 @@ namespace Infrastructure.Repos
                 if (existingBlacklistedToken != null)
                 {
                     // Token đã ở trong blacklist, coi như thành công
-                    return OperationResult.Success();
+                    return OperationResult.Success([]);
                 }
 
                 var blacklistedToken = new BlacklistedToken
@@ -265,7 +265,7 @@ namespace Infrastructure.Repos
                 };
 
                 await _dbContext.BlacklistedTokens.AddAsync(blacklistedToken);
-                return OperationResult.Success();
+                return OperationResult.Success([]);
             }
             catch (Exception ex)
             {

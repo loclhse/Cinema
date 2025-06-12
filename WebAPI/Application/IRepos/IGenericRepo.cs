@@ -4,7 +4,6 @@ using System.Linq.Expressions;
 
 public interface IGenericRepo<T> where T : class
 {
-
         //Kiet  
         Task<T> GetAsync(Expression<Func<T, bool>> filter);
         //Kiet
