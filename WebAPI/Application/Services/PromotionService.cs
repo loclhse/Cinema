@@ -103,5 +103,22 @@ namespace Application.Services
                 return rp.SetBadRequest(ex.Message) ;
             }
         }
+
+        public async Task<ApiResp> GetPromotionById(Guid id)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var promo = await _uow.PromotionRepo.GetPromotionById(id);
+                if(promo == null)
+                {
+                    return apiResp.SetNotFound("Not found this Promotion");
+                }
+                return apiResp.SetOk(promo);
+            }catch(Exception e)
+            {
+                return apiResp.SetBadRequest(e.Message) ;
+            }
+        }
     }
 }

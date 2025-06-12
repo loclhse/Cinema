@@ -12,6 +12,9 @@ namespace Application.IServices
     public interface IPromotionService
     {
         public Task<ApiResp> GetAllPromotion();
+
+        public Task<ApiResp> GetPromotionById(Guid id);
+
         public Task<ApiResp> AddPromotion(EditPromotionRequest editPromotionRequest);
 
         public Task<ApiResp> DeletePromotion(Guid id);

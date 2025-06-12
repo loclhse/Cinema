@@ -24,6 +24,13 @@ namespace WebAPI.Controllers
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
 
+        [HttpGet("GetPromomtionById")]
+        public async Task<IActionResult> GetPromotionById(Guid Id)
+        {
+            var rs = await _service.GetPromotionById(Id);
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
+        }
+
         //[Authorize(Roles = "Admin")]
         [HttpPost("AddPromotion")]
         public async Task<IActionResult> AddPromotion(EditPromotionRequest req)
