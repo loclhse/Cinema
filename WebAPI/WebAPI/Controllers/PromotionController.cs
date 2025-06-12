@@ -17,6 +17,13 @@ namespace WebAPI.Controllers
             _service = promotionService;
         }
 
+        [HttpGet("GetAllPromotion")]
+        public async Task<IActionResult> GetAllPromotion()
+        {
+            var rs = await _service.GetAllPromotion();
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
+        }
+
         //[Authorize(Roles = "Admin")]
         [HttpPost("AddPromotion")]
         public async Task<IActionResult> AddPromotion(EditPromotionRequest req)
