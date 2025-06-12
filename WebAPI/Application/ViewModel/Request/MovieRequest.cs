@@ -6,11 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.ViewModel.Response
+namespace Application.ViewModel.Request
 {
-    public class MovieResponse
+    public class MovieRequest
     {
-        public Guid Id { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
         public string? Director { get; set; }
@@ -23,6 +22,6 @@ namespace Application.ViewModel.Response
         public MovieStatus MovieStatus { get; set; }
         public DateOnly? ReleaseDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public List<string> GenreNames { get; set; }
+        public List<Guid>? GenreIds { get; set; }
     }
 }

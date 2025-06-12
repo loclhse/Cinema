@@ -10,6 +10,9 @@ namespace Application
         IAuthRepo AuthRepo { get; }
         
         IOtpValidRepo OtpValidRepo { get; }
+        IPromotionRepo PromotionRepo { get; }
+        IMovieRepo MovieRepo { get; }
+        IGenreRepo GenreRepo { get; }
 
         IMovieRepo MovieRepo { get; }
         Task<int> SaveChangesAsync();

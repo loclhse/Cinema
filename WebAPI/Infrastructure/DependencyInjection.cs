@@ -58,6 +58,11 @@ namespace Infrastructure
             services.AddScoped<IAuthRepo, AuthRepo>();
             services.AddScoped<IOtpValidRepo, OtpValidRepo>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IPromotionRepo, PromotionRepo>();
+            
+            services.AddScoped<IGenreRepo, GenreRepo>();
+            services.AddScoped<IMovieRepo, MovieRepo>();
+
             services.AddScoped<IMemberService, MemberService>();
             services.AddScoped<IMovieRepo, MovieRepo>();
 
@@ -70,6 +75,11 @@ namespace Infrastructure
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IMemberService, MemberService>();
+            services.AddScoped<IGenreService, GenreService>();
+            services.AddScoped<IMovieService, MovieService>();
+            services.AddScoped<IMemberService, MemberService>();
+            services.AddScoped<IPromotionService, PromotionService>();
             services.AddScoped<IMovieService, MovieService>();
             //services.AddScoped<RecommendationService>();
             #endregion

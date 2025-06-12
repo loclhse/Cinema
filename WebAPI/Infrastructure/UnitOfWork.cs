@@ -10,15 +10,21 @@ namespace Infrastructure
         public readonly AppDbContext _context;
 
         public IUserRepo UserRepo { get; }
-
         public IAuthRepo AuthRepo { get; }
 
         public IMovieRepo MovieRepo { get; }
         
         public IOtpValidRepo OtpValidRepo { get; }
+        public IMovieRepo MovieRepo { get; }
+        public IGenreRepo GenreRepo { get; }
+
+        public IPromotionRepo PromotionRepo { get; }
 
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
+            IOtpValidRepo otpValidRepo,
+            IPromotionRepo promotionRepo,
+            IMovieRepo movieRepo, IGenreRepo genre)
             IOtpValidRepo otpValidRepo,
             IMovieRepo movieRepo)
         {
@@ -26,6 +32,9 @@ namespace Infrastructure
             UserRepo = userRepo;
             AuthRepo = authRepo;
             OtpValidRepo = otpValidRepo;
+            PromotionRepo = promotionRepo;
+            MovieRepo = movieRepo;
+            GenreRepo = genre;
             MovieRepo=movieRepo; 
         }
 
