@@ -16,10 +16,10 @@ public partial class Movie : BaseEntity
         public MovieStatus MovieStatus { get; set; } 
         public DateOnly? ReleaseDate { get; set; } 
         public DateOnly? EndDate { get; set; }
-    public DateOnly? EndDate { get; set; }
+  
     public virtual ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
     public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
-    public virtual ICollection<Movie>? RecommendedMovies { get; set; } = new List<Movie>();
+  
 
 
 }

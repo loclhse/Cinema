@@ -21,8 +21,7 @@ namespace Infrastructure.Configuration
                    .HasForeignKey(s => s.MovieId)
                    .IsRequired(false);
 
-            builder.HasMany(m => m.RecommendedMovies)
-                   .WithMany();
+           
                   
         }
     }

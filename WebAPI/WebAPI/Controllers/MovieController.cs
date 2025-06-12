@@ -14,27 +14,37 @@ namespace WebAPI.Controllers
 
         public MovieController(IMovieService movieService)
         {
-            _movieService = movieService;
+            
             _movieService = movieService ?? throw new ArgumentNullException(nameof(movieService));
         }
-        [HttpPost("CreateMovie")]
-        public async Task<IActionResult> CreateMovie(MovieRequest movieRequest)
+
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SearchMovies([FromQuery] string? searchTerm, [FromQuery] string searchType, [FromQuery] int? limit = 5)
+        {
+            var response = await _movieService.SearchMoviesAsync(searchTerm, searchType, limit);
+            if (response.IsSuccess)
+            {
+                return Ok(response);
+            }
+            else
+            {
+                return StatusCode((int)response.StatusCode, response);
+            }
+        }
+
+        [HttpPost("CreateMovie")]
+        public async Task<IActionResult> CreateMovie(MovieRequest movieRequest)
         {
             var response = await _movieService.CreateMovieAsync(movieRequest);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpGet("GetAllMovies")]
         public async Task<IActionResult> GetAllMovies()
-            var response = await _movieService.SearchMoviesAsync(searchTerm, searchType, limit);
-            if (response.IsSuccess)
         {
             var response = await _movieService.GetAllMoviesAsync();
             return response.IsSuccess ? Ok(response) : BadRequest(response);
-                return Ok(response);
         }
         [HttpGet("GetMovieById{id}")]
         public async Task<IActionResult> GetMovieById(Guid id)
@@ -44,11 +54,9 @@ namespace WebAPI.Controllers
         }
         [HttpPut("UpdateMovie{id}")]
         public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] MovieRequest movieRequest)
-            else
         {
             var response = await _movieService.UpdateMovieAsync(id, movieRequest);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
-                return StatusCode((int)response.StatusCode, response);
         }
         [HttpDelete("DeleteMovie{id}")]
         public async Task<IActionResult> DeleteMovie(Guid id)
@@ -56,12 +64,10 @@ namespace WebAPI.Controllers
             var response = await _movieService.DeleteMovieAsync(id);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        //test
-        //[HttpGet("GetGenresForMovie{movieId}")]
-        //public async Task<IActionResult> GetGenresForMovie(Guid movieId)
-        //{
-        //    var response = await _movieService.GetGenresForMovie(movieId);
-        //    return response.IsSuccess ? Ok(response) : BadRequest(response);
-        //}
+
+
+
+
+
     }
 }

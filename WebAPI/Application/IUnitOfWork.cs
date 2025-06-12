@@ -14,7 +14,7 @@ namespace Application
         IMovieRepo MovieRepo { get; }
         IGenreRepo GenreRepo { get; }
 
-        IMovieRepo MovieRepo { get; }
+       
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();

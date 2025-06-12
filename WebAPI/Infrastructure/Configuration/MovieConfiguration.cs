@@ -14,10 +14,9 @@ namespace Infrastructure.Configuration
     {
         public void Configure(EntityTypeBuilder<MovieGenre> builder)
         {
-            // Nếu dùng Id riêng cho entity:
+           
             builder.HasKey(mg => mg.Id);
-            // Nếu dùng khóa kép (MovieId + GenreId):
-            //builder.HasKey(mg => new { mg.MovieId, mg.GenreId });
+            
 
             builder.ToTable("MovieGenres");
 
