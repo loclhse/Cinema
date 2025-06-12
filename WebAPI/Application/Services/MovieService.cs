@@ -115,11 +115,15 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try { 
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
+                var Genres = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
+                
+                var res = _mapper.Map<MovieResponse>(movie);
+                res.GenreNames= Genres;
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
                 }
-                return resp.SetOk(movie);
+                return resp.SetOk(res);
             }
             catch (Exception ex)
             {
