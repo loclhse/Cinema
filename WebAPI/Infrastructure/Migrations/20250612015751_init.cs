@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -89,7 +89,6 @@ namespace Infrastructure.Migrations
                     Description = table.Column<string>(type: "text", nullable: true),
                     Director = table.Column<string>(type: "text", nullable: true),
                     Duration = table.Column<int>(type: "integer", nullable: true),
-                    Genre = table.Column<string>(type: "text", nullable: true),
                     Img = table.Column<string>(type: "text", nullable: true),
                     Language = table.Column<int>(type: "integer", nullable: false),
                     TrailerUrl = table.Column<string>(type: "text", nullable: true),

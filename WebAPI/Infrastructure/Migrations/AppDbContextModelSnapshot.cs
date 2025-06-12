@@ -174,9 +174,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("Genre")
-                        .HasColumnType("text");
-
                     b.Property<string>("Img")
                         .HasColumnType("text");
 

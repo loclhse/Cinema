@@ -14,12 +14,26 @@ namespace Infrastructure
 
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
+
+        public IMovieRepo MovieRepo { get; }
+        
         public IOtpValidRepo OtpValidRepo { get; }
         public ICinemaRoomRepo CinemaRoomRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
 
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
+        
+        public IGenreRepo GenreRepo { get; }
+
+        public IPromotionRepo PromotionRepo { get; }
+
+        public UnitOfWork(AppDbContext context, IUserRepo userRepo,
+            IAuthRepo authRepo,
+            IOtpValidRepo otpValidRepo,
+            IPromotionRepo promotionRepo,
+            IMovieRepo movieRepo, IGenreRepo genre)
+           
         {
             _context = context;
             UserRepo = new UserRepo(context);

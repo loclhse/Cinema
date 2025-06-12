@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250610072100_Init")]
-    partial class Init
+    [Migration("20250612015751_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -176,9 +176,6 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
-
-                    b.Property<string>("Genre")
-                        .HasColumnType("text");
 
                     b.Property<string>("Img")
                         .HasColumnType("text");

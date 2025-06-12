@@ -100,5 +100,12 @@ namespace Infrastructure.Repositories
         {
             await _db.AddRangeAsync(entities);
         }
+
+        public async Task UpdateAsync(T entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            _db.Update(entity);
+            await _context.SaveChangesAsync(); // Save changes immediately
+        }
     }
 }
