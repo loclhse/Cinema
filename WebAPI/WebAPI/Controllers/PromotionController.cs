@@ -18,7 +18,7 @@ namespace WebAPI.Controllers
         }
 
         //[Authorize(Roles = "Admin")]
-        [HttpPut("AddPromotion")]
+        [HttpPost("AddPromotion")]
         public async Task<IActionResult> AddPromotion(EditPromotionRequest req)
         {
             var result = await _service.AddPromotion(req);
@@ -26,7 +26,7 @@ namespace WebAPI.Controllers
         }
 
         //[Authorize(Roles = "Admin")]
-        [HttpPut("DeletePromotion")]
+        [HttpDelete("DeletePromotion")]
         public async Task<IActionResult> DeletePromotion(Guid id)
         {
             var result = await _service.DeletePromotion(id);
