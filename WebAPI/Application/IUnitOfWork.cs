@@ -8,6 +8,9 @@ namespace Application
         IUserRepo UserRepo { get; }
         IAuthRepo AuthRepo { get; }
         IOtpValidRepo OtpValidRepo { get; }
+        ICinemaRoomRepo CinemaRoomRepo { get; }
+        ISeatRepo SeatRepo { get; }
+        ISeatTypePriceRepo SeatTypeConfigRepo { get; }
 
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();

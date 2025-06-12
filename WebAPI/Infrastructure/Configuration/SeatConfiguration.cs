@@ -17,6 +17,10 @@ namespace Infrastructure.Configuration
 
             builder.ToTable("Seat");
 
+            builder.Property(x => x.SeatType)
+                .HasConversion<string>();
+
+
             builder.HasOne(m => m.CinemaRoom)
                    .WithMany(s => s.Seats)
                    .HasForeignKey(s => s.CinemaRoomId);

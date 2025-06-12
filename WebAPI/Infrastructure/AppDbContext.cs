@@ -42,6 +42,8 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public virtual DbSet<SeatSchedule> SeatSchedules { get; set; }
 
+    public virtual DbSet<SeatTypePrice> SeatTypePrices { get; set; }
+
     public virtual DbSet<Showtime> Showtimes { get; set; }
 
     //public virtual DbSet<Snack> Snacks { get; set; }
