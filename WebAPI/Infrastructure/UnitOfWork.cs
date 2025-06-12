@@ -11,8 +11,11 @@ namespace Infrastructure
 
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
-        public IOtpValidRepo OtpValidRepo { get; }
+
         public IMovieRepo MovieRepo { get; }
+        
+        public IOtpValidRepo OtpValidRepo { get; }
+        
         public IGenreRepo GenreRepo { get; }
 
         public IPromotionRepo PromotionRepo { get; }
@@ -22,6 +25,7 @@ namespace Infrastructure
             IOtpValidRepo otpValidRepo,
             IPromotionRepo promotionRepo,
             IMovieRepo movieRepo, IGenreRepo genre)
+           
         {
             _context = context;
             UserRepo = userRepo;
@@ -30,6 +34,7 @@ namespace Infrastructure
             PromotionRepo = promotionRepo;
             MovieRepo = movieRepo;
             GenreRepo = genre;
+           
         }
 
         public async Task<int> SaveChangesAsync()
