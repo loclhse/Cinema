@@ -1,5 +1,5 @@
 ﻿using Application.IServices;
-using Application.ViewModel;
+using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;

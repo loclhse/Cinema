@@ -235,7 +235,7 @@ namespace Infrastructure.Services
                 await _signInManager.SignOutAsync();
 
                 _logger.LogInformation("Password changed successfully for user {UserId}", userId);
-                return OperationResult.Success();
+                return OperationResult.Success([]);
             }
             catch (Exception ex)
             {
@@ -272,7 +272,7 @@ namespace Infrastructure.Services
                 await _uow.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return OperationResult.Success();
+                return OperationResult.Success([]);
             }
             catch (Exception ex)
             {
@@ -331,7 +331,7 @@ namespace Infrastructure.Services
                 await _userManager.UpdateSecurityStampAsync(user);
                 _logger.LogInformation("Password reset successfully for email: {Email}", email);
 
-                return OperationResult.Success();
+                return OperationResult.Success([]);
             }
             catch (Exception ex)
             {

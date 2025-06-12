@@ -1,7 +1,10 @@
 ﻿using Application;
 using Application.IRepos;
+using Infrastructure.Identity;
 using Infrastructure.Repos;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure
 {
@@ -15,26 +18,23 @@ namespace Infrastructure
         public IMovieRepo MovieRepo { get; }
         
         public IOtpValidRepo OtpValidRepo { get; }
-        
+        public ICinemaRoomRepo CinemaRoomRepo { get; }
+        public ISeatRepo SeatRepo { get; }
+        public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
         public IGenreRepo GenreRepo { get; }
-
         public IPromotionRepo PromotionRepo { get; }
-
-        public UnitOfWork(AppDbContext context, IUserRepo userRepo,
-            IAuthRepo authRepo,
-            IOtpValidRepo otpValidRepo,
-            IPromotionRepo promotionRepo,
-            IMovieRepo movieRepo, IGenreRepo genre)
-           
+        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
         {
             _context = context;
-            UserRepo = userRepo;
-            AuthRepo = authRepo;
-            OtpValidRepo = otpValidRepo;
-            PromotionRepo = promotionRepo;
-            MovieRepo = movieRepo;
-            GenreRepo = genre;
-           
+            UserRepo = new UserRepo(context);
+            AuthRepo = new AuthRepo(userManager, context, logger);
+            OtpValidRepo = new OtpValidRepo(context);
+            CinemaRoomRepo = new CinemaRoomRepo(context);
+            SeatRepo = new SeatRepo(context);
+            SeatTypeConfigRepo = new SeatTypePriceRepo(context);
+            MovieRepo = new MovieRepo(context);
+            GenreRepo = new GenreRepo(context);
+            PromotionRepo = new PromotionRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
