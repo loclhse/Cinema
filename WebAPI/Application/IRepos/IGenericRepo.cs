@@ -22,5 +22,6 @@ public interface IGenericRepo<T> where T : class
         //Kiet
         Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter,
                                                Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, int pageIndex = 1, int pageSize = 25);
-    
+
+    Task UpdateAsync(T entity);
 }

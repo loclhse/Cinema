@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities;
@@ -13,10 +14,9 @@ namespace Infrastructure.Configuration
     {
         public void Configure(EntityTypeBuilder<MovieGenre> builder)
         {
-            // Nếu dùng Id riêng cho entity:
+           
             builder.HasKey(mg => mg.Id);
-            // Nếu dùng khóa kép (MovieId + GenreId):
-            //builder.HasKey(mg => new { mg.MovieId, mg.GenreId });
+            
 
             builder.ToTable("MovieGenres");
 
@@ -27,6 +27,10 @@ namespace Infrastructure.Configuration
             builder.HasOne(mg => mg.Genre)
                    .WithMany(g => g.MovieGenres)
                    .HasForeignKey(mg => mg.GenreId);
+
+            builder.HasKey(m => m.Id); // Explicitly set Id as primary key
+            
+           
         }
     }
 }
