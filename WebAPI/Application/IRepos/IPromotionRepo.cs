@@ -10,5 +10,6 @@ namespace Application.IRepos
     public interface IPromotionRepo : IGenericRepo<Promotion>
     {
         Task<Promotion> GetPromotionById(Guid id);
+        Task<IEnumerable<Promotion>> GetAllPromotion();
     }
 }

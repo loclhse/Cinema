@@ -1,7 +1,10 @@
 ﻿using Application;
 using Application.IRepos;
+using Infrastructure.Identity;
 using Infrastructure.Repos;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure
 {
@@ -13,11 +16,13 @@ namespace Infrastructure
         public IAuthRepo AuthRepo { get; }
         public IOtpValidRepo OtpValidRepo { get; }
         public IMovieRepo MovieRepo { get; }
+        public ICinemaRoomRepo CinemaRoomRepo { get; }
+        public ISeatRepo SeatRepo { get; }
+        public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
         public IGenreRepo GenreRepo { get; }
-
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
-        public UnitOfWork(AppDbContext context, IUserRepo userRepo,
+        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo,
             IPromotionRepo promotionRepo,
@@ -27,6 +32,9 @@ namespace Infrastructure
             UserRepo = userRepo;
             AuthRepo = authRepo;
             OtpValidRepo = otpValidRepo;
+            CinemaRoomRepo = new CinemaRoomRepo(context);
+            SeatRepo = new SeatRepo(context);
+            SeatTypeConfigRepo = new SeatTypePriceRepo(context);
             PromotionRepo = promotionRepo;
             MovieRepo = movieRepo;
             GenreRepo = genre;

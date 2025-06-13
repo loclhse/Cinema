@@ -23,25 +23,32 @@ namespace Application.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        private async Task<bool> IsShowtimeExistsAsync(Guid id)
+        private async Task<bool> IsShowtimeExistsAsync(DateTime date, Guid cinemaRoomId, DateTime startTime, DateTime endTime)
         {
-            var request = await _unitOfWork.ShowtimeRepo.GetAsync(s => s.Id == id && !s.IsDeleted);
-            var Exists = await _unitOfWork.ShowtimeRepo.GetAllAsync(s => !s.IsDeleted);
-            foreach (var item in Exists)
+            // Tìm kiếm buổi chiếu đã tồn tại trong cùng một ngày và phòng chiếu
+            var existingShowtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(s =>
+                s.CinemaRoomId == cinemaRoomId &&
+                s.Date.Date == date.Date &&
+                !s.IsDeleted // Nếu có trường IsDeleted
+            );
+
+            // Kiểm tra xem có buổi chiếu nào chồng chéo không
+            foreach (var showtime in existingShowtimes)
             {
-                if (item.Date == request.Date && item.CinemaRoomId == request.CinemaRoomId && item.MovieId == request.MovieId)
+                // Kiểm tra chồng chéo
+                if ((startTime < showtime.EndTime && endTime > showtime.StartTime)  ||
+                    (startTime < showtime.EndTime && endTime > showtime.EndTime)    ||
+                    (startTime < showtime.StartTime && endTime > showtime.StartTime)
+                    )
                 {
-                    if ((item.StartTime < request.EndTime && request.StartTime < item.EndTime) ||
-                        (request.StartTime < item.EndTime && item.StartTime < request.EndTime))
-                    {
-                        return true;
-                    }
+                    return true; // Có chồng chéo
                 }
             }
-            return false;
+
+            return false; // Không có chồng chéo
         }
-        
-        public async Task<ApiResp> CreateShowtimeAsync(ShowtimeResquest showtimeResquest)
+
+        public async Task<ApiResp> CreateShowtimeAsync(ShowtimeResquest showtimeResquest, Guid movieId, Guid roomId)
         {
             ApiResp apiResp = new ApiResp();
             try
@@ -51,14 +58,21 @@ namespace Application.Services
                 {
                     return apiResp.SetBadRequest("Invalid showtime data.");
                 }
-                var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == showtimeResquest.MovieId && !m.IsDeleted);
+                var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == movieId && !m.IsDeleted);
                 if (movie == null)
                 {
                     return apiResp.SetNotFound("Movie does not exist!");
                 }
+                var cinemaRoom = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == roomId && !c.IsDeleted);
+                if (cinemaRoom == null)
+                {
+                    return apiResp.SetNotFound("Cinema room does not exist!");
+                }
                 showtime.Duration = movie.Duration + 45;
                 showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration);
-                if (await IsShowtimeExistsAsync(showtime.Id))
+                showtime.MovieId = movie.Id;
+                showtime.CinemaRoomId = cinemaRoom.Id;
+                if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime) == true)
                 {
                     return apiResp.SetBadRequest("Showtime already exists in the same cinema room and date.");
                 }
@@ -129,7 +143,7 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> UpdateShowtimeAsync(Guid id, ShowtimeResquest showtimeResquest)
+        public async Task<ApiResp> UpdateShowtimeAsync(Guid id, ShowtimeUpdateRequest showtimeUpdateRequest)
         {
             ApiResp resp = new ApiResp();
             try
@@ -139,11 +153,20 @@ namespace Application.Services
                 {
                     return resp.SetNotFound("Showtime not found.");
                 }
-                var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == showtimeResquest.MovieId && !m.IsDeleted);
-                _mapper.Map(showtimeResquest, showtime);
+                var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == showtimeUpdateRequest.MovieId && !m.IsDeleted);
+                if(movie == null)
+                {
+                    return resp.SetNotFound("Movie does not exist!!!");
+                }
+                var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtimeUpdateRequest.CinemaRoomId && !c.IsDeleted);
+                if(room == null)
+                {
+                    return resp.SetNotFound("Cinema room does not exist!!!");
+                }
+                _mapper.Map(showtimeUpdateRequest, showtime);
                 showtime.Duration = movie.Duration + 45;
                 showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration);
-                if (await IsShowtimeExistsAsync(showtime.Id))
+                if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime) == true)
                 {
                     return resp.SetBadRequest("Showtime already exists in the same cinema room and date.");
                 }

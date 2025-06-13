@@ -65,6 +65,24 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CinemaRoom",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    TotalRows = table.Column<int>(type: "integer", nullable: false),
+                    TotalCols = table.Column<int>(type: "integer", nullable: false),
+                    LayoutJson = table.Column<string>(type: "jsonb", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CinemaRoom", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Genres",
                 columns: table => new
                 {
@@ -88,7 +106,7 @@ namespace Infrastructure.Migrations
                     Title = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Director = table.Column<string>(type: "text", nullable: true),
-                    Duration = table.Column<int>(type: "integer", nullable: true),
+                    Duration = table.Column<int>(type: "integer", nullable: false),
                     Img = table.Column<string>(type: "text", nullable: true),
                     Language = table.Column<int>(type: "integer", nullable: false),
                     TrailerUrl = table.Column<string>(type: "text", nullable: true),
@@ -125,17 +143,19 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Theater",
+                name: "SeatTypePrice",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SeatType = table.Column<string>(type: "text", nullable: false),
+                    DefaultPrice = table.Column<double>(type: "double precision", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Theater", x => x.Id);
+                    table.PrimaryKey("PK_SeatTypePrice", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -276,6 +296,34 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Seat",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RowIndex = table.Column<int>(type: "integer", nullable: false),
+                    ColIndex = table.Column<int>(type: "integer", nullable: false),
+                    Label = table.Column<string>(type: "text", nullable: true),
+                    SeatType = table.Column<string>(type: "text", nullable: false),
+                    Price = table.Column<double>(type: "double precision", nullable: true),
+                    CoupleGroupId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CinemaRoomId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Seat", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Seat_CinemaRoom_CinemaRoomId",
+                        column: x => x.CinemaRoomId,
+                        principalTable: "CinemaRoom",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MovieGenres",
                 columns: table => new
                 {
@@ -304,25 +352,33 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CinemaRooms",
+                name: "Showtimes",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TheaterId = table.Column<int>(type: "integer", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    SeatQuantity = table.Column<int>(type: "integer", nullable: true),
-                    TheaterId1 = table.Column<Guid>(type: "uuid", nullable: true),
+                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Duration = table.Column<int>(type: "integer", nullable: false),
+                    Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CinemaRoomId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MovieId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CinemaRooms", x => x.Id);
+                    table.PrimaryKey("PK_Showtimes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CinemaRooms_Theater_TheaterId1",
-                        column: x => x.TheaterId1,
-                        principalTable: "Theater",
+                        name: "FK_Showtimes_CinemaRoom_CinemaRoomId",
+                        column: x => x.CinemaRoomId,
+                        principalTable: "CinemaRoom",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Showtimes_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
                         principalColumn: "Id");
                 });
 
@@ -371,61 +427,6 @@ namespace Infrastructure.Migrations
                         principalTable: "AppUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Seat",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SeatName = table.Column<string>(type: "text", nullable: true),
-                    SeatType = table.Column<int>(type: "integer", nullable: false),
-                    CinemaRoomId = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
-                    Col = table.Column<char>(type: "character(1)", nullable: true),
-                    Row = table.Column<int>(type: "integer", nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Seat", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Seat_CinemaRooms_CinemaRoomId",
-                        column: x => x.CinemaRoomId,
-                        principalTable: "CinemaRooms",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Showtimes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Duration = table.Column<int>(type: "integer", nullable: true),
-                    Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CinemaRoomId = table.Column<Guid>(type: "uuid", nullable: true),
-                    MovieId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Showtimes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Showtimes_CinemaRooms_CinemaRoomId",
-                        column: x => x.CinemaRoomId,
-                        principalTable: "CinemaRooms",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Showtimes_Movies_MovieId",
-                        column: x => x.MovieId,
-                        principalTable: "Movies",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -493,11 +494,6 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CinemaRooms_TheaterId1",
-                table: "CinemaRooms",
-                column: "TheaterId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MovieGenres_GenreId",
                 table: "MovieGenres",
                 column: "GenreId");
@@ -531,6 +527,12 @@ namespace Infrastructure.Migrations
                 name: "IX_SeatSchedules_ShowtimeId",
                 table: "SeatSchedules",
                 column: "ShowtimeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatTypePrice_SeatType",
+                table: "SeatTypePrice",
+                column: "SeatType",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Showtimes_CinemaRoomId",
@@ -580,6 +582,9 @@ namespace Infrastructure.Migrations
                 name: "SeatSchedules");
 
             migrationBuilder.DropTable(
+                name: "SeatTypePrice");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -598,13 +603,10 @@ namespace Infrastructure.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "CinemaRooms");
+                name: "CinemaRoom");
 
             migrationBuilder.DropTable(
                 name: "Movies");
-
-            migrationBuilder.DropTable(
-                name: "Theater");
         }
     }
 }

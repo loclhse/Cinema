@@ -5,6 +5,7 @@ using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +17,14 @@ namespace Application.Services
     public class MovieService : IMovieService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper; 
-        public MovieService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IMapper _mapper;
+        private readonly ILogger<MovieService> _logger;
+        
+        public MovieService(ILogger<MovieService> logger, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
         public async Task<ApiResp> CreateMovieAsync(MovieRequest movieRequest)
         {
@@ -111,11 +115,15 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try { 
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
+                var Genres = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
+                
+                var res = _mapper.Map<MovieResponse>(movie);
+                res.GenreNames= Genres;
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
                 }
-                return resp.SetOk(movie);
+                return resp.SetOk(res);
             }
             catch (Exception ex)
             {
@@ -154,6 +162,55 @@ namespace Application.Services
             catch (Exception ex)
             {
                 return resp.SetBadRequest(ex.Message);
+            }
+        }
+
+        public async Task<ApiResp> SearchMoviesAsync(string searchTerm, string searchType, int? limit = 5)
+        {
+
+
+            try
+            {
+                var validSearchTypes = new[] { "all", "title", "director", "rated", "genres" };
+                if (string.IsNullOrEmpty(searchType) || !validSearchTypes.Contains(searchType.ToLowerInvariant()))
+                {
+                    return new ApiResp()
+                        .SetBadRequest(message: "Invalid or missing searchType. Valid options are: title, director, rated, moviegenres.");
+                }
+
+                IEnumerable<Movie> allMovies = await _unitOfWork.MovieRepo.SearchMoviesAsync(null);
+                IEnumerable<Movie> movies;
+                if (string.IsNullOrEmpty(searchTerm))
+                {
+                    movies = allMovies.Take(limit ?? 5);
+                }
+                else
+                {
+                    var searchLower = searchTerm.ToLowerInvariant();
+                    movies = allMovies.Where(m =>
+                        (searchType.ToLowerInvariant() == "all" || searchType.ToLowerInvariant() == "title") &&
+                        (m.Title != null && m.Title.ToLowerInvariant().Contains(searchLower)) ||
+                        (searchType?.ToLowerInvariant() == "director" && m.Director != null && m.Director.ToLowerInvariant().Contains(searchLower)) ||
+                        (searchType?.ToLowerInvariant() == "rated" && m.Rated != null && m.Rated.ToString().ToLowerInvariant().Contains(searchLower)) ||
+                        (searchType?.ToLowerInvariant() == "genres" && m.MovieGenres != null && m.MovieGenres.Any(mg => mg.Genre != null && mg.Genre.Name != null && mg.Genre.Name.ToLowerInvariant().Contains(searchLower)))
+                    ).OrderBy(m => m.Title).Take(limit ?? 5);
+                }
+
+
+                if (!movies.Any())
+                {
+                    return new ApiResp()
+                        .SetOk("No movies found");
+                }
+                var responses = _mapper.Map<List<MovieResponse>>(movies);
+                    return new ApiResp()
+                        .SetOk(result: responses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching movies with term: {SearchTerm}, type: {SearchType}, limit: {Limit}", searchTerm ?? "null", searchType ?? "null", limit ?? 5);
+                return new ApiResp()
+                    .SetBadRequest(message: $"Failed to search movies. Please try again. Details: {ex.Message}");
             }
         }
 

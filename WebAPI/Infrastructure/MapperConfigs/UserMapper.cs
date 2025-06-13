@@ -41,7 +41,7 @@ namespace Infrastructure.MapperConfigs
                 Email = req.Email,
                 Address = req.Address,
                 Sex = req.Sex,
-                IdentityCard = req.IdentityCard
+                IdentityCard = req.IdentityCard 
             };
         }
 

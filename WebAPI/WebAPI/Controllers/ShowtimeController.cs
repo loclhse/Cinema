@@ -15,9 +15,9 @@ namespace WebAPI.Controllers
             _showtimeService = showtimeService;
         }
         [HttpPost("CreateShowtime")]
-        public async Task<IActionResult> CreateShowtime(ShowtimeResquest showtimeRequest)
+        public async Task<IActionResult> CreateShowtime(ShowtimeResquest showtimeRequest, Guid movieId, Guid roomId)
         {
-            var response = await _showtimeService.CreateShowtimeAsync(showtimeRequest);
+            var response = await _showtimeService.CreateShowtimeAsync(showtimeRequest, movieId,roomId);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpGet("GetAllShowtimes")]
@@ -33,9 +33,9 @@ namespace WebAPI.Controllers
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpPut("UpdateShowtime{id}")]
-        public async Task<IActionResult> UpdateShowtime(Guid id, ShowtimeResquest showtimeRequest)
+        public async Task<IActionResult> UpdateShowtime(Guid id,  ShowtimeUpdateRequest showtimeUpdateRequest)
         {
-            var response = await _showtimeService.UpdateShowtimeAsync(id, showtimeRequest);
+            var response = await _showtimeService.UpdateShowtimeAsync(id, showtimeUpdateRequest);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpDelete("DeleteShowtime{id}")]

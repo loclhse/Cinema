@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250612080001_init")]
+    [Migration("20250613062257_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -108,26 +108,26 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("SeatQuantity")
+                    b.Property<int>("TotalCols")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("TheaterId")
+                    b.Property<int>("TotalRows")
                         .HasColumnType("integer");
-
-                    b.Property<Guid?>("TheaterId1")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TheaterId1");
-
-                    b.ToTable("CinemaRooms");
+                    b.ToTable("CinemaRoom", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Genre", b =>
@@ -171,7 +171,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Director")
                         .HasColumnType("text");
 
-                    b.Property<int?>("Duration")
+                    b.Property<int>("Duration")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly?>("EndDate")
@@ -206,7 +206,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Movies");
+                    b.ToTable("Movies", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.MovieGenre", b =>
@@ -352,11 +352,17 @@ namespace Infrastructure.Migrations
                     b.Property<Guid?>("CinemaRoomId")
                         .HasColumnType("uuid");
 
-                    b.Property<char?>("Col")
-                        .HasColumnType("character(1)");
+                    b.Property<int>("ColIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CoupleGroupId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
@@ -364,14 +370,18 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("Row")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SeatName")
+                    b.Property<string>("Label")
                         .HasColumnType("text");
 
-                    b.Property<int>("SeatType")
+                    b.Property<double?>("Price")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("RowIndex")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SeatType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
@@ -416,13 +426,43 @@ namespace Infrastructure.Migrations
                     b.ToTable("SeatSchedules", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.SeatTypePrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("DefaultPrice")
+                        .HasColumnType("double precision");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SeatType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeatType")
+                        .IsUnique();
+
+                    b.ToTable("SeatTypePrice", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Showtime", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CinemaRoomId")
+                    b.Property<Guid>("CinemaRoomId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreateDate")
@@ -431,7 +471,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("Duration")
+                    b.Property<int>("Duration")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("EndTime")
@@ -440,7 +480,7 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("MovieId")
+                    b.Property<Guid>("MovieId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartTime")
@@ -456,26 +496,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("MovieId");
 
                     b.ToTable("Showtimes");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Theater", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Theater");
                 });
 
             modelBuilder.Entity("Infrastructure.Identity.AppRole", b =>
@@ -682,15 +702,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.CinemaRoom", b =>
-                {
-                    b.HasOne("Domain.Entities.Theater", "Theater")
-                        .WithMany()
-                        .HasForeignKey("TheaterId1");
-
-                    b.Navigation("Theater");
-                });
-
             modelBuilder.Entity("Domain.Entities.MovieGenre", b =>
                 {
                     b.HasOne("Domain.Entities.Genre", "Genre")
@@ -760,7 +771,9 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("Domain.Entities.CinemaRoom", "CinemaRoom")
                         .WithMany("Showtimes")
-                        .HasForeignKey("CinemaRoomId");
+                        .HasForeignKey("CinemaRoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.Entities.Movie", "Movie")
                         .WithMany("Showtimes")
