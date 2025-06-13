@@ -18,4 +18,5 @@ public partial class CinemaRoom : BaseEntity
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
 
     public virtual Theater? Theater { get; set; }
+    public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
 }

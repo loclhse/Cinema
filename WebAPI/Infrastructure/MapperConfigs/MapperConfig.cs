@@ -29,7 +29,8 @@ namespace Infrastructure.MapperConfigs
             CreateMap<GenreRequest, Genre>().ReverseMap();
             CreateMap<Movie,MovieResponse>().ReverseMap();
             CreateMap<MovieRequest, Movie>().ReverseMap();
-
+            CreateMap<Showtime, ShowtimeResponse>().ReverseMap();
+            CreateMap<ShowtimeResquest, Showtime>().ReverseMap();
             // map từ ApplicationUser (đã có AppUser) sang DTO
             CreateMap<IdentityWithProfile, EmployeeResponse>()
                 // Identity

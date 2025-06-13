@@ -26,7 +26,7 @@ namespace WebAPI.Controllers
         /// POST: api/Auth/register
         /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
+        public async Task<IActionResult> Register([FromForm] RegisterRequest req)
         {
             try
             {

@@ -16,12 +16,12 @@ namespace Infrastructure
         public IGenreRepo GenreRepo { get; }
 
         public IPromotionRepo PromotionRepo { get; }
-
+        public IShowtimeRepo ShowtimeRepo { get; }
         public UnitOfWork(AppDbContext context, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo,
             IPromotionRepo promotionRepo,
-            IMovieRepo movieRepo, IGenreRepo genre)
+            IMovieRepo movieRepo, IGenreRepo genre, IShowtimeRepo showtimeRepo)
         {
             _context = context;
             UserRepo = userRepo;
@@ -30,6 +30,7 @@ namespace Infrastructure
             PromotionRepo = promotionRepo;
             MovieRepo = movieRepo;
             GenreRepo = genre;
+            ShowtimeRepo = showtimeRepo;
         }
 
         public async Task<int> SaveChangesAsync()
