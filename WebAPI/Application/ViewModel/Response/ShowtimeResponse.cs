@@ -10,16 +10,12 @@ namespace Application.ViewModel.Response
     public class ShowtimeResponse
     {
         public Guid Id { get; set; }
-        public DateTime? StartTime { get; set; } 
-        public DateTime? EndTime { get; set; }
+        public DateTime StartTime { get; set; }
        
-
-        public ShowtimeResponse(Showtime showtime)
-        {
-            Id = showtime.Id;
-            StartTime = showtime.StartTime;
-            EndTime = showtime.EndTime;
-           
-        }
+        public int? Duration { get; set; }
+        public DateTime Date { get; set; }
+        public DateTime EndTime { get; set; }
+        public Guid? CinemaRoomId { get; set; }
+        public Guid? MovieId { get; set; }
     }
 }

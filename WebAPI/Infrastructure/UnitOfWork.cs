@@ -14,27 +14,31 @@ namespace Infrastructure
 
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
-
-        public IMovieRepo MovieRepo { get; }
-        
         public IOtpValidRepo OtpValidRepo { get; }
+        public IMovieRepo MovieRepo { get; }
         public ICinemaRoomRepo CinemaRoomRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
-        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
+        public IShowtimeRepo ShowtimeRepo { get; }
+        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
+            IAuthRepo authRepo,
+            IOtpValidRepo otpValidRepo,
+            IPromotionRepo promotionRepo,
+            IMovieRepo movieRepo, IGenreRepo genre, IShowtimeRepo showtimeRepo)
         {
             _context = context;
-            UserRepo = new UserRepo(context);
-            AuthRepo = new AuthRepo(userManager, context, logger);
-            OtpValidRepo = new OtpValidRepo(context);
+            UserRepo = userRepo;
+            AuthRepo = authRepo;
+            OtpValidRepo = otpValidRepo;
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypeConfigRepo = new SeatTypePriceRepo(context);
-            MovieRepo = new MovieRepo(context);
-            GenreRepo = new GenreRepo(context);
-            PromotionRepo = new PromotionRepo(context);
+            PromotionRepo = promotionRepo;
+            MovieRepo = movieRepo;
+            GenreRepo = genre;
+            ShowtimeRepo = showtimeRepo;
         }
 
         public async Task<int> SaveChangesAsync()

@@ -21,7 +21,10 @@ namespace Domain.Entities
         public JsonObject LayoutJson { get; set; } = new JsonObject();
 
         public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
-   }
+        public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
+    }
 }
 
+
+    
 

@@ -168,7 +168,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Director")
                         .HasColumnType("text");
 
-                    b.Property<int?>("Duration")
+                    b.Property<int>("Duration")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly?>("EndDate")
@@ -203,7 +203,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Movies");
+                    b.ToTable("Movies", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.MovieGenre", b =>
@@ -459,25 +459,36 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CinemaRoomId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("EndTime")
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("MovieId")
+                    b.Property<Guid>("MovieId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("StartTime")
+                    b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CinemaRoomId");
 
                     b.HasIndex("MovieId");
 
@@ -755,9 +766,17 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Showtime", b =>
                 {
+                    b.HasOne("Domain.Entities.CinemaRoom", "CinemaRoom")
+                        .WithMany("Showtimes")
+                        .HasForeignKey("CinemaRoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.Movie", "Movie")
                         .WithMany("Showtimes")
                         .HasForeignKey("MovieId");
+
+                    b.Navigation("CinemaRoom");
 
                     b.Navigation("Movie");
                 });
@@ -821,6 +840,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.CinemaRoom", b =>
                 {
                     b.Navigation("Seats");
+
+                    b.Navigation("Showtimes");
                 });
 
             modelBuilder.Entity("Domain.Entities.Genre", b =>
