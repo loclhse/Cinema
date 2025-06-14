@@ -14,6 +14,9 @@ namespace Application
         ISeatRepo SeatRepo { get; }
         ISeatTypePriceRepo SeatTypeConfigRepo { get; }
 
+        ISnackComboRepo SnackComboRepo { get; }
+        ISnackRepo SnackRepo { get; }
+
         IPromotionRepo PromotionRepo { get; }
         IMovieRepo MovieRepo { get; }
         IGenreRepo GenreRepo { get; }
