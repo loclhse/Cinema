@@ -1,4 +1,5 @@
 ﻿using Application.IRepos;
+using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System;
@@ -106,6 +107,36 @@ namespace Infrastructure.Repositories
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             _db.Update(entity);
             await _context.SaveChangesAsync(); // Save changes immediately
+        }
+
+        
+            public async Task<T> GetByIdAsync(Guid id)
+            {
+               
+                return await _db.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
+            }
+
+        
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var entity = await GetByIdAsync(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Entity with ID {id} not found.");
+            }
+            if (entity is BaseEntity baseEntity)
+            {
+                baseEntity.IsDeleted = true;
+                baseEntity.UpdateDate = DateTime.UtcNow;
+                _db.Update(entity);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                _db.Remove(entity);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

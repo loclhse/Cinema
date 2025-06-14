@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,25 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class Snack
+public partial class Snack : BaseEntity
 {
-    //public int SnackId { get; set; }
+    
 
-    //public string? Name { get; set; }
+    public string? Name { get; set; }
 
-    //public decimal? Price { get; set; }
+    public SnackType? Type { get; set; }
 
-    //public string? Description { get; set; }
+    public string? imgUrl { get; set; }
+    
+    public int quantity { get; set; }
 
-    //public virtual ICollection<SnackComboItem> SnackComboItems { get; set; } = new List<SnackComboItem>();
+    public decimal? Price { get; set; }
+
+    public decimal? discount { get; set; }
+
+    public string? Description { get; set; }
+
+    public SnackStatus SnackComboStatus { get; set; }
+
+    public virtual ICollection<SnackComboItem> SnackComboItems { get; set; } = new List<SnackComboItem>();
 }

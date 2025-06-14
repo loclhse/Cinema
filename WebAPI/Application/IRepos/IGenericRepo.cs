@@ -23,4 +23,7 @@ public interface IGenericRepo<T> where T : class
                                                Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null, int pageIndex = 1, int pageSize = 25);
 
     Task UpdateAsync(T entity);
+
+    Task<T> GetByIdAsync(Guid id); 
+    Task DeleteAsync(Guid id);
 }
