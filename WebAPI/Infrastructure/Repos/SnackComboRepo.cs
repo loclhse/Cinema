@@ -27,10 +27,12 @@ namespace Infrastructure.Repos
 
         public async Task<SnackCombo> GetComboWithItemsAsync(Guid id)
         {
+#pragma warning disable CS8603 // Possible null reference return.
             return await _db
                 .Include(sc => sc.SnackComboItems)
                 .ThenInclude(sci => sci.Snack)
                 .FirstOrDefaultAsync(sc => sc.Id == id && !sc.IsDeleted);
+#pragma warning restore CS8603 // Possible null reference return.
         }
     }
 }

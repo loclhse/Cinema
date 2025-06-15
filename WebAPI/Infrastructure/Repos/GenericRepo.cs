@@ -14,7 +14,7 @@ namespace Infrastructure.Repositories
     {
         public readonly DbSet<T> _db;
         public readonly AppDbContext _context;
-        
+
         //Kiet
         public GenericRepo(AppDbContext context)
         {
@@ -54,7 +54,7 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
         //Kiet
-        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter) 
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter)
         {
             if (filter != null)
             {
@@ -109,14 +109,34 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync(); // Save changes immediately
         }
 
-        
-            public async Task<T> GetByIdAsync(Guid id)
-            {
-               
-                return await _db.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
-            }
+        public async Task RemoveRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null)
+                throw new ArgumentNullException(nameof(entities));
 
-        
+            var entityList = entities.ToList();
+            if (!entityList.Any()) return;
+
+            // (Optional) Verify that all entities are currently tracked or exist in the database:
+            // var keys = entityList.Select(e => EF.Property<object>(e, "Id")).ToList();
+            // var existingCount = await _db.Where(e => keys.Contains(EF.Property<object>(e, "Id"))).CountAsync();
+            // if (existingCount != entityList.Count)
+            //     throw new InvalidOperationException("One or more entities were not found in the database.");
+
+            _db.RemoveRange(entityList);
+            await _context.SaveChangesAsync();
+        }
+
+
+        public async Task<T> GetByIdAsync(Guid id)
+        {
+
+#pragma warning disable CS8603 // Possible null reference return.
+            return await _db.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
+#pragma warning restore CS8603 // Possible null reference return.
+        }
+
+
 
         public async Task DeleteAsync(Guid id)
         {

@@ -10,16 +10,12 @@ namespace Application.IServices
 {
     public interface ISeatService
     {
+        // --- Ghế theo phòng ---
         Task<List<Seat>> GetSeatsByRoomAsync(Guid roomId);
-        Task<List<Seat>> GetSeatsByScheduleAsync(Guid scheduleId);
+        Task<Seat?> GetSeatByIdAsync(Guid seatId);
 
-        Task<Seat> UpdateSeatAsync(Guid seatId, object dto);
-        Task BulkUpdateSeatTypeAsync(IEnumerable<Guid> seatIds, SeatTypes newType);
-        Task BulkUpdateSeatPriceAsync(object dto);
-
-        // ====== Đặt vé ======
-        Task<bool> HoldSeatsAsync(object req);          // Status = Held
-        Task<bool> ConfirmSeatsAsync(object req);    // Status = Booked
-        Task ReleaseExpiredHoldsAsync();                          // Cron job
+        // --- Cập nhật cấu hình ---
+        Task UpdateSeatTypeAsync(IEnumerable<Guid> seatIds, SeatTypes newType);
+        Task UpdateSeatAvailabilityAsync(IEnumerable<Guid> seatIds, bool isAvailable);
     }
 }

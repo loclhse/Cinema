@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Repos
 {
-    public class Snackrepo : GenericRepo<Snack>, ISnackRepo
+    public class SnackRepo : GenericRepo<Snack>, ISnackRepo
     {
-        public Snackrepo(AppDbContext context) : base(context)
+        public SnackRepo(AppDbContext context) : base(context)
         {
         }
 

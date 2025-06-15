@@ -62,7 +62,8 @@ namespace Infrastructure
             services.AddScoped<ICinemaRoomRepo, CinemaRoomRepo>();
             services.AddScoped<ISeatTypePriceRepo, SeatTypePriceRepo>();
             services.AddScoped<IPromotionRepo, PromotionRepo>();
-            services.AddScoped<ISnackRepo,Snackrepo>();
+            services.AddScoped<IRoomLayoutRepo, RoomLayoutRepo>();
+            services.AddScoped<ISnackRepo,SnackRepo>();
             services.AddScoped<ISnackComboRepo, SnackComboRepo>();
             services.AddScoped<IGenreRepo, GenreRepo>();
             services.AddScoped<IMovieRepo, MovieRepo>();

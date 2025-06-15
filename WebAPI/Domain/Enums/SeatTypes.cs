@@ -8,7 +8,7 @@ namespace Domain.Enums
 {
     public enum SeatTypes
     {
-        Regular = 0,      // Ghế thường
+        Standard = 0,      // Ghế thường
         VIP = 1,          // Ghế VIP
         CoupleLeft = 2,   // Ghế đôi bên trái
         CoupleRight = 3,  // Ghế đôi bên phải

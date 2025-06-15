@@ -20,7 +20,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public virtual DbSet<CinemaRoom> CinemaRooms { get; set; }
 
     //public virtual DbSet<CustomerScore> CustomerScores { get; set; }
-    public virtual DbSet<Genre> Genres { get; set; } 
+    public virtual DbSet<Genre> Genres { get; set; }
 
     public virtual DbSet<Movie> Movies { get; set; }
 
@@ -41,6 +41,8 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public virtual DbSet<Seat> Seats { get; set; }
 
     public virtual DbSet<SeatSchedule> SeatSchedules { get; set; }
+
+    public virtual DbSet<SeatTypePrice> SeatTypePrices { get; set; }
 
     public virtual DbSet<Showtime> Showtimes { get; set; }
 

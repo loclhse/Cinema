@@ -1,5 +1,4 @@
-﻿
-using FirebaseAdmin;
+﻿using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Infrastructure;
 using Infrastructure.Configuration;
@@ -11,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace WebAPI
 {
@@ -33,13 +33,17 @@ namespace WebAPI
             //    Console.WriteLine("FirebaseApp khởi tạo thành công!");
             //}
 
-            // Infrastructure DI (một lần)
+            // DI Infrastructure
             builder.Services.AddInfrastructureServices(builder.Configuration);
 
             // Controllers & Swagger
-            builder.Services.AddControllers();
+            builder.Services
+                .AddControllers()
+                .AddJsonOptions(o =>
+                {
+                    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
             builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
@@ -59,21 +63,20 @@ namespace WebAPI
                         {
                             Reference = new OpenApiReference
                             {
-                                Type=ReferenceType.SecurityScheme,
-                                Id="Bearer"
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
                             }
                         },
-                        new string[]{}
+                        new string[] { }
                     }
                 });
             });
 
-            // JWT settings
+            // JWT config
             var jwt = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
             if (string.IsNullOrWhiteSpace(jwt.SecretKey))
                 throw new InvalidOperationException("JwtSettings:SecretKey missing");
 
-            // Authentication
             builder.Services
                 .AddAuthentication(options =>
                 {
@@ -84,7 +87,6 @@ namespace WebAPI
                 {
                     options.RequireHttpsMetadata = false;
                     options.SaveToken = true;
-
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -109,11 +111,14 @@ namespace WebAPI
 
             var app = builder.Build();
 
-            // Seed role
+            // Apply migration + Seed data (Role + SeatTypePrice)
             using (var scope = app.Services.CreateScope())
             {
-                var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
-                await SeedData.SeedRolesAsync(roleMgr);
+                var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<AppDbContext>();
+                await context.Database.MigrateAsync();
+
+                await SeedData.EnsureSeedDataAsync(services);
             }
 
             // Pipeline
@@ -132,8 +137,8 @@ namespace WebAPI
             app.UseAuthorization();
 
             app.MapControllers();
-            app.Run();
 
+            app.Run();
         }
     }
 }
