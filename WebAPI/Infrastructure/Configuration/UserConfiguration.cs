@@ -31,6 +31,9 @@ namespace Infrastructure.Configuration
                 .Property(u => u.FullName)
                 .HasMaxLength(200)
                 .IsRequired();
+
+            builder.Property(u => u.Sex)
+                .HasConversion<string>();
         }
     }
 }
