@@ -16,8 +16,6 @@ public partial class Seat : BaseEntity
     // Loại ghế: thường, VIP, đôi trái/phải, ghế trống
     public SeatTypes SeatType { get; set; }
 
-    public double? Price { get; set; }  // Giá ghế, có thể khác nhau tùy loại ghế
-
     // Dùng cho ghế đôi (2 ghế có cùng GroupId)
     public Guid? CoupleGroupId { get; set; }
 

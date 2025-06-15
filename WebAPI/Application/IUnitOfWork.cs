@@ -6,14 +6,12 @@ namespace Application
     public interface IUnitOfWork
     {
         IUserRepo UserRepo { get; }
-        
         IAuthRepo AuthRepo { get; }
-        
         IOtpValidRepo OtpValidRepo { get; }
         ICinemaRoomRepo CinemaRoomRepo { get; }
+        IRoomLayoutRepo RoomLayoutRepo { get; }
         ISeatRepo SeatRepo { get; }
-        ISeatTypePriceRepo SeatTypeConfigRepo { get; }
-
+        ISeatTypePriceRepo SeatTypePriceRepo { get; }
         IPromotionRepo PromotionRepo { get; }
         IMovieRepo MovieRepo { get; }
         IGenreRepo GenreRepo { get; }

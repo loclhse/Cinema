@@ -23,7 +23,9 @@ namespace WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SearchMovies([FromQuery] string? searchTerm, [FromQuery] string searchType, [FromQuery] int? limit = 5)
         {
+#pragma warning disable CS8604 // Possible null reference argument.
             var response = await _movieService.SearchMoviesAsync(searchTerm, searchType, limit);
+#pragma warning restore CS8604 // Possible null reference argument.
             if (response.IsSuccess)
             {
                 return Ok(response);

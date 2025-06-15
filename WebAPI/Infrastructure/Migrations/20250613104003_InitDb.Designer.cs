@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250612084510_UpdateDb1")]
-    partial class UpdateDb1
+    [Migration("20250613104003_InitDb")]
+    partial class InitDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -116,6 +116,10 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("OriginalLayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("TotalCols")
                         .HasColumnType("integer");
 
@@ -177,9 +181,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("Genre")
-                        .HasColumnType("text");
-
                     b.Property<string>("Img")
                         .HasColumnType("text");
 
@@ -209,7 +210,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Movies");
+                    b.ToTable("Movies", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.MovieGenre", b =>
@@ -375,9 +376,6 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Label")
                         .HasColumnType("text");
-
-                    b.Property<double?>("Price")
-                        .HasColumnType("double precision");
 
                     b.Property<int>("RowIndex")
                         .HasColumnType("integer");

@@ -14,6 +14,7 @@ namespace Infrastructure.MapperConfigs
     {
         public MovieMapping()
         {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             CreateMap<Movie, MovieResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
              .ForMember(dest => dest.GenreNames, opt => opt.MapFrom(src => src.MovieGenres.Select(mg => mg.Genre.Name ?? "Unknown")))
@@ -31,11 +32,12 @@ namespace Infrastructure.MapperConfigs
 
              .ForMember(dest => dest.MovieGenres, opt => opt.Ignore())
              .ForMember(dest => dest.Showtimes, opt => opt.Ignore());
-           
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
 
 
-         
+
+
         }
     }
 }
