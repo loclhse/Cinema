@@ -1,4 +1,5 @@
 ﻿using Application.IRepos;
+using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System;
@@ -13,7 +14,7 @@ namespace Infrastructure.Repositories
     {
         public readonly DbSet<T> _db;
         public readonly AppDbContext _context;
-        
+
         //Kiet
         public GenericRepo(AppDbContext context)
         {
@@ -53,7 +54,7 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
         //Kiet
-        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter) 
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter)
         {
             if (filter != null)
             {
@@ -124,6 +125,38 @@ namespace Infrastructure.Repositories
 
             _db.RemoveRange(entityList);
             await _context.SaveChangesAsync();
+        }
+
+
+        public async Task<T> GetByIdAsync(Guid id)
+        {
+
+#pragma warning disable CS8603 // Possible null reference return.
+            return await _db.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
+#pragma warning restore CS8603 // Possible null reference return.
+        }
+
+
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var entity = await GetByIdAsync(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Entity with ID {id} not found.");
+            }
+            if (entity is BaseEntity baseEntity)
+            {
+                baseEntity.IsDeleted = true;
+                baseEntity.UpdateDate = DateTime.UtcNow;
+                _db.Update(entity);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                _db.Remove(entity);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Infrastructure.MapperConfigs
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             CreateMap<Movie, MovieResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
              .ForMember(dest => dest.GenreNames, opt => opt.MapFrom(src => src.MovieGenres.Select(mg => mg.Genre.Name ?? "Unknown")))
              .ForMember(dest => dest.Language, opt => opt.MapFrom(src => (Language?)src.Language))
              .ForMember(dest => dest.Director, opt => opt.MapFrom(src => src.Director))

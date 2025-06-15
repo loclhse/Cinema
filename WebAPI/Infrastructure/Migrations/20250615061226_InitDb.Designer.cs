@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250614181741_UpdateDb1")]
-    partial class UpdateDb1
+    [Migration("20250615061226_InitDb")]
+    partial class InitDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -176,7 +176,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Director")
                         .HasColumnType("text");
 
-                    b.Property<int?>("Duration")
+                    b.Property<int>("Duration")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly?>("EndDate")
@@ -493,19 +493,28 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("CinemaRoomId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("EndTime")
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("MovieId")
+                    b.Property<Guid>("MovieId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("StartTime")
+                    b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("UpdateDate")
@@ -513,9 +522,127 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CinemaRoomId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("Showtimes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Snack", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("SnackComboStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("discount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("imgUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Snacks");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SnackCombo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImgUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SnackComboStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("TotalPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("discount")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SnackCombos");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ComboId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SnackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SnackId");
+
+                    b.HasIndex("ComboId", "SnackId")
+                        .IsUnique();
+
+                    b.ToTable("SnackComboItems");
                 });
 
             modelBuilder.Entity("Infrastructure.Identity.AppRole", b =>
@@ -800,11 +927,36 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Showtime", b =>
                 {
+                    b.HasOne("Domain.Entities.CinemaRoom", "CinemaRoom")
+                        .WithMany("Showtimes")
+                        .HasForeignKey("CinemaRoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.Movie", "Movie")
                         .WithMany("Showtimes")
                         .HasForeignKey("MovieId");
 
+                    b.Navigation("CinemaRoom");
+
                     b.Navigation("Movie");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
+                {
+                    b.HasOne("Domain.Entities.SnackCombo", "Combo")
+                        .WithMany("SnackComboItems")
+                        .HasForeignKey("ComboId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Domain.Entities.Snack", "Snack")
+                        .WithMany("SnackComboItems")
+                        .HasForeignKey("SnackId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Combo");
+
+                    b.Navigation("Snack");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -868,6 +1020,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("RoomLayouts");
 
                     b.Navigation("Seats");
+
+                    b.Navigation("Showtimes");
                 });
 
             modelBuilder.Entity("Domain.Entities.Genre", b =>
@@ -890,6 +1044,16 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Showtime", b =>
                 {
                     b.Navigation("SeatSchedules");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Snack", b =>
+                {
+                    b.Navigation("SnackComboItems");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SnackCombo", b =>
+                {
+                    b.Navigation("SnackComboItems");
                 });
 
             modelBuilder.Entity("Infrastructure.Identity.ApplicationUser", b =>

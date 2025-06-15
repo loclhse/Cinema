@@ -8,7 +8,7 @@ public partial class Movie : BaseEntity
         public string? Title { get; set; }
         public string? Description { get; set; }
         public string? Director { get; set; }
-        public int? Duration { get; set; }
+        public int Duration { get; set; }
         public string? Img { get; set; }
         public Language Language { get; set; } 
         public string? TrailerUrl { get; set; }

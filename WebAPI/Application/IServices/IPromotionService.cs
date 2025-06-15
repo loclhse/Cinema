@@ -11,14 +11,10 @@ namespace Application.IServices
 {
     public interface IPromotionService
     {
-        public Task<ApiResp> GetAllPromotion();
-
-        public Task<ApiResp> GetPromotionById(Guid id);
-
-        public Task<ApiResp> AddPromotion(EditPromotionRequest editPromotionRequest);
-
-        public Task<ApiResp> DeletePromotion(Guid id);
-
-        public Task<ApiResp> EditPromotion(Guid id, EditPromotionRequest editPromotionRequest);
+        Task<ApiResp> GetAllPromotion();
+        Task<ApiResp> GetPromotionById(Guid id); // Add this missing method signature  
+        Task<ApiResp> AddPromotion(EditPromotionRequest editPromotionRequest);
+        Task<ApiResp> DeletePromotion(Guid id);
+        Task<ApiResp> EditPromotion(Guid id, EditPromotionRequest editPromotionRequest);
     }
 }

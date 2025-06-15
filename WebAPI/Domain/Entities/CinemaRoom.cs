@@ -24,7 +24,10 @@ namespace Domain.Entities
 
         public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
         public virtual ICollection<RoomLayout> RoomLayouts { get; set; } = new List<RoomLayout>();
+        public virtual ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
     }
 }
 
+
+    
 

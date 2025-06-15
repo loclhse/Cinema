@@ -12,9 +12,12 @@ namespace Application
         IRoomLayoutRepo RoomLayoutRepo { get; }
         ISeatRepo SeatRepo { get; }
         ISeatTypePriceRepo SeatTypePriceRepo { get; }
-        IPromotionRepo PromotionRepo { get; }
+        ISnackComboRepo SnackComboRepo { get; }
+        ISnackRepo SnackRepo { get; }
         IMovieRepo MovieRepo { get; }
+        IPromotionRepo PromotionRepo { get; }
         IGenreRepo GenreRepo { get; }
+        IShowtimeRepo ShowtimeRepo { get; }
 
        
         Task<int> SaveChangesAsync();

@@ -63,8 +63,11 @@ namespace Infrastructure
             services.AddScoped<ISeatTypePriceRepo, SeatTypePriceRepo>();
             services.AddScoped<IPromotionRepo, PromotionRepo>();
             services.AddScoped<IRoomLayoutRepo, RoomLayoutRepo>();
+            services.AddScoped<ISnackRepo,SnackRepo>();
+            services.AddScoped<ISnackComboRepo, SnackComboRepo>();
             services.AddScoped<IGenreRepo, GenreRepo>();
             services.AddScoped<IMovieRepo, MovieRepo>();
+            services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
 
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
@@ -85,8 +88,9 @@ namespace Infrastructure
             services.AddScoped<IMovieService, MovieService>();
             services.AddScoped<IMemberService, MemberService>();
             services.AddScoped<IPromotionService, PromotionService>();
-
-
+            services.AddScoped<IShowtimeService, ShowtimeService>();
+            services.AddScoped<ISnackService, SnackService>();
+            services.AddScoped<ISnackComboService, SnackComboService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

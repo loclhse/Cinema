@@ -11,7 +11,8 @@ namespace Infrastructure
     public class UnitOfWork : IUnitOfWork
     {
         public readonly AppDbContext _context;
-
+        public ISnackComboRepo SnackComboRepo { get; }
+        public ISnackRepo SnackRepo { get; }
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
         public IMovieRepo MovieRepo { get; }
@@ -22,12 +23,15 @@ namespace Infrastructure
         public ISeatTypePriceRepo SeatTypePriceRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
-        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger)
+        public IShowtimeRepo ShowtimeRepo { get; }
+        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
+            IAuthRepo authRepo,
+            IOtpValidRepo otpValidRepo)
         {
             _context = context;
-            UserRepo = new UserRepo(context);
-            AuthRepo = new AuthRepo(userManager, context, logger);
-            OtpValidRepo = new OtpValidRepo(context);
+            UserRepo = userRepo;
+            AuthRepo = authRepo;
+            OtpValidRepo = otpValidRepo;
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypePriceRepo = new SeatTypePriceRepo(context);
@@ -35,6 +39,9 @@ namespace Infrastructure
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
+            SnackComboRepo = new SnackComboRepo(context);
+            SnackRepo = new SnackRepo(context);
+            ShowtimeRepo = new ShowtimeRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
