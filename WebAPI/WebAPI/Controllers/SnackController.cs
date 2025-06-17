@@ -67,13 +67,6 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpGet("combo/{comboId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSnacksInComboAsync([FromRoute] Guid comboId)
-        {
-            var response = await _snackService.GetSnacksInComboAsync(comboId);
-            return StatusCode((int)response.StatusCode, response);
-        }
+       
     }
 }

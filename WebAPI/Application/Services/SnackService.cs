@@ -117,8 +117,7 @@ namespace Application.Services
 
 
         public async Task<ApiResp> DeleteAsync(Guid id)
-                
-        {
+                {
              try
                    {
                       await _uow.SnackRepo.DeleteAsync(id);
@@ -133,25 +132,5 @@ namespace Application.Services
                       return new ApiResp().SetBadRequest(message: $"Error deleting snack: {ex.Message}");
                     }
                 }
-
-        public async Task<ApiResp> GetSnacksInComboAsync(Guid comboId)
-        {
-            try
-            {
-                var snacks = await _uow.SnackRepo.GetSnacksInComboAsync(comboId);
-                if (!snacks.Any())
-                {
-                    return new ApiResp().SetNotFound(message: "No snacks found for this combo.");
-                }
-                var responses = _mapper.Map<IEnumerable<SnackResponse>>(snacks);
-                return new ApiResp().SetOk(responses);
-            }
-            catch (Exception ex)
-            {
-                return new ApiResp().SetBadRequest(message: $"Error retrieving snacks in combo: {ex.Message}");
-            }
-        }
-
-       
-    }
+          }
 }
