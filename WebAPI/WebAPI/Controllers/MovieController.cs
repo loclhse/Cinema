@@ -18,7 +18,7 @@ namespace WebAPI.Controllers
             _movieService = movieService ?? throw new ArgumentNullException(nameof(movieService));
         }
 
-        [HttpGet("search")]
+        [HttpGet("Search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SearchMovies([FromQuery] string? searchTerm, [FromQuery] string searchType, [FromQuery] int? limit = 5)

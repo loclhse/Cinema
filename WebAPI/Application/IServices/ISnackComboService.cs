@@ -18,5 +18,9 @@ namespace Application.IServices
         Task<ApiResp> DeleteAsync(Guid id);
         Task<ApiResp> GetCombosWithSnacksAsync();
         Task<ApiResp> GetComboWithItemsAsync(Guid id);
+        Task<ApiResp> UpdateSnackQuantityInComboAsync(Guid comboId, Guid snackId, int quantity);
+
+        Task<ApiResp> AddSnackToComboAsync(Guid comboId, Guid snackId, int quantity);
+        Task<ApiResp> DeleteSnackFromComboAsync(Guid comboId, Guid snackId);
     }
 }

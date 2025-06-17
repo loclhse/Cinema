@@ -9,6 +9,5 @@ namespace Application.IRepos
 {
     public interface ISnackRepo : IGenericRepo<Snack>
     {
-        Task<IEnumerable<Snack>> GetSnacksInComboAsync(Guid comboId);
     }
 }

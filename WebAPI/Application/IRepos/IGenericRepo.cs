@@ -24,6 +24,8 @@ public interface IGenericRepo<T> where T : class
 
     Task UpdateAsync(T entity);
 
+    
+
     Task<T> GetByIdAsync(Guid id); 
     Task DeleteAsync(Guid id);
 }

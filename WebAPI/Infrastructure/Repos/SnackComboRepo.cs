@@ -32,5 +32,6 @@ namespace Infrastructure.Repos
                 .ThenInclude(sci => sci.Snack)
                 .FirstOrDefaultAsync(sc => sc.Id == id && !sc.IsDeleted);
         }
+       
     }
 }

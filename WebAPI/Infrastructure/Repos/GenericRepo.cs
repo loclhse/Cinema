@@ -106,7 +106,7 @@ namespace Infrastructure.Repositories
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             _db.Update(entity);
-            await _context.SaveChangesAsync(); // Save changes immediately
+          
         }
 
         
@@ -116,9 +116,9 @@ namespace Infrastructure.Repositories
                 return await _db.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id);
             }
 
-        
+       
 
-        public async Task DeleteAsync(Guid id)
+            public async Task DeleteAsync(Guid id)
         {
             var entity = await GetByIdAsync(id);
             if (entity == null)
