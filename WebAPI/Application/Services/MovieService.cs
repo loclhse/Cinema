@@ -55,10 +55,6 @@ namespace Application.Services
                     {
                         return resp.SetBadRequest($"Genre with ID {genreId} not found.");
                     }
-
-                    // Ensure MovieGenres is initialized before adding to it
-                    movie.MovieGenres ??= new List<MovieGenre>();
-
                     movie.MovieGenres.Add(new MovieGenre
                     {
                         Genre = genre,
@@ -153,36 +149,51 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
+                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
+                {
+                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
+                }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted, include: query => query.Include(m => m.MovieGenres));
+                var oldGenres = movie.MovieGenres.ToList();
+                foreach (var mg in oldGenres)
+                {
+                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
+                }
+
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
                 }
-                movie.MovieGenres.Clear();
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                foreach (var genreId in movieRequest.GenreIds)
+                
+                 foreach (var genreId in movieRequest.GenreIds)
                 {
+                    if (genreId == Guid.Empty)
+                    {
+                        return resp.SetBadRequest("Invalid GenreId provided.");
+                    }
+
                     var genre = await _unitOfWork.GenreRepo.GetAsync(x => x.Id == genreId && !x.IsDeleted);
                     if (genre == null)
                     {
                         return resp.SetBadRequest($"Genre with ID {genreId} not found.");
                     }
-                    movie.MovieGenres.Add(new MovieGenre
+                    await _unitOfWork.MovieGenreRepo.AddAsync(new MovieGenre
                     {
-                        Genre = genre,
-                        Movie = movie
+                        Genre = genre,          
+                        Movie = movie,
                     });
                 }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 _mapper.Map(movieRequest, movie);
                 await _unitOfWork.SaveChangesAsync();
                 return resp.SetOk("Movie updated successfully.");
             }
+
             catch (Exception ex)
             {
                 return resp.SetBadRequest(ex.Message);
             }
         }
+
 
         public async Task<ApiResp> SearchMoviesAsync(string searchTerm, string searchType, int? limit = 5)
         {

@@ -18,8 +18,9 @@ namespace Application
         IPromotionRepo PromotionRepo { get; }
         IGenreRepo GenreRepo { get; }
         IShowtimeRepo ShowtimeRepo { get; }
+        IMovieGenreRepo MovieGenreRepo { get; }
 
-       
+
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();

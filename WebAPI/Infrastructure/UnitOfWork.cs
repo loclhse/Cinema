@@ -24,9 +24,11 @@ namespace Infrastructure
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
+        public IMovieGenreRepo MovieGenreRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
-            IOtpValidRepo otpValidRepo)
+            IOtpValidRepo otpValidRepo,
+            IMovieRepo movieRepo, IMovieGenreRepo movieGenreRepo)
         {
             _context = context;
             UserRepo = userRepo;
@@ -35,13 +37,14 @@ namespace Infrastructure
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypePriceRepo = new SeatTypePriceRepo(context);
-            MovieRepo = new MovieRepo(context);
+            MovieRepo = movieRepo;
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
             SnackComboRepo = new SnackComboRepo(context);
             SnackRepo = new SnackRepo(context);
             ShowtimeRepo = new ShowtimeRepo(context);
+            MovieGenreRepo = movieGenreRepo;
         }
 
         public async Task<int> SaveChangesAsync()

@@ -13,12 +13,9 @@ namespace Infrastructure.Repos
 {
     public class MovieRepo : GenericRepo<Movie>, IMovieRepo
     {
-        private new readonly AppDbContext _context;
-
+       
         public MovieRepo(AppDbContext context) : base(context)
         {
-    
-            _context = context;
         }
 
         public async Task<List<string>> GetGenreNamesForMovieAsync(Guid movieId)
