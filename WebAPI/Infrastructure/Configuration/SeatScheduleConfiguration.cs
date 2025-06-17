@@ -24,6 +24,9 @@ namespace Infrastructure.Configuration
             builder.HasOne(s => s.Showtime)
                    .WithMany(s => s.SeatSchedules)
                    .HasForeignKey(mg => mg.ShowtimeId);
+
+            builder.Property(x => x.Status)
+                .HasConversion<string>();
         }
     }
 }
