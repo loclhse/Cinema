@@ -15,6 +15,7 @@ namespace Application.IServices
         Task<ApiResp> CreateShowtimeAsync(ShowtimeResquest showtimeResquest, Guid movieId, Guid roomId);
         Task<ApiResp> UpdateShowtimeAsync(Guid id, ShowtimeUpdateRequest showtimeUpdateRequest);
         Task<ApiResp> DeleteShowtimeAsync(Guid id);
+        Task<ApiResp> GetShowtimeByMovieIdAsync(Guid id);
 
     }
 }

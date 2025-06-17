@@ -15,7 +15,6 @@ namespace Application.IServices
         Task<ApiResp> GetMovieByIdAsync(Guid id);
         Task<ApiResp> UpdateMovieAsync(Guid id, MovieRequest movieRequest);
         Task<ApiResp> DeleteMovieAsync(Guid id);
-       
         Task<ApiResp> SearchMoviesAsync(string searchTerm, string searchType, int? limit = 5);
     }
 }

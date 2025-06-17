@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.ViewModel.Request
+namespace Application.ViewModel.Response
 {
-    public class ShowtimeResquest
+    public class MovieTimeResponse
     {
-        public DateTime StartTime { get; set; }
+       
         public DateOnly Date { get; set; }
+        public DateTime StartTime { get; set; }
     }
 }

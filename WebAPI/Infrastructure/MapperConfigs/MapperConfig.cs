@@ -48,7 +48,7 @@ namespace Infrastructure.MapperConfigs
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
             CreateMap<SnackCombo, SnackComboResponse>()
            .ForMember(dest => dest.SnackIds, opt => opt.MapFrom(src => src.SnackComboItems.Select(sci => sci.SnackId))).ReverseMap();
-
+            CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
             // map từ ApplicationUser (đã có AppUser) sang DTO
             CreateMap<IdentityWithProfile, EmployeeResponse>()
                 // Identity  
