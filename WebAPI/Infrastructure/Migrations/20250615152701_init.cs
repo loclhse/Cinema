@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDb : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -235,7 +235,7 @@ namespace Infrastructure.Migrations
                     Phone = table.Column<string>(type: "text", nullable: true),
                     Address = table.Column<string>(type: "text", nullable: true),
                     Avatar = table.Column<string>(type: "text", nullable: true),
-                    Sex = table.Column<int>(type: "integer", nullable: false),
+                    Sex = table.Column<string>(type: "text", nullable: false),
                     Assign = table.Column<string>(type: "text", nullable: true),
                     Salary = table.Column<double>(type: "double precision", nullable: false),
                     Position = table.Column<string>(type: "text", nullable: true),

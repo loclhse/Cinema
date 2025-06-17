@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250615061226_InitDb")]
-    partial class InitDb
+    [Migration("20250615152701_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,8 +69,9 @@ namespace Infrastructure.Migrations
                     b.Property<double>("Salary")
                         .HasColumnType("double precision");
 
-                    b.Property<int>("Sex")
-                        .HasColumnType("integer");
+                    b.Property<string>("Sex")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
