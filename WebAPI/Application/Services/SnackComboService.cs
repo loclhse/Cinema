@@ -20,6 +20,7 @@ namespace Application.Services
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
 
+
         public SnackComboService(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
@@ -92,7 +93,7 @@ namespace Application.Services
                 await transaction.CommitAsync();
 
                 var response = _mapper.Map<SnackComboResponse>(combo);
-                response.SnackIds = (IEnumerable<Guid>?)combo.SnackComboItems.Select(sci => sci.SnackId);
+
                 return new ApiResp().SetOk(response).SetApiResponse(HttpStatusCode.Created, true);
             }
             catch (Exception ex)
@@ -102,50 +103,38 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> UpdateAsync(Guid id, SnackComboRequest request)
+        public async Task<ApiResp> DeleteSnackFromComboAsync(Guid comboId, Guid snackId)
         {
+            using var transaction = await _uow.BeginTransactionAsync();
             try
             {
-                if (request == null || string.IsNullOrWhiteSpace(request.Name))
-                {
-                    return new ApiResp().SetBadRequest(message: "Snack combo name is required.");
-                }
-                if (request.TotalPrice <= 0)
-                {
-                    return new ApiResp().SetBadRequest(message: "Total price must be greater than zero.");
-                }
-
-                var existingCombo = await _uow.SnackComboRepo.GetByIdAsync(id);
-                if (existingCombo == null)
+                var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
+                if (combo == null)
                 {
                     return new ApiResp().SetNotFound(message: "Snack combo not found.");
                 }
 
-                _mapper.Map(request, existingCombo);
-                if (request.SnackIds != null)
+                var item = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == snackId && !sci.IsDeleted);
+                if (item == null)
                 {
-                    existingCombo.SnackComboItems.Clear();
-                    foreach (var snackId in request.SnackIds)
-                    {
-                        var snack = await _uow.SnackRepo.GetByIdAsync(snackId);
-                        if (snack == null)
-                        {
-                            return new ApiResp().SetNotFound(message: $"Snack with ID {snackId} not found.");
-                        }
-                        existingCombo.SnackComboItems.Add(new SnackComboItem { SnackId = snackId, Quantity = 1 });
-                    }
+                    return new ApiResp().SetNotFound(message: $"Snack item with SnackId {snackId} not found in combo.");
                 }
 
-                await _uow.SnackComboRepo.UpdateAsync(existingCombo);
+                item.IsDeleted = true;
+                item.UpdateDate = DateTime.UtcNow;
+                await _uow.SnackComboRepo.UpdateAsync(combo);
                 await _uow.SaveChangesAsync();
-                var response = _mapper.Map<SnackComboResponse>(existingCombo);
-                return new ApiResp().SetOk(response);
+                await transaction.CommitAsync();
+                return new ApiResp().SetOk("Snack removed from combo successfully.");
             }
             catch (Exception ex)
             {
-                return new ApiResp().SetBadRequest(message: $"Error updating snack combo: {ex.Message}");
+                await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(message: $"Error deleting snack from combo: {ex.Message}");
             }
         }
+
+
 
 
 
@@ -159,7 +148,7 @@ namespace Application.Services
                     return new ApiResp().SetNotFound(message: "Snack combo not found.");
                 }
                 var response = _mapper.Map<SnackComboResponse>(combo);
-               
+
                 return new ApiResp().SetOk(response);
             }
             catch (Exception ex)
@@ -198,6 +187,104 @@ namespace Application.Services
                 return new ApiResp().SetBadRequest(message: $"Error deleting snack combo: {ex.Message}");
             }
         }
+
+
+        public async Task<ApiResp> UpdateSnackQuantityInComboAsync(Guid comboId, Guid snackId, int quantity)
+        {
+            using var transaction = await _uow.BeginTransactionAsync();
+            try
+            {
+                var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
+                if (combo == null)
+                {
+                    return new ApiResp().SetNotFound(message: "Snack combo not found.");
+                }
+
+                var item = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == snackId && !sci.IsDeleted);
+                if (item == null)
+                {
+                    return new ApiResp().SetNotFound(message: $"Snack item with SnackId {snackId} not found in combo.");
+                }
+
+                if (quantity <= 0)
+                {
+                    item.IsDeleted = true;
+                    item.UpdateDate = DateTime.UtcNow;
+                    _uow.SnackComboRepo.UpdateAsync(combo);
+                }
+                else
+                {
+                    item.Quantity = quantity;
+                    item.UpdateDate = DateTime.UtcNow;
+                    _uow.SnackComboRepo.UpdateAsync(combo);
+                }
+
+                await _uow.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new ApiResp().SetOk("Snack quantity updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(message: $"Error updating snack quantity: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResp> AddSnackToComboAsync(Guid comboId, Guid snackId, int quantity)
+        {
+            using var transaction = await _uow.BeginTransactionAsync();
+            try
+            {
+                var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
+                if (combo == null)
+                {
+                    return new ApiResp().SetNotFound(message: "Snack combo not found.");
+                }
+
+                var snack = await _uow.SnackRepo.GetByIdAsync(snackId);
+                if (snack == null)
+                {
+                    return new ApiResp().SetNotFound(message: $"Snack with ID {snackId} not found.");
+                }
+
+                if (quantity <= 0)
+                {
+                    return new ApiResp().SetBadRequest(message: "Quantity must be greater than zero.");
+                }
+
+                var existingItem = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == snackId && !sci.IsDeleted);
+                if (existingItem != null)
+                {
+                    existingItem.Quantity += quantity; 
+                    _uow.SnackComboRepo.UpdateAsync(combo);
+                }
+                else
+                {
+                    var newItem = new SnackComboItem
+                    {
+                        ComboId = comboId,
+                        SnackId = snackId,
+                        Quantity = quantity,
+                        UpdateDate = DateTime.UtcNow
+                    };
+                    _uow.SnackComboRepo.UpdateAsync(combo);
+                }
+
+                await _uow.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new ApiResp().SetOk("Snack added to combo successfully.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(message: $"Error adding snack to combo: {ex.Message}");
+            }
+        }
+
+        public Task<ApiResp> UpdateAsync(Guid id, SnackComboRequest request)
+        {
+            throw new NotImplementedException();
+        }
     }
+
 }
-    

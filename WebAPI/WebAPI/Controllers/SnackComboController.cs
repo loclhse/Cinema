@@ -24,8 +24,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+       
+        
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AddAsync([FromBody] SnackComboRequest request)
         {
@@ -68,7 +68,7 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet("with-snacks")]
+        [HttpGet("With-Snacks")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCombosWithSnacksAsync()
         {
@@ -76,12 +76,41 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpGet("with-items/{id}")]
+        [HttpGet("With-Snacks/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetComboWithItemsAsync([FromRoute] Guid id)
         {
             var response = await _snackComboService.GetComboWithItemsAsync(id);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpDelete("remove-snack/{comboId}/{snackId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteSnackFromComboAsync([FromRoute] Guid comboId, [FromRoute] Guid snackId)
+        {
+            var response = await _snackComboService.DeleteSnackFromComboAsync(comboId, snackId);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpPut("update-quantity/{comboId}/{snackId}/{quantity}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateSnackQuantityInComboAsync([FromRoute] Guid comboId, [FromRoute] Guid snackId, [FromRoute] int quantity)
+        {
+            var response = await _snackComboService.UpdateSnackQuantityInComboAsync(comboId, snackId, quantity);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpPost("add-snack/{comboId}/{snackId}/{quantity}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AddSnackToComboAsync([FromRoute] Guid comboId, [FromRoute] Guid snackId, [FromRoute] int quantity)
+        {
+            var response = await _snackComboService.AddSnackToComboAsync(comboId, snackId, quantity);
             return StatusCode((int)response.StatusCode, response);
         }
     }

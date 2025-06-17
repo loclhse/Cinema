@@ -106,7 +106,7 @@ namespace Infrastructure.Repositories
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             _db.Update(entity);
-            await _context.SaveChangesAsync(); // Save changes immediately
+          
         }
 
         public async Task RemoveRangeAsync(IEnumerable<T> entities)
@@ -137,8 +137,9 @@ namespace Infrastructure.Repositories
         }
 
 
+       
 
-        public async Task DeleteAsync(Guid id)
+            public async Task DeleteAsync(Guid id)
         {
             var entity = await GetByIdAsync(id);
             if (entity == null)

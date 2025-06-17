@@ -15,9 +15,8 @@ namespace Application.IServices
         Task<ApiResp> GetAllAsync();
         Task<ApiResp> AddAsync(SnackRequest request);
         Task<ApiResp> DeleteAsync(Guid id);
-
         Task<ApiResp> UpdateAsync(Guid id, SnackRequest request);
-        Task<ApiResp> GetSnacksInComboAsync(Guid comboId);
+        
     }
 }
 
