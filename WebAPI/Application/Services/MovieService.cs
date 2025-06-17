@@ -31,9 +31,25 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
-                var movie = _mapper.Map<Movie>(movieRequest);
-                foreach(var genreId in movieRequest.GenreIds)
+                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
                 {
+                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
+                }
+
+                var movie = _mapper.Map<Movie>(movieRequest);
+                if (movie == null)
+                {
+                    return resp.SetBadRequest("Invalid movie data.");
+                }
+
+                foreach (var genreId in movieRequest.GenreIds)
+                {
+                    // Ensure genreId is not null before dereferencing
+                    if (genreId == Guid.Empty)
+                    {
+                        return resp.SetBadRequest("Invalid GenreId provided.");
+                    }
+
                     var genre = await _unitOfWork.GenreRepo.GetAsync(x => x.Id == genreId && !x.IsDeleted);
                     if (genre == null)
                     {
@@ -45,10 +61,7 @@ namespace Application.Services
                         Movie = movie
                     });
                 }
-                if (movie == null)
-                {
-                    return resp.SetBadRequest("Invalid movie data.");    
-                }
+
                 await _unitOfWork.MovieRepo.AddAsync(movie);
                 await _unitOfWork.SaveChangesAsync();
                 return resp.SetOk("Movie created successfully.");
@@ -56,7 +69,7 @@ namespace Application.Services
             catch (Exception ex)
             {
                 return resp.SetBadRequest(null, ex.Message);
-            }   
+            }
         }
 
         public async Task<ApiResp> DeleteMovieAsync(Guid id)
@@ -100,7 +113,9 @@ namespace Application.Services
                     var response = _mapper.Map<MovieResponse>(movie);
                     response.GenreNames = GenreNames;
                     movieRespList.Add(response);
+                    
                 }
+                
                 return resp.SetOk(movieRespList);
             }
             catch (Exception ex)
@@ -108,8 +123,7 @@ namespace Application.Services
                 return resp.SetBadRequest(ex.Message);
             }
         }
-
-        //Huy chỉnh phần này nha chỉnh cho nó hiện ra thể loại chứ ban đầu get không thì tên thế loại là rỗng
+        
         public async Task<ApiResp> GetMovieByIdAsync(Guid id)
         {
             ApiResp resp = new ApiResp();
@@ -136,34 +150,51 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
+                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
+                {
+                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
+                }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted, include: query => query.Include(m => m.MovieGenres));
+                var oldGenres = movie.MovieGenres.ToList();
+                foreach (var mg in oldGenres)
+                {
+                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
+                }
+
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
                 }
-                movie.MovieGenres.Clear();
-                foreach (var genreId in movieRequest.GenreIds)
+                
+                 foreach (var genreId in movieRequest.GenreIds)
                 {
+                    if (genreId == Guid.Empty)
+                    {
+                        return resp.SetBadRequest("Invalid GenreId provided.");
+                    }
+
                     var genre = await _unitOfWork.GenreRepo.GetAsync(x => x.Id == genreId && !x.IsDeleted);
                     if (genre == null)
                     {
                         return resp.SetBadRequest($"Genre with ID {genreId} not found.");
                     }
-                    movie.MovieGenres.Add(new MovieGenre
+                    await _unitOfWork.MovieGenreRepo.AddAsync(new MovieGenre
                     {
-                        Genre = genre,
-                        Movie = movie
+                        Genre = genre,          
+                        Movie = movie,
                     });
                 }
                 _mapper.Map(movieRequest, movie);
                 await _unitOfWork.SaveChangesAsync();
                 return resp.SetOk("Movie updated successfully.");
             }
+
             catch (Exception ex)
             {
                 return resp.SetBadRequest(ex.Message);
             }
         }
+
 
         public async Task<ApiResp> SearchMoviesAsync(string searchTerm, string searchType, int? limit = 5)
         {
@@ -187,6 +218,7 @@ namespace Application.Services
                 else
                 {
                     var searchLower = searchTerm.ToLowerInvariant();
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
                     movies = allMovies.Where(m =>
                         (searchType.ToLowerInvariant() == "all" || searchType.ToLowerInvariant() == "title") &&
                         (m.Title != null && m.Title.ToLowerInvariant().Contains(searchLower)) ||
@@ -194,6 +226,7 @@ namespace Application.Services
                         (searchType?.ToLowerInvariant() == "rated" && m.Rated != null && m.Rated.ToString().ToLowerInvariant().Contains(searchLower)) ||
                         (searchType?.ToLowerInvariant() == "genres" && m.MovieGenres != null && m.MovieGenres.Any(mg => mg.Genre != null && mg.Genre.Name != null && mg.Genre.Name.ToLowerInvariant().Contains(searchLower)))
                     ).OrderBy(m => m.Title).Take(limit ?? 5);
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
                 }
 
 

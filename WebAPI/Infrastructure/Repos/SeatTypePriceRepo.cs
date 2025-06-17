@@ -7,6 +7,7 @@ using Application.IRepos;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repos
 {
@@ -20,12 +21,18 @@ namespace Infrastructure.Repos
 
         public Task<List<SeatTypePrice>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            var result = _context.SeatTypePrices
+                .AsNoTracking()
+                .ToListAsync();
+            return result;
         }
 
         public Task<SeatTypePrice?> GetByTypeAsync(SeatTypes type)
         {
-            throw new NotImplementedException();
+            var query = _context.SeatTypePrices
+                .FirstOrDefaultAsync(x => x.SeatType == type);
+            if (query == null) throw new KeyNotFoundException($"SeatTypePrice for '{type}' not found.");
+            return query;
         }
     }
 }

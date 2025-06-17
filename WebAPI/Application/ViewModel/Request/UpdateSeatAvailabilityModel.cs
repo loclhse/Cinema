@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Application.ViewModel.Request
 {
-    public class ShowtimeResquest
+    public class UpdateSeatAvailabilityModel
     {
-        public DateTime StartTime { get; set; }
-        public DateOnly Date { get; set; }
+        public IEnumerable<Guid> SeatIds { get; set; } = new List<Guid>();
+        public bool IsAvailable { get; set; }
     }
 }

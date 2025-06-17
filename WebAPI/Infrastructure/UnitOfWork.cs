@@ -13,22 +13,22 @@ namespace Infrastructure
         public readonly AppDbContext _context;
         public ISnackComboRepo SnackComboRepo { get; }
         public ISnackRepo SnackRepo { get; }
-
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
-        public IOtpValidRepo OtpValidRepo { get; }
         public IMovieRepo MovieRepo { get; }
+        public IOtpValidRepo OtpValidRepo { get; }
         public ICinemaRoomRepo CinemaRoomRepo { get; }
+        public IRoomLayoutRepo RoomLayoutRepo { get; }
         public ISeatRepo SeatRepo { get; }
-        public ISeatTypePriceRepo SeatTypeConfigRepo { get; }
+        public ISeatTypePriceRepo SeatTypePriceRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
+        public IMovieGenreRepo MovieGenreRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo,
-            IPromotionRepo promotionRepo,
-            IMovieRepo movieRepo, IGenreRepo genre, IShowtimeRepo showtimeRepo, ISnackComboRepo snackComboRepo, ISnackRepo snackRepo)
+            IMovieRepo movieRepo, IMovieGenreRepo movieGenreRepo)
         {
             _context = context;
             UserRepo = userRepo;
@@ -36,13 +36,15 @@ namespace Infrastructure
             OtpValidRepo = otpValidRepo;
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
-            SeatTypeConfigRepo = new SeatTypePriceRepo(context);
-            PromotionRepo = promotionRepo;
+            SeatTypePriceRepo = new SeatTypePriceRepo(context);
             MovieRepo = movieRepo;
-            GenreRepo = genre;
-            ShowtimeRepo = showtimeRepo;
-            SnackComboRepo = snackComboRepo;
-            SnackRepo = snackRepo;
+            GenreRepo = new GenreRepo(context);
+            PromotionRepo = new PromotionRepo(context);
+            RoomLayoutRepo = new RoomLayoutRepo(context);
+            SnackComboRepo = new SnackComboRepo(context);
+            SnackRepo = new SnackRepo(context);
+            ShowtimeRepo = new ShowtimeRepo(context);
+            MovieGenreRepo = movieGenreRepo;
         }
 
         public async Task<int> SaveChangesAsync()

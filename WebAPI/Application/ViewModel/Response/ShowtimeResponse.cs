@@ -13,7 +13,7 @@ namespace Application.ViewModel.Response
         public DateTime StartTime { get; set; }
        
         public int? Duration { get; set; }
-        public DateTime Date { get; set; }
+        public DateOnly Date { get; set; }
         public DateTime EndTime { get; set; }
         public Guid? CinemaRoomId { get; set; }
         public Guid? MovieId { get; set; }

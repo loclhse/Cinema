@@ -22,7 +22,8 @@ namespace Application.ViewModel.Response
         public MovieStatus MovieStatus { get; set; }
         public DateOnly? ReleaseDate { get; set; }
         public DateOnly? EndDate { get; set; }
-        public List<string> GenreNames { get; set; }
-      
+        public List<string> GenreNames { get; set; } = new List<string>();
+
     }
 }
+    

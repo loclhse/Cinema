@@ -1,16 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Infrastructure.Identity;
+using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Helper
 {
-    public class SeedData
+    public static class SeedData
     {
-        public static async Task SeedRolesAsync(RoleManager<AppRole> roleManager)
+        /// <summary>
+        /// Hàm duy nhất bạn gọi trong Program.cs
+        /// </summary>
+        public static async Task EnsureSeedDataAsync(IServiceProvider services)
+        {
+            using var scope = services.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+            var context     = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            await SeedRolesAsync(roleManager);
+            await SeedSeatTypePricesAsync(context);
+        }
+
+        /* ---------- Seed Roles ---------- */
+        private static async Task SeedRolesAsync(RoleManager<AppRole> roleManager)
         {
             var roles = new[] { "Admin", "Employee", "Member", "Customer" };
 
@@ -21,6 +37,29 @@ namespace Infrastructure.Helper
                     await roleManager.CreateAsync(new AppRole(role));
                 }
             }
+        }
+
+        /* ---------- Seed SeatTypePrice ---------- */
+        private static async Task SeedSeatTypePricesAsync(AppDbContext context)
+        {
+            // Lấy danh sách SeatTypePrice hiện có (hash set cho nhanh)
+            var existingTypes = await context.SeatTypePrices
+                                             .Select(x => x.SeatType)
+                                             .ToListAsync();
+
+            foreach (SeatTypes type in Enum.GetValues(typeof(SeatTypes)))
+            {
+                if (!existingTypes.Contains(type))
+                {
+                    context.SeatTypePrices.Add(new SeatTypePrice
+                    {
+                        SeatType     = type,
+                        DefaultPrice = 0    // hoặc giá mặc định tuỳ bạn
+                    });
+                }
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }
