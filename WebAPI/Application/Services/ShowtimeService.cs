@@ -23,12 +23,12 @@ namespace Application.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        private async Task<bool> IsShowtimeExistsAsync(DateTime date, Guid cinemaRoomId, DateTime startTime, DateTime endTime)
+        private async Task<bool> IsShowtimeExistsAsync(DateOnly date, Guid cinemaRoomId, DateTime startTime, DateTime endTime)
         {
             // Tìm kiếm buổi chiếu đã tồn tại trong cùng một ngày và phòng chiếu
             var existingShowtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(s =>
                 s.CinemaRoomId == cinemaRoomId &&
-                s.Date.Date == date.Date &&
+                s.Date == date &&
                 !s.IsDeleted // Nếu có trường IsDeleted
             );
 
@@ -37,7 +37,6 @@ namespace Application.Services
             {
                 // Kiểm tra chồng chéo
                 if ((startTime < showtime.EndTime && endTime > showtime.StartTime)  ||
-                    (startTime < showtime.EndTime && endTime > showtime.EndTime)    ||
                     (startTime < showtime.StartTime && endTime > showtime.StartTime)
                     )
                 {
@@ -69,7 +68,7 @@ namespace Application.Services
                     return apiResp.SetNotFound("Cinema room does not exist!");
                 }
                 showtime.Duration = movie.Duration + 45;
-                showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration);
+                showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration );
                 showtime.MovieId = movie.Id;
                 showtime.CinemaRoomId = cinemaRoom.Id;
                 if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime) == true)
@@ -178,6 +177,23 @@ namespace Application.Services
                 return resp.SetBadRequest(ex.Message);
             }
 
+        }
+        public async Task<ApiResp> GetShowtimeByMovieIdAsync(Guid id)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var showtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(x=> x.MovieId == id);
+                if (showtimes == null)
+                {
+                    apiResp.SetNotFound("Showtime for this movie does not exist!!!");
+                }
+                var result = _mapper.Map<List<MovieTimeResponse>>(showtimes);
+                return apiResp.SetOk(result);
+            }catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
         }
     }
 }

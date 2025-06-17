@@ -113,7 +113,9 @@ namespace Application.Services
                     var response = _mapper.Map<MovieResponse>(movie);
                     response.GenreNames = GenreNames;
                     movieRespList.Add(response);
+                    
                 }
+                
                 return resp.SetOk(movieRespList);
             }
             catch (Exception ex)
@@ -121,8 +123,7 @@ namespace Application.Services
                 return resp.SetBadRequest(ex.Message);
             }
         }
-
-        //Huy chỉnh phần này nha chỉnh cho nó hiện ra thể loại chứ ban đầu get không thì tên thế loại là rỗng
+        
         public async Task<ApiResp> GetMovieByIdAsync(Guid id)
         {
             ApiResp resp = new ApiResp();

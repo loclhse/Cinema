@@ -26,22 +26,28 @@ namespace WebAPI.Controllers
             var response = await _showtimeService.GetAllShowtimesAsync();
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpGet("GetShowtimeById{id}")]
+        [HttpGet("GetShowtimeById/{id}")]
         public async Task<IActionResult> GetShowtimeById(Guid id)
         {
             var response = await _showtimeService.GetShowtimeByIdAsync(id);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpPut("UpdateShowtime{id}")]
+        [HttpPut("UpdateShowtime/{id}")]
         public async Task<IActionResult> UpdateShowtime(Guid id,  ShowtimeUpdateRequest showtimeUpdateRequest)
         {
             var response = await _showtimeService.UpdateShowtimeAsync(id, showtimeUpdateRequest);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpDelete("DeleteShowtime{id}")]
+        [HttpDelete("DeleteShowtime/{id}")]
         public async Task<IActionResult> DeleteShowtime(Guid id)
         {
             var response = await _showtimeService.DeleteShowtimeAsync(id);
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
+        [HttpGet("GetShowtimeByMovieID/{id}")]
+        public async Task<IActionResult> GetShowtimeByMovieID(Guid id)
+        {
+            var response = await _showtimeService.GetShowtimeByMovieIdAsync(id);
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
     }
