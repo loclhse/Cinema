@@ -156,7 +156,13 @@ namespace Application.Services
                 {
                     return resp.SetNotFound("Showtime not found.");
                 }
-                var result = _mapper.Map<ShowtimeResponse>(showtime);
+                var Room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtime.CinemaRoomId && !c.IsDeleted);
+                if (Room == null)
+                {
+                    return resp.SetNotFound("Cinema room not found.");
+                }
+                var result = _mapper.Map<RoomShowtimeResponse>(showtime);
+                result.RoomName = Room.Name;
                 return resp.SetOk(result);
             }
             catch (Exception ex)

@@ -58,7 +58,7 @@ namespace Infrastructure.MapperConfigs
 
 
             CreateMap<SeatSchedule, SeatScheduleResponse>().ReverseMap();
-
+            CreateMap<Showtime, RoomShowtimeResponse>().ReverseMap();
             // map từ ApplicationUser (đã có AppUser) sang DTO
             CreateMap<IdentityWithProfile, EmployeeResponse>()
                 // Identity  
