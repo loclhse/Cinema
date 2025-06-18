@@ -1,5 +1,7 @@
-﻿using FirebaseAdmin;
+﻿using Application.IServices;
+using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Hangfire;
 using Infrastructure;
 using Infrastructure.Configuration;
 using Infrastructure.Helper;
@@ -11,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using WebAPI.Hubs;
 
 namespace WebAPI
 {
@@ -120,7 +123,13 @@ namespace WebAPI
 
                 await SeedData.EnsureSeedDataAsync(services);
             }
-
+            //SignalR
+            app.MapHub<SeatHub>("/seatHub");
+            //HangFire
+            app.UseHangfireDashboard();
+            //Đăng ký tác vụ ngầm
+            //mỗi phút,mỗi giờ,mỗi ngày trong tháng, tháng, ngày trong tuần ứng với mỗi *
+            RecurringJob.AddOrUpdate<IBackgroundService>("Change-Seat-Booking-status", s => s.ChangeSeatBookingStatus(), "* * * * *");
             // Pipeline
             if (app.Environment.IsDevelopment())
             {
