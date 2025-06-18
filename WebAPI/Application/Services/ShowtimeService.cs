@@ -213,11 +213,24 @@ namespace Application.Services
             try
             {
                 var showtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(x=> x.MovieId == id);
+                foreach (var time in showtimes)
+                {
+                    var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == time.CinemaRoomId && !c.IsDeleted);
+                    if (room != null)
+                    {
+                        time.CinemaRoomId = room.Id;
+                    }
+                }
                 if (showtimes == null)
                 {
                     apiResp.SetNotFound("Showtime for this movie does not exist!!!");
                 }
                 var result = _mapper.Map<List<MovieTimeResponse>>(showtimes);
+                foreach (var item in result)
+                {
+                    var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == item.CinemaRoomId && !c.IsDeleted);
+                    item.RoomName = room.Name;
+                }
                 return apiResp.SetOk(result);
             }catch (Exception ex)
             {
