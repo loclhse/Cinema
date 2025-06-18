@@ -63,6 +63,7 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(dest => dest.IsOwnedByCaller, opt => opt.Ignore())
                 .ReverseMap();
 
+            CreateMap<Showtime, RoomShowtimeResponse>().ReverseMap();
             // map từ ApplicationUser (đã có AppUser) sang DTO
             CreateMap<IdentityWithProfile, EmployeeResponse>()
                 // Identity  

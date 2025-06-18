@@ -11,5 +11,8 @@ namespace Application.ViewModel.Response
        
         public DateOnly Date { get; set; }
         public DateTime StartTime { get; set; }
+        public Guid Id { get; set; }
+        public Guid CinemaRoomId { get; set; }
+        public string? RoomName { get; set; }
     }
 }
