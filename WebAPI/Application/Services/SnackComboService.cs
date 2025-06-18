@@ -210,13 +210,13 @@ namespace Application.Services
                 {
                     item.IsDeleted = true;
                     item.UpdateDate = DateTime.UtcNow;
-                    _uow.SnackComboRepo.UpdateAsync(combo);
+                    await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
                 else
                 {
                     item.Quantity = quantity;
                     item.UpdateDate = DateTime.UtcNow;
-                    _uow.SnackComboRepo.UpdateAsync(combo);
+                    await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
 
                 await _uow.SaveChangesAsync();
@@ -256,7 +256,7 @@ namespace Application.Services
                 if (existingItem != null)
                 {
                     existingItem.Quantity += quantity; 
-                    _uow.SnackComboRepo.UpdateAsync(combo);
+                    await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
                 else
                 {
@@ -267,7 +267,7 @@ namespace Application.Services
                         Quantity = quantity,
                         UpdateDate = DateTime.UtcNow
                     };
-                    _uow.SnackComboRepo.UpdateAsync(combo);
+                    await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
 
                 await _uow.SaveChangesAsync();

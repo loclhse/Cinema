@@ -106,7 +106,7 @@ namespace Infrastructure.Repositories
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             _db.Update(entity);
-          
+            await _context.SaveChangesAsync(); // Ensure changes are saved to the database
         }
 
         public async Task RemoveRangeAsync(IEnumerable<T> entities)

@@ -13,7 +13,26 @@ namespace Application.ViewModel.Response
         public Guid Id { get; set; }
         public Guid? SeatId { get; set; }
         public Guid? ShowtimeId { get; set; }
-        public DateTime? HoldUntil { get; set; } // Nullable, chỉ có giá trị nếu Status = Held
+
         public SeatBookingStatus Status { get; set; } = SeatBookingStatus.Available;
+
+        public DateTime? HoldUntil { get; set; } // Nullable nếu chưa hold
+
+        public string? HoldByConnectionId { get; set; } // Dùng để phân biệt client khác
+
+        public bool IsOwnedByCaller { get; set; } // Chỉ chính chủ giữ ghế này mới là true
+
+        public int? HoldRemainingSeconds
+        {
+            get
+            {
+                if (HoldUntil.HasValue)
+                {
+                    var remaining = (int)(HoldUntil.Value - DateTime.UtcNow).TotalSeconds;
+                    return remaining > 0 ? remaining : 0;
+                }
+                return null;
+            }
+        }
     }
 }

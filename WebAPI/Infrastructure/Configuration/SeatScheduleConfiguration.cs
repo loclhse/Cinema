@@ -27,6 +27,11 @@ namespace Infrastructure.Configuration
 
             builder.Property(x => x.Status)
                 .HasConversion<string>();
+
+            builder.Property(x => x.RowVersion)
+               .IsRowVersion()
+               .IsConcurrencyToken()
+               .HasColumnType("bytea");
         }
     }
 }

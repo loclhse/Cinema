@@ -15,12 +15,16 @@ namespace Application.IServices
         Task<OperationResult> UpdateSeatStatusAsync(List<Guid> seatScheduleIds, SeatBookingStatus status);
 
         // Giữ ghế (Hold) với thời gian giữ
-        Task<IEnumerable<SeatScheduleResponse>> HoldSeatAsync(List<Guid> seatIds);
+        Task<IEnumerable<SeatScheduleResponse>> HoldSeatAsync(Guid showtimeId, List<Guid> seatIds, Guid userId, string connectionId);
 
         // Lấy tất cả seat schedules theo ShowtimeId
         Task<IEnumerable<SeatScheduleResponse>> GetSeatSchedulesByShowtimeAsync(Guid showtimeId);
-
-        // Lấy seat schedule theo SeatId
-        Task<SeatScheduleResponse> GetSeatScheduleBySeatIdAsync(Guid seatId);
+        Task<IEnumerable<SeatScheduleResponse>> GetHoldSeatByUserIdAsync(Guid showtimeId, Guid userId);
+        // Xác nhận giữ ghế (Confirm)
+        Task<OperationResult> ConfirmSeatAsync(List<Guid> seatIds, Guid userId);
+        // Huỷ giữ ghế (Cancel Hold)
+        Task<OperationResult> CancelHoldAsync(List<Guid> seatIds, Guid userId);
+        // Huỷ giữ ghế theo ConnectionId (dùng trong SignalR)
+        Task CancelHoldByConnectionAsync(string connectionId, Guid userId);
     }
 }
