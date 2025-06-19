@@ -41,11 +41,13 @@ namespace Application.Services
 
         public async Task<IEnumerable<SeatScheduleResponse>> GetSeatSchedulesByShowtimeAsync(Guid showTimeId)
         {
-            var seats = await _unitOfWork.SeatScheduleRepo.GetAllAsync(x => x.ShowtimeId == showTimeId);
+            var seats = await _unitOfWork.SeatScheduleRepo.GetAllAsync(
+                x => x.ShowtimeId == showTimeId,
+                include: q => q.Include(x => x.Seat!));
 
             if (seats == null || !seats.Any())
             {
-                // Trả về danh sách rỗng nếu không có dữ liệu
+                // Return an empty list if no data is found
                 return Enumerable.Empty<SeatScheduleResponse>();
             }
 
