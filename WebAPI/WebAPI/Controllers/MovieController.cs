@@ -3,6 +3,7 @@ using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -46,24 +47,40 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAllMovies()
         {
             var response = await _movieService.GetAllMoviesAsync();
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpGet("GetMovieById{id}")]
         public async Task<IActionResult> GetMovieById(Guid id)
         {
             var response = await _movieService.GetMovieByIdAsync(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpPut("UpdateMovie{id}")]
         public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] MovieRequest movieRequest)
         {
             var response = await _movieService.UpdateMovieAsync(id, movieRequest);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpDelete("DeleteMovie{id}")]
         public async Task<IActionResult> DeleteMovie(Guid id)
         {
             var response = await _movieService.DeleteMovieAsync(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
 

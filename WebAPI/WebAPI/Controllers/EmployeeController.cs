@@ -4,7 +4,9 @@ using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using static Application.IServices.IUserService;
+using static Google.Apis.Requests.BatchRequest;
 
 namespace WebAPI.Controllers
 {
@@ -23,7 +25,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAllEmployee()
         {
             var result = await _userService.GetAllEmployeesAsync();
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
 
@@ -31,21 +37,33 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetEmployeeById(Guid id)
         {
             var result = await _userService.GetEmployeeByIdAsync(id);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [HttpPut("UpdateEmployee/{id}")]
         public async Task<IActionResult> UpdateEmployee(Guid id, EmployeeUpdateResquest request)
         {
             var result = await _userService.UpdateEmployeeAsync(id, request);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [Authorize(Roles = "Admin")]
         [HttpDelete("DeleteEmployee/{id}")]
         public async Task<IActionResult> DeleteEmployee(Guid id)
         {
             var result = await _userService.DeleteEmployeeAsync(id);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [Authorize(Roles = "Admin")]
@@ -53,7 +71,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> SearchEmployee(string value, SearchKey searchKey)
         {
             var result = await _userService.SearchEmployees(value, searchKey);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [Authorize(Roles = "Admin")]
@@ -61,7 +83,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetDeletedAccounts()
         {
             var result = await _userService.GetDeletedAccountsAsync();
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [Authorize(Roles = "Admin")]
@@ -69,14 +95,22 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> RestoreAccount(Guid id)
         {
             var result = await _userService.RestoreAccountAsync(id);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [Authorize(Roles = "Admin")]
         [HttpGet("SearchIsDeleteEmployee")]
         public async Task<IActionResult> SearchIsDeleteEmployee(string value, SearchKey searchKey)
         {
             var result = await _userService.SearchIsDeleteEmployees(value, searchKey);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }
 }
