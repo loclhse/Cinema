@@ -233,7 +233,7 @@ namespace Application.Services
                 if (!movies.Any())
                 {
                     return new ApiResp()
-                        .SetOk("No movies found");
+                        .SetNotFound("No movies found");
                 }
                 var responses = _mapper.Map<List<MovieResponse>>(movies);
                     return new ApiResp()
