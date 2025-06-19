@@ -55,14 +55,6 @@ namespace Application.ViewModel.Request
                 {
                     yield return new ValidationResult("Date of birth cannot be in the future.", new[] { nameof(Dob) });
                 }
-
-                var age = today.Year - Dob.Value.Year;
-                if (Dob.Value.AddYears(age) > today) age--;
-
-                if (age < 18)
-                {
-                    yield return new ValidationResult("You must be at least 18 years old.", new[] { nameof(Dob) });
-                }
             }
         }
     }

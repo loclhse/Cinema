@@ -59,6 +59,13 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.SnackComboItems))
                 .ReverseMap();
 
+
+            CreateMap<SeatSchedule, SeatScheduleResponse>()
+                .ForMember(dest => dest.IsOwnedByCaller, opt => opt.Ignore())
+                .ForMember(dest => dest.Label, opt => opt.MapFrom(src => src.Seat != null ? src.Seat.Label : string.Empty))
+                .ReverseMap();
+
+            CreateMap<Showtime, RoomShowtimeResponse>().ReverseMap();
             // map từ ApplicationUser (đã có AppUser) sang DTO
             CreateMap<IdentityWithProfile, EmployeeResponse>()
                 // Identity  

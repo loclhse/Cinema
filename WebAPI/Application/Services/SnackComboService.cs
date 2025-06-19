@@ -201,7 +201,7 @@ namespace Application.Services
                 {
                     item.Quantity = quantity;
                     item.UpdateDate = DateTime.UtcNow;
-                    _uow.SnackComboRepo.UpdateAsync(combo);
+                    await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
 
                 await _uow.SaveChangesAsync();

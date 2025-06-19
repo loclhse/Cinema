@@ -15,13 +15,11 @@ namespace Application.ViewModel.Request
 
         // Tổng số hàng và cột ghế
         [Required]
-        [MinLength(1, ErrorMessage = "TotalRows must be at least 1.")]
-        [MaxLength(15, ErrorMessage = "TotalRows cannot exceed 15.")]
+        [Range(1, 15, ErrorMessage = "TotalRows must be between 1 and 15.")]
         public int TotalRows { get; set; }
 
         [Required]
-        [MinLength(1, ErrorMessage = "TotalCols must be at least 1.")]
-        [MaxLength(20, ErrorMessage = "TotalCols cannot exceed 20.")]
+        [Range(1, 20, ErrorMessage = "TotalCols must be between 1 and 20.")]
         public int TotalCols { get; set; }
     }
 }

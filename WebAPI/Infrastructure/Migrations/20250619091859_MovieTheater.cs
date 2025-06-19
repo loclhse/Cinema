@@ -528,9 +528,13 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SeatId = table.Column<Guid>(type: "uuid", nullable: true),
-                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    SeatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    HoldUntil = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    HoldByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    HoldByConnectionId = table.Column<string>(type: "text", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -542,12 +546,14 @@ namespace Infrastructure.Migrations
                         name: "FK_SeatSchedules_Seat_SeatId",
                         column: x => x.SeatId,
                         principalTable: "Seat",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SeatSchedules_Showtimes_ShowtimeId",
                         column: x => x.ShowtimeId,
                         principalTable: "Showtimes",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(

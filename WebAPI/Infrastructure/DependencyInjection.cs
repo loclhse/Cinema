@@ -1,20 +1,23 @@
-﻿using System;
+﻿using Application;
+using Application.IRepos;
+using Application.IServices;
+using Application.Services;
+using AutoMapper;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Infrastructure.Configuration;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Infrastructure.Repos;
+using Infrastructure.Service;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using AutoMapper;
-using Application.IRepos;
-using Application.IServices;
-using Application.Services;
-using Application;
-using Infrastructure.Service;
-using Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System;
 
 namespace Infrastructure
 {
@@ -69,6 +72,7 @@ namespace Infrastructure
             services.AddScoped<IMovieRepo, MovieRepo>();
             services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
             services.AddScoped<IMovieGenreRepo, MovieGenreRepo>();
+            services.AddScoped<ISeatScheduleRepo, SeatScheduleRepo>();
 
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
@@ -92,11 +96,27 @@ namespace Infrastructure
             services.AddScoped<IShowtimeService, ShowtimeService>();
             services.AddScoped<ISnackService, SnackService>();
             services.AddScoped<ISnackComboService, SnackComboService>();
+            services.AddScoped<ISeatScheduleService, SeatScheduleService>();
+            services.AddScoped<IBackgroundService, BackgroundService>();    
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+            //Đăng ký HangFire
+            services.AddHangfire(config =>
+            {
+                config.UsePostgreSqlStorage(options =>
+                {               
+                    options.UseNpgsqlConnection(configuration.GetConnectionString("Local"));
+                });
+            });
+            services.AddHangfireServer();
+           
+            //Đăng ký SignalR
+            services.AddSignalR();
+
             return services;
+            
         }
     }
 }

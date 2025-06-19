@@ -57,26 +57,48 @@ namespace Application.Services
                 {
                     return apiResp.SetBadRequest("Invalid showtime data.");
                 }
+
                 var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == movieId && !m.IsDeleted);
                 if (movie == null)
                 {
                     return apiResp.SetNotFound("Movie does not exist!");
                 }
+
                 var cinemaRoom = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == roomId && !c.IsDeleted);
                 if (cinemaRoom == null)
                 {
                     return apiResp.SetNotFound("Cinema room does not exist!");
                 }
-                showtime.Duration = movie.Duration + 45;
-                showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration );
+
+                showtime.Duration = movie.Duration + 45; // Add buffer time for movie length
+                showtime.EndTime = showtime.StartTime.AddMinutes(showtime.Duration); // Calculate End Time
                 showtime.MovieId = movie.Id;
                 showtime.CinemaRoomId = cinemaRoom.Id;
-                if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime) == true)
+
+                // Check if Showtime already exists
+                if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime))
                 {
                     return apiResp.SetBadRequest("Showtime already exists in the same cinema room and date.");
                 }
+
                 await _unitOfWork.ShowtimeRepo.AddAsync(showtime);
+
+                // Fetch seats and create seat schedules
+                var seats = await _unitOfWork.SeatRepo.GetAllAsync(s => s.CinemaRoomId == roomId && !s.IsDeleted);
+                if (!seats.Any())
+                {
+                    return apiResp.SetNotFound($"No seats found in the {cinemaRoom.Name} cinema room.");
+                }
+
+                var seatSchedules = seats.Select(seat => new SeatSchedule
+                {
+                    ShowtimeId = showtime.Id,
+                    SeatId = seat.Id,
+                }).ToList();
+
+                await _unitOfWork.SeatScheduleRepo.AddRangeAsync(seatSchedules);
                 await _unitOfWork.SaveChangesAsync();
+
                 return apiResp.SetOk("Added successfully!");
             }
             catch (Exception ex)
@@ -84,6 +106,7 @@ namespace Application.Services
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
+
 
         public async Task<ApiResp> DeleteShowtimeAsync(Guid id)
         {
@@ -133,7 +156,13 @@ namespace Application.Services
                 {
                     return resp.SetNotFound("Showtime not found.");
                 }
-                var result = _mapper.Map<ShowtimeResponse>(showtime);
+                var Room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtime.CinemaRoomId && !c.IsDeleted);
+                if (Room == null)
+                {
+                    return resp.SetNotFound("Cinema room not found.");
+                }
+                var result = _mapper.Map<RoomShowtimeResponse>(showtime);
+                result.RoomName = Room.Name;
                 return resp.SetOk(result);
             }
             catch (Exception ex)
@@ -153,12 +182,12 @@ namespace Application.Services
                     return resp.SetNotFound("Showtime not found.");
                 }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == showtimeUpdateRequest.MovieId && !m.IsDeleted);
-                if(movie == null)
+                if (movie == null)
                 {
                     return resp.SetNotFound("Movie does not exist!!!");
                 }
                 var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtimeUpdateRequest.CinemaRoomId && !c.IsDeleted);
-                if(room == null)
+                if (room == null)
                 {
                     return resp.SetNotFound("Cinema room does not exist!!!");
                 }
@@ -184,11 +213,24 @@ namespace Application.Services
             try
             {
                 var showtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(x=> x.MovieId == id);
+                foreach (var time in showtimes)
+                {
+                    var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == time.CinemaRoomId && !c.IsDeleted);
+                    if (room != null)
+                    {
+                        time.CinemaRoomId = room.Id;
+                    }
+                }
                 if (showtimes == null)
                 {
                     apiResp.SetNotFound("Showtime for this movie does not exist!!!");
                 }
                 var result = _mapper.Map<List<MovieTimeResponse>>(showtimes);
+                foreach (var item in result)
+                {
+                    var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == item.CinemaRoomId && !c.IsDeleted);
+                    item.RoomName = room.Name;
+                }
                 return apiResp.SetOk(result);
             }catch (Exception ex)
             {

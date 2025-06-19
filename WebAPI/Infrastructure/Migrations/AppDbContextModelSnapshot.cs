@@ -431,17 +431,32 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsAvailable")
-                        .HasColumnType("boolean");
+                    b.Property<string>("HoldByConnectionId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("HoldByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("HoldUntil")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("SeatId")
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("SeatId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ShowtimeId")
+                    b.Property<Guid>("ShowtimeId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
@@ -912,11 +927,15 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("Domain.Entities.Seat", "Seat")
                         .WithMany("SeatSchedules")
-                        .HasForeignKey("SeatId");
+                        .HasForeignKey("SeatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.Entities.Showtime", "Showtime")
                         .WithMany("SeatSchedules")
-                        .HasForeignKey("ShowtimeId");
+                        .HasForeignKey("ShowtimeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Seat");
 
