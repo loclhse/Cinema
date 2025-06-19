@@ -12,6 +12,7 @@ namespace Application.ViewModel.Response
     {
         public Guid Id { get; set; }
         public Guid? SeatId { get; set; }
+        public string Label { get; set; } = string.Empty; // Nhãn ghế hiển thị (VD: A1, A2)
         public Guid? ShowtimeId { get; set; }
 
         public SeatBookingStatus Status { get; set; } = SeatBookingStatus.Available;

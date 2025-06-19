@@ -61,6 +61,7 @@ namespace Infrastructure.MapperConfigs
 
             CreateMap<SeatSchedule, SeatScheduleResponse>()
                 .ForMember(dest => dest.IsOwnedByCaller, opt => opt.Ignore())
+                .ForMember(dest => dest.Label, opt => opt.MapFrom(src => src.Seat != null ? src.Seat.Label : string.Empty))
                 .ReverseMap();
 
             CreateMap<Showtime, RoomShowtimeResponse>().ReverseMap();
