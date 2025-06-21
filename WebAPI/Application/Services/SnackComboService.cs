@@ -64,10 +64,7 @@ namespace Application.Services
                 {
                     return new ApiResp().SetBadRequest(message: "Total price must be greater than zero.");
                 }
-                if (request.SnackIds == null || !request.SnackIds.Any())
-                {
-                    return new ApiResp().SetBadRequest(message: "At least one snack is required.");
-                }
+               
 
                 var combo = _mapper.Map<SnackCombo>(request);
                 foreach (var snackId in request.SnackIds) // Process each SnackId individually
@@ -92,6 +89,98 @@ namespace Application.Services
             {
                 await transaction.RollbackAsync(); // Rollback on error
                 return new ApiResp().SetBadRequest(message: $"Error adding snack combo: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResp> AddSnackToComboAsync(Guid comboId, AddSnackToComboRequest request)
+        {
+            using var transaction = await _uow.BeginTransactionAsync();
+            try
+            {
+                
+                if (comboId == Guid.Empty)
+                {
+                    return new ApiResp().SetBadRequest("Invalid combo ID format.");
+                }
+                if (request == null || request.SnackId == Guid.Empty)
+                {
+                    return new ApiResp().SetBadRequest("Valid snack ID is required.");
+                }
+                
+
+                
+                var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
+                if (combo == null)
+                {
+                    return new ApiResp().SetNotFound("Snack combo not found.");
+                }
+
+               
+                var snack = await _uow.SnackRepo.GetByIdAsync(request.SnackId);
+                if (snack == null)
+                {
+                    return new ApiResp().SetNotFound($"Snack with ID {request.SnackId} not found.");
+                }
+
+                
+                var existingItem = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == request.SnackId && !sci.IsDeleted);
+                if (existingItem != null)
+                {
+                    // Update existing item quantity
+                    existingItem.Quantity += request.Quantity;
+                    existingItem.UpdateDate = DateTime.UtcNow;
+                }
+                else
+                {
+                    // Create new combo item
+                    var newComboItem = new SnackComboItem
+                    {
+                        ComboId = comboId,
+                        SnackId = request.SnackId,
+                        Quantity = request.Quantity
+                    };
+                    
+                    // Add the new item using the existing method
+                    await _uow.SnackComboRepo.AddComboItemAsync(newComboItem);
+                }
+
+                await _uow.SaveChangesAsync(); 
+                await transaction.CommitAsync(); 
+
+                // Get the updated combo for response
+                var updatedCombo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
+                var response = _mapper.Map<SnackComboResponse>(updatedCombo);
+                return new ApiResp().SetOk(response);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(message: $"Concurrency conflict: The combo may have been modified. Details: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(message: $"Error adding snack to combo: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResp> GetAllSnackCombosAsync()
+        {
+            var resp = new ApiResp();
+            try
+            {
+                var snackCombos = await _uow.SnackComboRepo.GetAllAsync(x => !x.IsDeleted, include: query => query.Include(sc => sc.SnackComboItems).ThenInclude(sc => sc.Snack));
+                if (snackCombos == null || !snackCombos.Any())
+                {
+                    return resp.SetNotFound("No snack combos found.");
+                }
+
+                var responses = _mapper.Map<List<SnackComboResponse>>(snackCombos);
+                return resp.SetOk(responses);
+            }
+            catch (Exception ex)
+            {
+                return resp.SetBadRequest(ex.Message);
             }
         }
 
@@ -148,19 +237,7 @@ namespace Application.Services
                 return new ApiResp().SetBadRequest(message: $"Error retrieving combo with items: {ex.Message}");
             }
         }
-        public async Task<ApiResp> GetCombosWithSnacksAsync()
-        {
-            try
-            {
-                var combos = await _uow.SnackComboRepo.GetCombosWithSnacksAsync();
-                var responses = _mapper.Map<IEnumerable<SnackComboResponse>>(combos);
-                return new ApiResp().SetOk(responses);
-            }
-            catch (Exception ex)
-            {
-                return new ApiResp().SetBadRequest(message: $"Error retrieving combos with snacks: {ex.Message}");
-            }
-        }
+      
 
 
         public async Task<ApiResp> DeleteAsync(Guid id)
@@ -215,58 +292,9 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> AddSnackToComboAsync(Guid comboId, Guid snackId, int quantity)
-        {
-            using var transaction = await _uow.BeginTransactionAsync();
-            try
-            {
-                var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
-                if (combo == null)
-                {
-                    return new ApiResp().SetNotFound(message: "Snack combo not found.");
-                }
+        
 
-                var snack = await _uow.SnackRepo.GetByIdAsync(snackId);
-                if (snack == null)
-                {
-                    return new ApiResp().SetNotFound(message: $"Snack with ID {snackId} not found.");
-                }
-
-                if (quantity <= 0)
-                {
-                    return new ApiResp().SetBadRequest(message: "Quantity must be greater than zero.");
-                }
-
-                var existingItem = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == snackId && !sci.IsDeleted);
-                if (existingItem != null)
-                {
-                    existingItem.Quantity += quantity;
-                    _uow.SnackComboRepo.UpdateAsync(combo);
-                }
-                else
-                {
-                    var newItem = new SnackComboItem
-                    {
-                        ComboId = comboId,
-                        SnackId = snackId,
-                        Quantity = quantity,
-                        UpdateDate = DateTime.UtcNow
-                    };
-                    combo.SnackComboItems.Add(newItem);
-                    _uow.SnackComboRepo.UpdateAsync(combo);
-
-                }
-
-                await _uow.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return new ApiResp().SetOk("Snack added to combo successfully.");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return new ApiResp().SetBadRequest(message: $"Error adding snack to combo: {ex.Message}");
-            }
-        }
+      
 
       
             public async Task<ApiResp> UpdateAsync(Guid id, SnackComboUpdateRequest request)
@@ -314,6 +342,7 @@ namespace Application.Services
                 }
             }
 
-        }
+      
+    }
 
     }
