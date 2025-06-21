@@ -46,7 +46,7 @@ namespace Infrastructure.MapperConfigs
             CreateMap<Snack, SnackResponse>().ReverseMap();
             CreateMap<SnackRequest, Snack>().ReverseMap();
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
-          
+           
             CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
             CreateMap<SnackComboUpdateRequest, SnackCombo>().ReverseMap();
             CreateMap<SnackComboItem, SnackComboItemDetail>()

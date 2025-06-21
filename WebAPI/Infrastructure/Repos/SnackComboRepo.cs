@@ -34,14 +34,13 @@ namespace Infrastructure.Repos
                 .FirstOrDefaultAsync(sc => sc.Id == id && !sc.IsDeleted);
 #pragma warning restore CS8603 // Possible null reference return.
         }
-        public async Task<IEnumerable<SnackCombo>> GetSnackAndQuantityAsync()
+      
+        public async Task AddComboItemAsync(SnackComboItem comboItem)
         {
-            return await _db
-                .Where(e => !e.IsDeleted)
-                .Include(sc => sc.SnackComboItems)
-                .ThenInclude(sci => sci.Snack)
-                .ToListAsync();
+            await _context.Set<SnackComboItem>().AddAsync(comboItem);
         }
+
+       
 
     }
 }

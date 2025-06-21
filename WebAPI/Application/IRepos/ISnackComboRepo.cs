@@ -11,7 +11,8 @@ namespace Application.IRepos
     {
         Task<IEnumerable<SnackCombo>> GetCombosWithSnacksAsync();
         Task<SnackCombo> GetComboWithItemsAsync(Guid id);
-        Task<IEnumerable<SnackCombo>> GetSnackAndQuantityAsync();
+        Task AddComboItemAsync(SnackComboItem comboItem);
+       
 
     }
 }
