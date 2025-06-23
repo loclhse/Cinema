@@ -23,7 +23,7 @@ namespace WebAPI.Controllers
             _snackService = snackService ?? throw new ArgumentNullException(nameof(snackService));
         }
 
-        [HttpPost]
+        [HttpPost("create-snackcombo")]
        
         
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,11 +38,11 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update-snackcombo/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateAsync([FromRoute] Guid id, [FromBody] SnackComboRequest request)
+        public async Task<IActionResult> UpdateAsync([FromRoute] Guid id, [FromBody] SnackComboUpdateRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(new ApiResp().SetBadRequest(message: "Invalid model state."));
             var response = await _snackComboService.UpdateAsync(id, request);
@@ -52,7 +52,7 @@ namespace WebAPI.Controllers
 
 
 
-        [HttpDelete("{id}")]    
+        [HttpDelete("delete-snackcombo/{id}")]    
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteAsync(Guid id)
@@ -68,15 +68,15 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet("With-Snacks")]
+        [HttpGet("get-all-snackcombo")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCombosWithSnacksAsync()
         {
-            var response = await _snackComboService.GetCombosWithSnacksAsync();
+            var response = await _snackComboService.GetAllSnackCombosAsync();
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpGet("With-Snacks/{id}")]
+        [HttpGet("get-snackcombo-by-id/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetComboWithItemsAsync([FromRoute] Guid id)
@@ -85,7 +85,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpDelete("remove-snack/{comboId}/{snackId}")]
+        [HttpDelete("remove-snack-from-combo/{comboId}/{snackId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteSnackFromComboAsync([FromRoute] Guid comboId, [FromRoute] Guid snackId)
@@ -94,7 +94,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpPut("update-quantity/{comboId}/{snackId}/{quantity}")]
+        [HttpPut("update-snack-quantity/{comboId}/{snackId}/{quantity}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -104,13 +104,14 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpPost("add-snack/{comboId}/{snackId}/{quantity}")]
+        [HttpPost("add-snack-to-combo/{comboId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddSnackToComboAsync([FromRoute] Guid comboId, [FromRoute] Guid snackId, [FromRoute] int quantity)
+        public async Task<IActionResult> AddSnackToComboAsync(Guid comboId, [FromBody] AddSnackToComboRequest request)
         {
-            var response = await _snackComboService.AddSnackToComboAsync(comboId, snackId, quantity);
+            if (!ModelState.IsValid) return BadRequest(new ApiResp().SetBadRequest(message: "Invalid model state."));
+            var response = await _snackComboService.AddSnackToComboAsync(comboId, request);
             return StatusCode((int)response.StatusCode, response);
         }
     }

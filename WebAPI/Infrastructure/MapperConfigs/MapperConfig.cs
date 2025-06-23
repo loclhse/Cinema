@@ -46,17 +46,18 @@ namespace Infrastructure.MapperConfigs
             CreateMap<Snack, SnackResponse>().ReverseMap();
             CreateMap<SnackRequest, Snack>().ReverseMap();
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
-          
+           
             CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
             CreateMap<SnackComboUpdateRequest, SnackCombo>().ReverseMap();
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            CreateMap<SnackComboItem,SnackComboItemDetail>()
-            .ForMember(dest => dest.SnackId, opt => opt.MapFrom(src => src.SnackId))
-            .ForMember(dest => dest.SnackName, opt => opt.MapFrom(src => src.Snack.Name))
+            CreateMap<SnackComboItem, SnackComboItemDetail>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SnackId))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Snack.Name))
             .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-            CreateMap<SnackCombo, SnackComboResponse>() 
-            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.SnackComboItems)).ReverseMap();
+
+            
+            CreateMap<SnackCombo, SnackComboResponse>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.SnackComboItems))
+                .ReverseMap();
 
 
             CreateMap<SeatSchedule, SeatScheduleResponse>()

@@ -18,7 +18,7 @@ namespace Application.ViewModel.Response
             public decimal? TotalPrice { get; set; }
             public decimal? Discount { get; set; }
             public SnackStatus SnackComboStatus { get; set; }
-        public IEnumerable<SnackComboItemDetail>? Items { get; set; }
+        public virtual ICollection<SnackComboItemDetail>? Items { get; set; }
     }
     }
 

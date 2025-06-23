@@ -19,7 +19,7 @@ namespace WebAPI.Controllers
             _snackService = snackService ?? throw new ArgumentNullException(nameof(snackService));
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("get-snack-by-id/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id)
@@ -28,7 +28,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpGet]
+        [HttpGet("get-all-snack")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAllAsync()
         {
@@ -36,7 +36,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpPost]
+        [HttpPost("create-snack")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -47,7 +47,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update-snack/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -58,7 +58,7 @@ namespace WebAPI.Controllers
             return StatusCode((int)response.StatusCode, response);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-snack/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteAsync([FromRoute] Guid id)

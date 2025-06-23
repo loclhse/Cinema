@@ -12,15 +12,17 @@ namespace Application.IServices
     public interface ISnackComboService
     {
         Task<ApiResp> GetByIdAsync(Guid id);
-        Task<ApiResp> GetAllAsync();
+        
         Task<ApiResp> AddAsync(SnackComboRequest request);
-        Task<ApiResp> UpdateAsync(Guid id, SnackComboRequest request);
+        Task<ApiResp> UpdateAsync(Guid id, SnackComboUpdateRequest request);
         Task<ApiResp> DeleteAsync(Guid id);
-        Task<ApiResp> GetCombosWithSnacksAsync();
+       
         Task<ApiResp> GetComboWithItemsAsync(Guid id);
         Task<ApiResp> UpdateSnackQuantityInComboAsync(Guid comboId, Guid snackId, int quantity);
 
-        Task<ApiResp> AddSnackToComboAsync(Guid comboId, Guid snackId, int quantity);
+        Task<ApiResp> AddSnackToComboAsync(Guid comboId, AddSnackToComboRequest request);
         Task<ApiResp> DeleteSnackFromComboAsync(Guid comboId, Guid snackId);
+
+        Task<ApiResp> GetAllSnackCombosAsync();
     }
 }

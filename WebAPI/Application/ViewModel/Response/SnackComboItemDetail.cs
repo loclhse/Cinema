@@ -8,8 +8,8 @@ namespace Application.ViewModel.Response
 {
     public class SnackComboItemDetail
     {
-        public Guid SnackId { get; set; }
-        public string? SnackName { get; set; } 
-        public int Quantity { get; set; }
+        public Guid? Id { get; set; }
+        public string? Name { get; set; } 
+        public int? Quantity { get; set; }
     }
 }
