@@ -2,6 +2,7 @@
 using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -24,25 +25,41 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAllGenre()
         {
             var result = await _genreService.GetAllGenresAsync();
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpPut("UpdateGenre/{id}")]
         public async Task<IActionResult> UpdateGenre(Guid id, GenreRequest genreRequest)
         {
             var result = await _genreService.UpdateGenreAsync(id, genreRequest);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpDelete("DeleteGenre/{id}")]
         public async Task<IActionResult> DeleteGenre(Guid id)
         {
             var result = await _genreService.DeleteGenreAsync(id);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpGet("getGenreById/{id}")]
         public async Task<IActionResult> GetGenreById(Guid id)
         {
             var result = await _genreService.GetGenresAsync(id);
-            return result.IsSuccess ? Ok(result) : NotFound(result);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }
 }
