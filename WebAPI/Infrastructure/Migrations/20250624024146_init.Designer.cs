@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250623065453_init")]
+    [Migration("20250624024146_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -245,6 +245,40 @@ namespace Infrastructure.Migrations
                     b.ToTable("MovieGenres", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("OrderTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("TotalBonusPoint")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders");
+                });
+
             modelBuilder.Entity("Domain.Entities.OtpValid", b =>
                 {
                     b.Property<Guid>("Id")
@@ -276,6 +310,43 @@ namespace Infrastructure.Migrations
                     b.HasIndex("AppUserId");
 
                     b.ToTable("OtpValids");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("AmountPaid")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PaymentTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TransactionCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("Domain.Entities.Promotion", b =>
@@ -446,6 +517,9 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -465,6 +539,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
 
                     b.HasIndex("SeatId");
 
@@ -659,6 +735,46 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("SnackComboItems");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TicketLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SeatId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ShowtimeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("SeatId");
+
+                    b.HasIndex("ShowtimeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TicketLogs");
                 });
 
             modelBuilder.Entity("Infrastructure.Identity.AppRole", b =>
@@ -884,6 +1000,16 @@ namespace Infrastructure.Migrations
                     b.Navigation("Movie");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.OtpValid", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "AppUser")
@@ -893,6 +1019,16 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", "Order")
+                        .WithMany("Payments")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Domain.Entities.RefreshToken", b =>
@@ -928,6 +1064,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.SeatSchedule", b =>
                 {
+                    b.HasOne("Domain.Entities.Order", "Order")
+                        .WithMany("SeatSchedules")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Domain.Entities.Seat", "Seat")
                         .WithMany("SeatSchedules")
                         .HasForeignKey("SeatId")
@@ -939,6 +1080,8 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("ShowtimeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Order");
 
                     b.Navigation("Seat");
 
@@ -977,6 +1120,39 @@ namespace Infrastructure.Migrations
                     b.Navigation("Combo");
 
                     b.Navigation("Snack");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TicketLog", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", "Order")
+                        .WithMany("TicketLogs")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Domain.Entities.Seat", "Seat")
+                        .WithMany("TicketLogs")
+                        .HasForeignKey("SeatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Showtime", "Showtime")
+                        .WithMany("TicketLogs")
+                        .HasForeignKey("ShowtimeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany("TicketLogs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Seat");
+
+                    b.Navigation("Showtime");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -1032,7 +1208,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.AppUser", b =>
                 {
+                    b.Navigation("Orders");
+
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("TicketLogs");
                 });
 
             modelBuilder.Entity("Domain.Entities.CinemaRoom", b =>
@@ -1056,14 +1236,27 @@ namespace Infrastructure.Migrations
                     b.Navigation("Showtimes");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.Navigation("Payments");
+
+                    b.Navigation("SeatSchedules");
+
+                    b.Navigation("TicketLogs");
+                });
+
             modelBuilder.Entity("Domain.Entities.Seat", b =>
                 {
                     b.Navigation("SeatSchedules");
+
+                    b.Navigation("TicketLogs");
                 });
 
             modelBuilder.Entity("Domain.Entities.Showtime", b =>
                 {
                     b.Navigation("SeatSchedules");
+
+                    b.Navigation("TicketLogs");
                 });
 
             modelBuilder.Entity("Domain.Entities.Snack", b =>
