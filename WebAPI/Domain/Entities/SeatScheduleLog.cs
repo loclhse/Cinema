@@ -1,13 +1,16 @@
-﻿namespace Domain.Entities;
+﻿using Domain.Enums;
 
-public partial class TicketLog : BaseEntity
+namespace Domain.Entities;
+
+public partial class SeatScheduleLog : BaseEntity
 {
-    public Guid? OrderId { get; set; }
-    public Guid? UserId { get; set; }
     public Guid SeatId { get; set; }
     public Guid ShowtimeId { get; set; }
+    public Guid? OrderId { get; set; }
+
+    public SeatBookingStatus Status { get; set; } = SeatBookingStatus.Available;
+
     public virtual Seat? Seat { get; set; }
     public virtual Showtime? Showtime { get; set; }
-    public virtual AppUser? User { get; set; }
     public virtual Order? Order { get; set; }
 }

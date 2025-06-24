@@ -14,6 +14,6 @@ public partial class Order : BaseEntity
     public int? TotalBonusPoint { get; set; }
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<SeatSchedule>? SeatSchedules { get; set; } = new List<SeatSchedule>();
-    public virtual ICollection<TicketLog> TicketLogs { get; set; } = new List<TicketLog>();
+    public virtual ICollection<SeatScheduleLog> SeatScheduleLogs { get; set; } = new List<SeatScheduleLog>();
     public virtual AppUser? User { get; set; }
 }

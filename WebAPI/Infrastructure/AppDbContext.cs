@@ -53,7 +53,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
     public DbSet<OtpValid> OtpValids { get; set; }
-    public DbSet<TicketLog> TicketLogs { get; set; }
+    public DbSet<SeatScheduleLog> SeatScheduleLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

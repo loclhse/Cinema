@@ -17,23 +17,22 @@ namespace Infrastructure.Configuration
             //quan he voi Appuser
             builder.HasOne(o => o.User)
                    .WithMany(u => u.Orders)
-                   .HasForeignKey(o => o.UserId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .HasForeignKey(o => o.UserId);
+       
             //quan he voi payment
             builder.HasMany(o => o.Payments)
-                .WithOne(p => p.Order)
-                .HasForeignKey(p => p.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(p => p.Orders)
+                .HasForeignKey(p => p.OrderId);
+             
             //quan he voi seat schedule
             builder.HasMany(o => o.SeatSchedules)
                 .WithOne(s => s.Order)
-                .HasForeignKey(s => s.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(s => s.OrderId);
+     
             //quan he voi ticket log
-            builder.HasMany(o => o.TicketLogs)
+            builder.HasMany(o => o.SeatScheduleLogs)
                 .WithOne(t => t.Order)
-                .HasForeignKey(t => t.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(t => t.OrderId);
         }
     }
 }

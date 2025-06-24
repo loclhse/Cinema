@@ -25,7 +25,6 @@ public partial class AppUser : BaseEntity
     public double Salary { get; set; }
     public string? Position { get; set; }
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-    public virtual ICollection<TicketLog> TicketLogs { get; set; } = new List<TicketLog>();
     //public virtual CustomerScore? CustomerScore { get; set; }
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 

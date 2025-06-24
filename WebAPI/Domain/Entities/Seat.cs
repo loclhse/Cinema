@@ -28,6 +28,6 @@ public partial class Seat : BaseEntity
     public virtual CinemaRoom? CinemaRoom { get; set; }
 
     public virtual ICollection<SeatSchedule> SeatSchedules { get; set; } = new List<SeatSchedule>();
-    public virtual ICollection<TicketLog> TicketLogs { get; set; } = new List<TicketLog>();
+    public virtual ICollection<SeatScheduleLog> SeatScheduleLogs { get; set; } = new List<SeatScheduleLog>();
 
 }

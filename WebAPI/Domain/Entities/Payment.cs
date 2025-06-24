@@ -14,5 +14,5 @@ public partial class Payment : BaseEntity
     public string? TransactionCode { get; set; }
 
     public Guid? OrderId { get; set; }
-    public virtual Order? Order { get; set; }
+    public virtual Order? Orders { get; set; }
 }
