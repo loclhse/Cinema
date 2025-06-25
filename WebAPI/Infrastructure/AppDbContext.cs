@@ -48,9 +48,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public virtual DbSet<Snack> Snacks { get; set; }
 
-    public virtual DbSet<SnackCombo> SnackCombos { get; set; }
-
-    public virtual DbSet<SnackComboItem> SnackComboItems { get; set; }
+   
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }

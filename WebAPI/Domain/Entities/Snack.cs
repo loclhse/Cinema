@@ -25,7 +25,7 @@ public partial class Snack : BaseEntity
 
     public string? Description { get; set; }
 
-    public SnackStatus SnackComboStatus { get; set; }
+    public SnackStatus SnackStatus { get; set; }
 
-    public virtual ICollection<SnackComboItem> SnackComboItems { get; set; } = new List<SnackComboItem>();
+   
 }
