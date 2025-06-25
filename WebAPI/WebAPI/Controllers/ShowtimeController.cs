@@ -2,6 +2,7 @@
 using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -24,30 +25,50 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetAllShowtimes()
         {
             var response = await _showtimeService.GetAllShowtimesAsync();
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpGet("GetShowtimeById/{id}")]
         public async Task<IActionResult> GetShowtimeById(Guid id)
         {
             var response = await _showtimeService.GetShowtimeByIdAsync(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpPut("UpdateShowtime/{id}")]
         public async Task<IActionResult> UpdateShowtime(Guid id,  ShowtimeUpdateRequest showtimeUpdateRequest)
         {
             var response = await _showtimeService.UpdateShowtimeAsync(id, showtimeUpdateRequest);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpDelete("DeleteShowtime/{id}")]
         public async Task<IActionResult> DeleteShowtime(Guid id)
         {
             var response = await _showtimeService.DeleteShowtimeAsync(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
         [HttpGet("GetShowtimeByMovieID/{id}")]
         public async Task<IActionResult> GetShowtimeByMovieID(Guid id)
         {
             var response = await _showtimeService.GetShowtimeByMovieIdAsync(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
     }

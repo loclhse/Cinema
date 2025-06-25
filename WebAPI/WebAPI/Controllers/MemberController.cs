@@ -1,6 +1,7 @@
 ﻿using Application.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -20,6 +21,10 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> getAllMember()
         {
             var rs = await _memberService.GetAllMember();
+            if (rs.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
             return rs.IsSuccess ? Ok(rs) : BadRequest();
         }
     }

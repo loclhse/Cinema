@@ -26,13 +26,9 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public virtual DbSet<MovieGenre> MovieGenres { get; set; }
 
-    //public virtual DbSet<MovieTicket> MovieTickets { get; set; }
+    public virtual DbSet<Order> Orders { get; set; }
 
-    //public virtual DbSet<Order> Orders { get; set; }
-
-    //public virtual DbSet<OrderDetail> OrderDetails { get; set; }
-
-    //public virtual DbSet<Payment> Payments { get; set; }
+    public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Promotion> Promotions { get; set; }
 
@@ -55,6 +51,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
     public DbSet<OtpValid> OtpValids { get; set; }
+    public DbSet<SeatScheduleLog> SeatScheduleLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
