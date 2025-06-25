@@ -12,7 +12,7 @@ namespace Application
         IRoomLayoutRepo RoomLayoutRepo { get; }
         ISeatRepo SeatRepo { get; }
         ISeatTypePriceRepo SeatTypePriceRepo { get; }
-        ISnackComboRepo SnackComboRepo { get; }
+      
         ISnackRepo SnackRepo { get; }
         IMovieRepo MovieRepo { get; }
         IPromotionRepo PromotionRepo { get; }
