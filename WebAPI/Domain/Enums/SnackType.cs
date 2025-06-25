@@ -14,7 +14,8 @@ namespace Domain.Enums
         Popcorn,
         Candy,
         Chips,
-        IceCream
+        IceCream,
+        Combo
         
     }
 }
