@@ -1,5 +1,6 @@
 ﻿using Application;
 using Application.IRepos;
+using Application.IServices;
 using Infrastructure.Identity;
 using Infrastructure.Repos;
 using Microsoft.AspNetCore.Identity;
@@ -26,6 +27,7 @@ namespace Infrastructure
         public IShowtimeRepo ShowtimeRepo { get; }
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
+        public IOrderService OrderService { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)

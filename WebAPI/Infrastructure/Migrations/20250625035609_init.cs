@@ -496,8 +496,7 @@ namespace Infrastructure.Migrations
                         name: "FK_Orders_AppUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AppUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -568,6 +567,40 @@ namespace Infrastructure.Migrations
                         name: "FK_Payments_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SeatScheduleLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SeatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SeatScheduleLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Seat_SeatId",
+                        column: x => x.SeatId,
+                        principalTable: "Seat",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Showtimes_ShowtimeId",
+                        column: x => x.ShowtimeId,
+                        principalTable: "Showtimes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -596,8 +629,7 @@ namespace Infrastructure.Migrations
                         name: "FK_SeatSchedules_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_SeatSchedules_Seat_SeatId",
                         column: x => x.SeatId,
@@ -606,48 +638,6 @@ namespace Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SeatSchedules_Showtimes_ShowtimeId",
-                        column: x => x.ShowtimeId,
-                        principalTable: "Showtimes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TicketLogs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SeatId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TicketLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_AppUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AppUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Seat_SeatId",
-                        column: x => x.SeatId,
-                        principalTable: "Seat",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Showtimes_ShowtimeId",
                         column: x => x.ShowtimeId,
                         principalTable: "Showtimes",
                         principalColumn: "Id",
@@ -732,6 +722,21 @@ namespace Infrastructure.Migrations
                 column: "CinemaRoomId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_OrderId",
+                table: "SeatScheduleLogs",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_SeatId",
+                table: "SeatScheduleLogs",
+                column: "SeatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_ShowtimeId",
+                table: "SeatScheduleLogs",
+                column: "ShowtimeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SeatSchedules_OrderId",
                 table: "SeatSchedules",
                 column: "OrderId");
@@ -772,26 +777,6 @@ namespace Infrastructure.Migrations
                 name: "IX_SnackComboItems_SnackId",
                 table: "SnackComboItems",
                 column: "SnackId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_OrderId",
-                table: "TicketLogs",
-                column: "OrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_SeatId",
-                table: "TicketLogs",
-                column: "SeatId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_ShowtimeId",
-                table: "TicketLogs",
-                column: "ShowtimeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_UserId",
-                table: "TicketLogs",
-                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -834,6 +819,9 @@ namespace Infrastructure.Migrations
                 name: "RoomLayout");
 
             migrationBuilder.DropTable(
+                name: "SeatScheduleLogs");
+
+            migrationBuilder.DropTable(
                 name: "SeatSchedules");
 
             migrationBuilder.DropTable(
@@ -843,19 +831,10 @@ namespace Infrastructure.Migrations
                 name: "SnackComboItems");
 
             migrationBuilder.DropTable(
-                name: "TicketLogs");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Genres");
-
-            migrationBuilder.DropTable(
-                name: "SnackCombos");
-
-            migrationBuilder.DropTable(
-                name: "Snacks");
 
             migrationBuilder.DropTable(
                 name: "Orders");
@@ -865,6 +844,12 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Showtimes");
+
+            migrationBuilder.DropTable(
+                name: "SnackCombos");
+
+            migrationBuilder.DropTable(
+                name: "Snacks");
 
             migrationBuilder.DropTable(
                 name: "AppUsers");
