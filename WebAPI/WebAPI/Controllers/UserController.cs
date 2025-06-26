@@ -22,7 +22,7 @@ namespace WebAPI.Controllers
             _userService = userService;
         }
 
-        [Authorize(Roles = "Admin,Employee")]
+        //[Authorize(Roles = "Admin,Employee")]
         [HttpGet("GetAllCustomers")]
         public async Task<IActionResult> GetAllCustomers()
         {

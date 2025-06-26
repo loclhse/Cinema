@@ -9,12 +9,11 @@ namespace Application.ViewModel.Response
 {
     public class OrderResponse
     {
-        public Guid? UserId { get; set; }
+        public Guid? UserId { get; set; } 
         public DateTime? OrderTime { get; set; }
         public decimal? TotalAmount { get; set; }
-        public int? TotalBonusPoint { get; set; }
-        public string? PaymentLink { get; set; }
+        public decimal? TotalAfter { get; set; }
         public List<SeatScheduleForOrderResponse> SeatSchedules { get; set; } = new List<SeatScheduleForOrderResponse>();
-        //response them List Snack
+        public List<Snack> Snacks { get; set; } = new List<Snack>();
     }
 }

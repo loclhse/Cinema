@@ -1,4 +1,5 @@
 ﻿using Application.IServices;
+using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -12,6 +13,13 @@ namespace WebAPI.Controllers
         public OrderController(IOrderService service)
         {
             _service = service;
+        }
+
+        [HttpPost("CreateTicketOrder")]
+        public async Task<IActionResult> CreateOrder([FromBody] OrderRequest rq)
+        {
+            var rs = await _service.CreateTicketOrder(rq);
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
     }
 }

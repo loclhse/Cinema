@@ -9,11 +9,13 @@ namespace Application.ViewModel.Request
 {
     public class OrderRequest
     {
-        public Guid? UserId { get; set; }
+
+        public Guid? UserId { get; set; } = Guid.Empty;
 
         public string? PaymentMethod { get; set; }
 
         public List<Guid>? SeatScheduleId { get; set; }
-        //request them Snack
+        
+        public List<Guid>? SnackId { get; set; }
     }
 }

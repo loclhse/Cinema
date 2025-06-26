@@ -161,26 +161,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackCombos",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    ImgUrl = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    TotalPrice = table.Column<decimal>(type: "numeric", nullable: true),
-                    discount = table.Column<decimal>(type: "numeric", nullable: true),
-                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SnackCombos", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Snacks",
                 columns: table => new
                 {
@@ -192,7 +172,7 @@ namespace Infrastructure.Migrations
                     Price = table.Column<decimal>(type: "numeric", nullable: true),
                     discount = table.Column<decimal>(type: "numeric", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
+                    SnackStatus = table.Column<int>(type: "integer", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -445,35 +425,6 @@ namespace Infrastructure.Migrations
                         column: x => x.MovieId,
                         principalTable: "Movies",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SnackComboItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: true),
-                    ComboId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SnackId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SnackComboItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SnackComboItems_SnackCombos_ComboId",
-                        column: x => x.ComboId,
-                        principalTable: "SnackCombos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SnackComboItems_Snacks_SnackId",
-                        column: x => x.SnackId,
-                        principalTable: "Snacks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -766,17 +717,6 @@ namespace Infrastructure.Migrations
                 name: "IX_Showtimes_MovieId",
                 table: "Showtimes",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_ComboId_SnackId",
-                table: "SnackComboItems",
-                columns: new[] { "ComboId", "SnackId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_SnackId",
-                table: "SnackComboItems",
-                column: "SnackId");
         }
 
         /// <inheritdoc />
@@ -828,7 +768,7 @@ namespace Infrastructure.Migrations
                 name: "SeatTypePrice");
 
             migrationBuilder.DropTable(
-                name: "SnackComboItems");
+                name: "Snacks");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -844,12 +784,6 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Showtimes");
-
-            migrationBuilder.DropTable(
-                name: "SnackCombos");
-
-            migrationBuilder.DropTable(
-                name: "Snacks");
 
             migrationBuilder.DropTable(
                 name: "AppUsers");

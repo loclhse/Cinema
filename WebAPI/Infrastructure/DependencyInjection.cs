@@ -99,7 +99,7 @@ namespace Infrastructure
            
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
             services.AddScoped<IBackgroundService, BackgroundService>();
-            services.AddScoped<IOrderService, IOrderService>();
+            services.AddScoped<IOrderService, OrderService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

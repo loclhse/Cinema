@@ -27,7 +27,7 @@ namespace Infrastructure
         public IShowtimeRepo ShowtimeRepo { get; }
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
-        public IOrderService OrderService { get; }
+        public IOrderRepo OrderRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -48,6 +48,7 @@ namespace Infrastructure
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);
             SeatScheduleRepo = new SeatScheduleRepo(context);
+            OrderRepo = new OrderRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
