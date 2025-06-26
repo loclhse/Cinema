@@ -69,6 +69,26 @@ namespace Application.Services
             }
         }
 
+        public async Task<ApiResp> ViewTicketOrder(int page, int size)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var rs = await _uow.OrderRepo.GetAllAsync(x => x.IsDeleted == false, null, page, size);
+                if(rs != null)
+                {
+                    return apiResp.SetOk(rs);
+                }
+                else
+                {
+                    return apiResp.SetNotFound("Not found");
+                }
+            }catch(Exception ex)
+            {
+                return apiResp.SetBadRequest(ex);
+            }
+        }
+
         private double CalculatePrice(List<Guid>? SeatScheduleId, List<Guid>? SnackId)
         {
             return 0;
