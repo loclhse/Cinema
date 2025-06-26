@@ -161,7 +161,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackCombos",
+                name: "SnackCombo",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -177,7 +177,7 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnackCombos", x => x.Id);
+                    table.PrimaryKey("PK_SnackCombo", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -192,7 +192,7 @@ namespace Infrastructure.Migrations
                     Price = table.Column<decimal>(type: "numeric", nullable: true),
                     discount = table.Column<decimal>(type: "numeric", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
+                    SnackStatus = table.Column<int>(type: "integer", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -200,6 +200,25 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Snacks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubscriptionPlan",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Duration = table.Column<int>(type: "integer", nullable: false),
+                    Price = table.Column<double>(type: "double precision", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubscriptionPlan", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -448,7 +467,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackComboItems",
+                name: "SnackComboItem",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -461,41 +480,17 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnackComboItems", x => x.Id);
+                    table.PrimaryKey("PK_SnackComboItem", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SnackComboItems_SnackCombos_ComboId",
+                        name: "FK_SnackComboItem_SnackCombo_ComboId",
                         column: x => x.ComboId,
-                        principalTable: "SnackCombos",
+                        principalTable: "SnackCombo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SnackComboItems_Snacks_SnackId",
+                        name: "FK_SnackComboItem_Snacks_SnackId",
                         column: x => x.SnackId,
                         principalTable: "Snacks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    OrderTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: true),
-                    TotalBonusPoint = table.Column<int>(type: "integer", nullable: true),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_AppUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AppUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -548,6 +543,65 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Subscriptions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SubscriptionPlanId = table.Column<Guid>(type: "uuid", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Subscriptions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Subscriptions_AppUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Subscriptions_SubscriptionPlan_SubscriptionPlanId",
+                        column: x => x.SubscriptionPlanId,
+                        principalTable: "SubscriptionPlan",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OrderTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: true),
+                    TotalBonusPoint = table.Column<int>(type: "integer", nullable: true),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_AppUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Orders_Subscriptions_SubscriptionId",
+                        column: x => x.SubscriptionId,
+                        principalTable: "Subscriptions",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payments",
                 columns: table => new
                 {
@@ -557,6 +611,7 @@ namespace Infrastructure.Migrations
                     AmountPaid = table.Column<decimal>(type: "numeric", nullable: true),
                     TransactionCode = table.Column<string>(type: "text", nullable: true),
                     OrderId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -568,6 +623,46 @@ namespace Infrastructure.Migrations
                         name: "FK_Payments_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Payments_Subscriptions_SubscriptionId",
+                        column: x => x.SubscriptionId,
+                        principalTable: "Subscriptions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SeatScheduleLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SeatId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SeatScheduleLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Seat_SeatId",
+                        column: x => x.SeatId,
+                        principalTable: "Seat",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SeatScheduleLogs_Showtimes_ShowtimeId",
+                        column: x => x.ShowtimeId,
+                        principalTable: "Showtimes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -596,8 +691,7 @@ namespace Infrastructure.Migrations
                         name: "FK_SeatSchedules_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_SeatSchedules_Seat_SeatId",
                         column: x => x.SeatId,
@@ -606,48 +700,6 @@ namespace Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SeatSchedules_Showtimes_ShowtimeId",
-                        column: x => x.ShowtimeId,
-                        principalTable: "Showtimes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TicketLogs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SeatId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ShowtimeId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TicketLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_AppUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AppUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Seat_SeatId",
-                        column: x => x.SeatId,
-                        principalTable: "Seat",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TicketLogs_Showtimes_ShowtimeId",
                         column: x => x.ShowtimeId,
                         principalTable: "Showtimes",
                         principalColumn: "Id",
@@ -702,6 +754,11 @@ namespace Infrastructure.Migrations
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_SubscriptionId",
+                table: "Orders",
+                column: "SubscriptionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserId",
                 table: "Orders",
                 column: "UserId");
@@ -717,6 +774,11 @@ namespace Infrastructure.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_SubscriptionId",
+                table: "Payments",
+                column: "SubscriptionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
@@ -730,6 +792,21 @@ namespace Infrastructure.Migrations
                 name: "IX_Seat_CinemaRoomId",
                 table: "Seat",
                 column: "CinemaRoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_OrderId",
+                table: "SeatScheduleLogs",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_SeatId",
+                table: "SeatScheduleLogs",
+                column: "SeatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SeatScheduleLogs_ShowtimeId",
+                table: "SeatScheduleLogs",
+                column: "ShowtimeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatSchedules_OrderId",
@@ -763,34 +840,24 @@ namespace Infrastructure.Migrations
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_ComboId_SnackId",
-                table: "SnackComboItems",
+                name: "IX_SnackComboItem_ComboId_SnackId",
+                table: "SnackComboItem",
                 columns: new[] { "ComboId", "SnackId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_SnackId",
-                table: "SnackComboItems",
+                name: "IX_SnackComboItem_SnackId",
+                table: "SnackComboItem",
                 column: "SnackId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_OrderId",
-                table: "TicketLogs",
-                column: "OrderId");
+                name: "IX_Subscriptions_SubscriptionPlanId",
+                table: "Subscriptions",
+                column: "SubscriptionPlanId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_SeatId",
-                table: "TicketLogs",
-                column: "SeatId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_ShowtimeId",
-                table: "TicketLogs",
-                column: "ShowtimeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TicketLogs_UserId",
-                table: "TicketLogs",
+                name: "IX_Subscriptions_UserId",
+                table: "Subscriptions",
                 column: "UserId");
         }
 
@@ -834,28 +901,22 @@ namespace Infrastructure.Migrations
                 name: "RoomLayout");
 
             migrationBuilder.DropTable(
+                name: "SeatScheduleLogs");
+
+            migrationBuilder.DropTable(
                 name: "SeatSchedules");
 
             migrationBuilder.DropTable(
                 name: "SeatTypePrice");
 
             migrationBuilder.DropTable(
-                name: "SnackComboItems");
-
-            migrationBuilder.DropTable(
-                name: "TicketLogs");
+                name: "SnackComboItem");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Genres");
-
-            migrationBuilder.DropTable(
-                name: "SnackCombos");
-
-            migrationBuilder.DropTable(
-                name: "Snacks");
 
             migrationBuilder.DropTable(
                 name: "Orders");
@@ -867,13 +928,25 @@ namespace Infrastructure.Migrations
                 name: "Showtimes");
 
             migrationBuilder.DropTable(
-                name: "AppUsers");
+                name: "SnackCombo");
+
+            migrationBuilder.DropTable(
+                name: "Snacks");
+
+            migrationBuilder.DropTable(
+                name: "Subscriptions");
 
             migrationBuilder.DropTable(
                 name: "CinemaRoom");
 
             migrationBuilder.DropTable(
                 name: "Movies");
+
+            migrationBuilder.DropTable(
+                name: "AppUsers");
+
+            migrationBuilder.DropTable(
+                name: "SubscriptionPlan");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

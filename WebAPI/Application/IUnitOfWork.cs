@@ -20,7 +20,8 @@ namespace Application
         IShowtimeRepo ShowtimeRepo { get; }
         IMovieGenreRepo MovieGenreRepo { get; }
         ISeatScheduleRepo SeatScheduleRepo { get; }
-
+        ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
+        ISnackComboRepo SnackComboRepo { get; }
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();
