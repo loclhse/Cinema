@@ -7,27 +7,21 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities;
 
-public partial class Snack : BaseEntity
+public partial class SnackCombo : BaseEntity
 {
-    
+   
 
     public string? Name { get; set; }
 
-    public SnackType? Type { get; set; }
-
-    public string? imgUrl { get; set; }
-    
-    public int quantity { get; set; }
-
-    public decimal? Price { get; set; }
-
-    public decimal? discount { get; set; }
+    public string? ImgUrl { get; set; }
 
     public string? Description { get; set; }
 
-    public SnackStatus SnackStatus { get; set; }
+    public decimal? TotalPrice { get; set; }
+
+    public decimal? discount { get; set; }
+
+    public SnackStatus SnackComboStatus { get; set; }
 
     public virtual ICollection<SnackComboItem> SnackComboItems { get; set; } = new List<SnackComboItem>();
-
-
 }

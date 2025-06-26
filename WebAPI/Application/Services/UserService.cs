@@ -195,7 +195,7 @@ namespace Application.Services
                     case SearchKey.IdentityCard:
                         result = customers.Where(c => c.IdentityCard != null && c.IdentityCard.Contains(value));
                         break;
-                    case SearchKey.PhoneNumeber:
+                    case SearchKey.PhoneNumber:
                         result = customers.Where(c => c.Phone != null && c.Phone.Contains(value));
                         break;
                     case SearchKey.Name:
@@ -224,7 +224,7 @@ namespace Application.Services
                     case SearchKey.IdentityCard:
                         result = employees.Where(c => c.IdentityCard != null && c.IdentityCard.Contains(value));
                         break;
-                    case SearchKey.PhoneNumeber:
+                    case SearchKey.PhoneNumber:
                         result = employees.Where(c => c.Phone != null && c.Phone.Contains(value));
                         break;
                     case SearchKey.Name:
@@ -308,7 +308,7 @@ namespace Application.Services
                     case SearchKey.IdentityCard:
                         result = employees.Where(c => c.IdentityCard != null && c.IdentityCard.Contains(value));
                         break;
-                    case SearchKey.PhoneNumeber:
+                    case SearchKey.PhoneNumber:
                         result = employees.Where(c => c.Phone != null && c.Phone.Contains(value));
                         break;
                     case SearchKey.Name:

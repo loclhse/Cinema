@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Domain.Entities;
 
-public partial class Payment : BaseEntity
+public partial class                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Payment : BaseEntity
 {
     public string? PaymentMethod { get; set; }
 
@@ -14,5 +14,7 @@ public partial class Payment : BaseEntity
     public string? TransactionCode { get; set; }
 
     public Guid? OrderId { get; set; }
+    public Guid? SubscriptionId { get; set; }
     public virtual Order? Orders { get; set; }
+    public virtual Subscription? Subscription { get; set; }
 }

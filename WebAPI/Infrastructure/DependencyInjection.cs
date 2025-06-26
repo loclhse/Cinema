@@ -73,6 +73,7 @@ namespace Infrastructure
             services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
             services.AddScoped<IMovieGenreRepo, MovieGenreRepo>();
             services.AddScoped<ISeatScheduleRepo, SeatScheduleRepo>();
+            services.AddScoped<ISubscriptionPlanRepo, SubscriptionPlanRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
 
 
@@ -98,6 +99,8 @@ namespace Infrastructure
             services.AddScoped<ISnackService, SnackService>();
            
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
+            services.AddScoped<IBackgroundService, BackgroundService>();    
+            services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
             #endregion
