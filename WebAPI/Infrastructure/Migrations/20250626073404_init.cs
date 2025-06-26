@@ -161,7 +161,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackCombos",
+                name: "SnackCombo",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -177,7 +177,7 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnackCombos", x => x.Id);
+                    table.PrimaryKey("PK_SnackCombo", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -192,7 +192,7 @@ namespace Infrastructure.Migrations
                     Price = table.Column<decimal>(type: "numeric", nullable: true),
                     discount = table.Column<decimal>(type: "numeric", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
+                    SnackStatus = table.Column<int>(type: "integer", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -467,7 +467,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackComboItems",
+                name: "SnackComboItem",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -480,15 +480,15 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnackComboItems", x => x.Id);
+                    table.PrimaryKey("PK_SnackComboItem", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SnackComboItems_SnackCombos_ComboId",
+                        name: "FK_SnackComboItem_SnackCombo_ComboId",
                         column: x => x.ComboId,
-                        principalTable: "SnackCombos",
+                        principalTable: "SnackCombo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SnackComboItems_Snacks_SnackId",
+                        name: "FK_SnackComboItem_Snacks_SnackId",
                         column: x => x.SnackId,
                         principalTable: "Snacks",
                         principalColumn: "Id",
@@ -840,14 +840,14 @@ namespace Infrastructure.Migrations
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_ComboId_SnackId",
-                table: "SnackComboItems",
+                name: "IX_SnackComboItem_ComboId_SnackId",
+                table: "SnackComboItem",
                 columns: new[] { "ComboId", "SnackId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItems_SnackId",
-                table: "SnackComboItems",
+                name: "IX_SnackComboItem_SnackId",
+                table: "SnackComboItem",
                 column: "SnackId");
 
             migrationBuilder.CreateIndex(
@@ -910,7 +910,7 @@ namespace Infrastructure.Migrations
                 name: "SeatTypePrice");
 
             migrationBuilder.DropTable(
-                name: "SnackComboItems");
+                name: "SnackComboItem");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -928,7 +928,7 @@ namespace Infrastructure.Migrations
                 name: "Showtimes");
 
             migrationBuilder.DropTable(
-                name: "SnackCombos");
+                name: "SnackCombo");
 
             migrationBuilder.DropTable(
                 name: "Snacks");

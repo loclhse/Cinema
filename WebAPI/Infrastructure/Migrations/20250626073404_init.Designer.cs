@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250626071121_init")]
+    [Migration("20250626073404_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -690,7 +690,7 @@ namespace Infrastructure.Migrations
                     b.Property<decimal?>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("SnackComboStatus")
+                    b.Property<int>("SnackStatus")
                         .HasColumnType("integer");
 
                     b.Property<int?>("Type")
@@ -748,7 +748,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SnackCombos");
+                    b.ToTable("SnackCombo");
                 });
 
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
@@ -782,7 +782,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ComboId", "SnackId")
                         .IsUnique();
 
-                    b.ToTable("SnackComboItems");
+                    b.ToTable("SnackComboItem");
                 });
 
             modelBuilder.Entity("Domain.Entities.Subscription", b =>

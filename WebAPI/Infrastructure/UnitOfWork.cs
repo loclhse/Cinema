@@ -11,7 +11,7 @@ namespace Infrastructure
     public class UnitOfWork : IUnitOfWork
     {
         public readonly AppDbContext _context;
-        public ISnackComboRepo SnackComboRepo { get; }
+       
         public ISnackRepo SnackRepo { get; }
         public IUserRepo UserRepo { get; }
         public IAuthRepo AuthRepo { get; }
@@ -27,6 +27,10 @@ namespace Infrastructure
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
         public ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
+       
+
+        public ISnackComboRepo SnackComboRepo { get; }
+
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -42,12 +46,13 @@ namespace Infrastructure
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
-            SnackComboRepo = new SnackComboRepo(context);
+            
             SnackRepo = new SnackRepo(context);
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);
             SeatScheduleRepo = new SeatScheduleRepo(context);
             SubscriptionPlanRepo = new SubscriptionPlanRepo(context);
+            SnackComboRepo = new SnackComboRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()

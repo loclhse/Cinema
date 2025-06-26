@@ -16,6 +16,6 @@ namespace Application.ViewModel.Request
         public decimal? Price { get; set; }
         public decimal? Discount { get; set; }
         public string? Description { get; set; }
-        public SnackStatus SnackComboStatus { get; set; }
+        public SnackStatus SnackStatus { get; set; }
     }
 }

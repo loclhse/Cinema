@@ -15,13 +15,7 @@ namespace Infrastructure.Repos
         public SnackRepo(AppDbContext context) : base(context)
         {
         }
-        public async Task<IEnumerable<Snack>> GetSnacksInComboAsync(Guid comboId)
-        {
-            return await _db
-                .Include(s => s.SnackComboItems)
-                .Where(s => s.SnackComboItems.Any(sci => sci.ComboId == comboId && !sci.IsDeleted) && !s.IsDeleted)
-                .ToListAsync();
-        }
+       
     }
     
     }

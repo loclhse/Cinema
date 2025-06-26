@@ -12,7 +12,7 @@ namespace Application
         IRoomLayoutRepo RoomLayoutRepo { get; }
         ISeatRepo SeatRepo { get; }
         ISeatTypePriceRepo SeatTypePriceRepo { get; }
-        ISnackComboRepo SnackComboRepo { get; }
+      
         ISnackRepo SnackRepo { get; }
         IMovieRepo MovieRepo { get; }
         IPromotionRepo PromotionRepo { get; }
@@ -21,6 +21,7 @@ namespace Application
         IMovieGenreRepo MovieGenreRepo { get; }
         ISeatScheduleRepo SeatScheduleRepo { get; }
         ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
+        ISnackComboRepo SnackComboRepo { get; }
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();

@@ -8,14 +8,9 @@ namespace Domain.Enums
 {
     public enum SnackStatus
     {
-        
-        outOfStock,
-        comingSoon,
-        limitedEdition,
-        seasonal,
-        specialOffer,
-        newArrival,
-        preOrder,
+       outOfStock,
+       limitedEdition,
+       inStock
 
     }
 }
