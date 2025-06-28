@@ -50,10 +50,14 @@ namespace Infrastructure.MapperConfigs
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
             CreateMap<SubscriptionPlanRequest, SubscriptionPlan>().ReverseMap();
             CreateMap<SubscriptionPlan, SubscriptionPlanResponse>().ReverseMap();
-            CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
-           
+            CreateMap<Order, OrderResponse>().ReverseMap();
 
-           
+
+            CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
+            CreateMap<SubscriptionRequest, Subscription>().ReverseMap();
+            CreateMap<Subscription, SubscriptionResponse>().ReverseMap();
+            CreateMap<AdminSubPlanResponse, SubscriptionPlan>().ReverseMap();
+
             CreateMap<SnackComboUpdateRequest, SnackCombo>().ReverseMap();
             CreateMap<SnackComboItem, SnackComboItemDetail>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SnackId))

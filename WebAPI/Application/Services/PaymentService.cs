@@ -75,7 +75,7 @@ namespace Application.Services
         {
             try
             {
-                // Using GenericRepo's GetByIdAsync
+               
                 var payment = await _uow.PaymentRepo.GetByIdAsync(id);
                 if (payment == null)
                 {
@@ -87,12 +87,12 @@ namespace Application.Services
                     return new ApiResp().SetBadRequest($"Payment with ID {id} is not in Pending status.");
                 }
 
-                // Update the payment status
+                
                 payment.Status = PaymentStatus.Success;
                 payment.PaymentTime = DateTime.UtcNow;
                 payment.UpdateDate = DateTime.UtcNow;
 
-                // Using GenericRepo's UpdateAsync
+               
                 await _uow.PaymentRepo.UpdateAsync(payment);
                 
                 return new ApiResp().SetOk("Payment status changed from Pending to Success successfully.");

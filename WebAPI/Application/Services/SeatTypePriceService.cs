@@ -48,7 +48,7 @@ namespace Application.Services
             var entity = await _uow.SeatTypePriceRepo.GetAsync(x => x.SeatType == seatType)
                          ?? throw new KeyNotFoundException($"SeatTypePrice for '{seatType}' not found.");
 
-            entity.DefaultPrice = request.NewPrice;
+            entity.DefaultPrice = (decimal)request.NewPrice;
             await _uow.SaveChangesAsync();
 
             return _mapper.Map<SeatTypePriceResponse>(entity);

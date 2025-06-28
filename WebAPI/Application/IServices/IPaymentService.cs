@@ -10,7 +10,7 @@ namespace Application.IServices
 {
     public interface IPaymentService
     {
-        // Required methods using GenericRepo functions
+       
         Task<ApiResp> FindPaymentByUserIdAsync(Guid userId);
         Task<ApiResp> GetAllCashPaymentAsync();
         Task<ApiResp> ChangeStatusFromPendingToSuccessAsync(Guid id);
