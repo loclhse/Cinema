@@ -31,6 +31,7 @@ namespace Infrastructure
        
 
         public ISnackComboRepo SnackComboRepo { get; }
+        public ISubscriptionRepo SubscriptionRepo { get; }
 
         public IOrderRepo OrderRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
@@ -55,6 +56,7 @@ namespace Infrastructure
             SeatScheduleRepo = new SeatScheduleRepo(context);
             SubscriptionPlanRepo = new SubscriptionPlanRepo(context);
             SnackComboRepo = new SnackComboRepo(context);
+            SubscriptionRepo = new SubscriptionRepo(context);
             OrderRepo = new OrderRepo(context);
         }
 
