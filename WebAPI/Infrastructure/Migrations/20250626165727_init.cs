@@ -161,8 +161,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-========
                 name: "SnackCombo",
                 columns: table => new
                 {
@@ -183,7 +181,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
                 name: "Snacks",
                 columns: table => new
                 {
@@ -470,16 +467,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    OrderTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: true),
-                    TotalBonusPoint = table.Column<int>(type: "integer", nullable: true),
-========
                 name: "SnackComboItem",
                 columns: table => new
                 {
@@ -487,21 +474,12 @@ namespace Infrastructure.Migrations
                     Quantity = table.Column<int>(type: "integer", nullable: true),
                     ComboId = table.Column<Guid>(type: "uuid", nullable: true),
                     SnackId = table.Column<Guid>(type: "uuid", nullable: true),
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_AppUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AppUsers",
-                        principalColumn: "Id");
-========
                     table.PrimaryKey("PK_SnackComboItem", x => x.Id);
                     table.ForeignKey(
                         name: "FK_SnackComboItem_SnackCombo_ComboId",
@@ -515,7 +493,6 @@ namespace Infrastructure.Migrations
                         principalTable: "Snacks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
                 });
 
             migrationBuilder.CreateTable(
@@ -647,15 +624,12 @@ namespace Infrastructure.Migrations
                         column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id");
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-========
                     table.ForeignKey(
                         name: "FK_Payments_Subscriptions_SubscriptionId",
                         column: x => x.SubscriptionId,
                         principalTable: "Subscriptions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
                 });
 
             migrationBuilder.CreateTable(
@@ -864,8 +838,6 @@ namespace Infrastructure.Migrations
                 name: "IX_Showtimes_MovieId",
                 table: "Showtimes",
                 column: "MovieId");
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-========
 
             migrationBuilder.CreateIndex(
                 name: "IX_SnackComboItem_ComboId_SnackId",
@@ -887,7 +859,6 @@ namespace Infrastructure.Migrations
                 name: "IX_Subscriptions_UserId",
                 table: "Subscriptions",
                 column: "UserId");
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
         }
 
         /// <inheritdoc />
@@ -939,11 +910,7 @@ namespace Infrastructure.Migrations
                 name: "SeatTypePrice");
 
             migrationBuilder.DropTable(
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.cs
-                name: "Snacks");
-========
                 name: "SnackComboItem");
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.cs
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

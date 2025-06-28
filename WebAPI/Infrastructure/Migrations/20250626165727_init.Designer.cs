@@ -13,11 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.Designer.cs
-    [Migration("20250626031004_init")]
-========
-    [Migration("20250626073404_init")]
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.Designer.cs
+    [Migration("20250626165727_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -717,8 +713,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("Snacks");
                 });
 
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.Designer.cs
-========
             modelBuilder.Entity("Domain.Entities.SnackCombo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -862,7 +856,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("SubscriptionPlan");
                 });
 
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.Designer.cs
             modelBuilder.Entity("Infrastructure.Identity.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1226,8 +1219,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Movie");
                 });
 
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.Designer.cs
-========
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
                 {
                     b.HasOne("Domain.Entities.SnackCombo", "Combo")
@@ -1262,7 +1253,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.Designer.cs
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Infrastructure.Identity.AppRole", null)
@@ -1367,8 +1357,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("SeatSchedules");
                 });
 
-<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250626031004_init.Designer.cs
-========
             modelBuilder.Entity("Domain.Entities.Snack", b =>
                 {
                     b.Navigation("SnackComboItems");
@@ -1389,7 +1377,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Subscriptions");
                 });
 
->>>>>>>> origin/Develop:WebAPI/Infrastructure/Migrations/20250626073404_init.Designer.cs
             modelBuilder.Entity("Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Navigation("AppUser");

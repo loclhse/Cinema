@@ -4,6 +4,7 @@ using Application.ViewModel.Request;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,13 +30,8 @@ namespace Application.Services
             try
             {
                 //lay list snack bang id tu request
-                List<Snack> snacks = new();
-                foreach (var snackId in request.SnackId)
-                {
-                    var snack = await _uow.SnackRepo.GetAsync(x => x.Id == snackId);
-                    if (snack != null)
-                        snacks.Add(snack);
-                }
+
+                //lay list snackCombo
 
                 //lay list seatSchedules bang id tu request
                 List<SeatSchedule> seatSchedules = new();
@@ -46,17 +42,18 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                double price = CalculatePrice(request.SeatScheduleId, request.SnackId);
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo); // gia chua giam tu promotion
 
                 var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
                 OrderResponse rp = new OrderResponse
                 {
                     UserId = request.UserId,
                     OrderTime = DateTime.UtcNow,
-                    TotalAmount = 12, //dang fix cung, sua lai theo CalculatePrice
-                    TotalAfter = 12, //dang fix cung, sua lai theo CalculatePrice
+                    TotalAmount = price,
+                    TotalAfter = price, //can them promotion de chinh lai
                     SeatSchedules = seatSchedulesMapped,
-                    Snacks = snacks,
+                    Snacks = request.Snack,
+                    SnackCombos = request.SnackCombo,
                 };
 
                 Order order = _mapper.Map<Order>(rp);
@@ -89,9 +86,40 @@ namespace Application.Services
             }
         }
 
-        private double CalculatePrice(List<Guid>? SeatScheduleId, List<Guid>? SnackId)
+        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatSchedules, IEnumerable<SnackOrderRequest>? seatScheduleIds, IEnumerable<SnackComboOrderRequest>? snackIds)
         {
+            //decimal total = 0m;
+
+            //if (seatScheduleIds?.Any() == true)
+            //{
+            //    var seatTypePrices = (await _uow.SeatTypePriceRepo.GetAllAsync(null))
+            //                         .ToDictionary(x => x.SeatType,
+            //                                       x => x.DefaultPrice);
+
+            //    var schedules = await _uow.SeatScheduleRepo.GetAllAsync(
+            //                                                    ss => seatScheduleIds.Contains(ss.Id),
+            //                                                    include: q => q.Include(ss => ss.Seat!));
+
+            //    foreach (var ss in schedules)
+            //    {
+            //        if (ss.Seat != null &&
+            //            seatTypePrices.TryGetValue(ss.Seat.SeatType, out var price))
+            //        {
+            //            total += price;
+            //        }
+            //    }
+            //}
+
+            //if (snackIds?.Any() == true)
+            //{
+            //    var snacks = await _uow.SnackRepo.GetAllAsync(s => snackIds.Contains(s.Id));
+
+            //    total += snacks.Sum(s => s.Price);
+            //}
+
+            //return total;
             return 0;
         }
+
     }
 }
