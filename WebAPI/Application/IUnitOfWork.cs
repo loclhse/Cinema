@@ -22,6 +22,7 @@ namespace Application
         ISeatScheduleRepo SeatScheduleRepo { get; }
         ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
         ISnackComboRepo SnackComboRepo { get; }
+        ISubscriptionRepo SubscriptionRepo { get; }
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();

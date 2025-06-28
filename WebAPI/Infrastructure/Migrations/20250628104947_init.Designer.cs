@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250626073404_init")]
+    [Migration("20250628104947_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -803,6 +803,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("SubscriptionPlanId")
                         .HasColumnType("uuid");
 
@@ -836,10 +839,16 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Duration")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Imgs")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Offer")
                         .HasColumnType("text");
 
                     b.Property<double>("Price")
@@ -850,6 +859,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Users")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

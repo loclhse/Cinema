@@ -30,7 +30,7 @@ namespace Infrastructure
        
 
         public ISnackComboRepo SnackComboRepo { get; }
-
+        public ISubscriptionRepo SubscriptionRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -53,6 +53,7 @@ namespace Infrastructure
             SeatScheduleRepo = new SeatScheduleRepo(context);
             SubscriptionPlanRepo = new SubscriptionPlanRepo(context);
             SnackComboRepo = new SnackComboRepo(context);
+            SubscriptionRepo = new SubscriptionRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()

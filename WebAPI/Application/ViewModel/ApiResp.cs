@@ -46,6 +46,17 @@ namespace Application.ViewModel
             Result = result;
             return this;
         }
+        public ApiResp SetUnauthorized(object? result = null, string? message = null) // Changed 'object' and 'string' to nullable types  
+        {
+            IsSuccess = false;
+            StatusCode = HttpStatusCode.Unauthorized;
+            if (!string.IsNullOrEmpty(message))
+            {
+                ErrorMessage = message;
+            }
+            Result = result;
+            return this;
+        }
 
         public ApiResp SetApiResponse(HttpStatusCode statusCode, bool isSuccess, string? message = null, object? result = null) // Changed 'string' and 'object' to nullable types  
         {

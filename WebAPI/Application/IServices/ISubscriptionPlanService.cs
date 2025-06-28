@@ -17,5 +17,6 @@ namespace Application.IServices
         Task<ApiResp> UpdateInActiveSubscriptionPlanAsync(Guid id, SubscriptionPlanRequest subscriptionPlanRequest);
         Task<ApiResp> ActiveSubscriptionPlanAsync(Guid id);
         Task<ApiResp> UserGetAllSubscriptionPlansAsync();
+        Task<ApiResp> ManagerGetAllSubscriptionPlansHistoryAsync();
     }
 }

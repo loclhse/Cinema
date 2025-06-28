@@ -82,5 +82,15 @@ namespace WebAPI.Controllers
             return response.IsSuccess ? Ok(response) : BadRequest(response);
 
         }
+        [HttpGet("ViewHistory")]
+        public async Task<IActionResult> ViewSubscriptionPlanHistory()
+        {
+            var response = await _subscriptionPlanService.ManagerGetAllSubscriptionPlansHistoryAsync();
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
     }
 }
