@@ -19,7 +19,7 @@ public partial class Snack : BaseEntity
     
     public int quantity { get; set; }
 
-    public decimal? Price { get; set; }
+    public decimal Price { get; set; }
 
     public decimal? discount { get; set; }
 

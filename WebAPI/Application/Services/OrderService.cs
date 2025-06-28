@@ -4,6 +4,7 @@ using Application.ViewModel.Request;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                double price = CalculatePrice(request.SeatScheduleId, request.SnackId);
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.SnackId);
 
                 var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
                 OrderResponse rp = new OrderResponse
@@ -69,9 +70,40 @@ namespace Application.Services
             }
         }
 
-        private double CalculatePrice(List<Guid>? SeatScheduleId, List<Guid>? SnackId)
+        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatScheduleIds, IEnumerable<Guid>? snackIds)
         {
-            return 0;
+            decimal total = 0m;
+
+            if (seatScheduleIds?.Any() == true)
+            {
+                var seatTypePrices = (await _uow.SeatTypePriceRepo.GetAllAsync(null))
+                                     .ToDictionary(x => x.SeatType,
+                                                   x => x.DefaultPrice);
+
+                var schedules = await _uow.SeatScheduleRepo.GetAllAsync(
+                                                                ss => seatScheduleIds.Contains(ss.Id),
+                                                                include: q => q.Include(ss => ss.Seat!));
+
+                foreach (var ss in schedules)
+                {
+                    if (ss.Seat != null &&
+                        seatTypePrices.TryGetValue(ss.Seat.SeatType, out var price))
+                    {
+                        total += price;
+                    }
+                }
+            }
+
+            if (snackIds?.Any() == true)
+            {
+                var snacks = await _uow.SnackRepo.GetAllAsync(s => snackIds.Contains(s.Id));
+
+                total += snacks.Sum(s => s.Price);
+            }
+
+            return total;
         }
+
+
     }
 }
