@@ -42,17 +42,38 @@ namespace Infrastructure.Repositories
                 query = query.Where(filter);
             }
 
-            //query.IgnoreQueryFilters();
+            query.IgnoreQueryFilters();
 
             if (include != null)
             {
                 query = include(query);
             }
             return await query
-                //.Skip((pageIndex - 1) * pageSize)
-                //.Take(pageSize)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
+
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter,
+                                               Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
+        {
+            IQueryable<T> query = _db;
+
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+
+            if (include != null)
+            {
+                query = include(query);
+            }
+            return await query
+                .ToListAsync();
+        }
+
         //Kiet
         public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter)
         {

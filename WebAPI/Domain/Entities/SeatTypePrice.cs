@@ -11,6 +11,6 @@ namespace Domain.Entities
     {
         public SeatTypes SeatType { get; set; } // Enum
 
-        public double DefaultPrice { get; set; }
+        public decimal DefaultPrice { get; set; }
     }
 }

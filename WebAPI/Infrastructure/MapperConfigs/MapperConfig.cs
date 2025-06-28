@@ -50,6 +50,9 @@ namespace Infrastructure.MapperConfigs
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
             CreateMap<SubscriptionPlanRequest, SubscriptionPlan>().ReverseMap();
             CreateMap<SubscriptionPlan, SubscriptionPlanResponse>().ReverseMap();
+            CreateMap<Order, OrderResponse>().ReverseMap();
+
+
             CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
             CreateMap<SubscriptionRequest, Subscription>().ReverseMap();
             CreateMap<Subscription, SubscriptionResponse>().ReverseMap();
