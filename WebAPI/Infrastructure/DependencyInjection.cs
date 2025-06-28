@@ -74,6 +74,7 @@ namespace Infrastructure
             services.AddScoped<IMovieGenreRepo, MovieGenreRepo>();
             services.AddScoped<ISeatScheduleRepo, SeatScheduleRepo>();
             services.AddScoped<ISubscriptionPlanRepo, SubscriptionPlanRepo>();
+            services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

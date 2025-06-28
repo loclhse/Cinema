@@ -28,9 +28,9 @@ namespace Application.Services
             try
             {
                 var subPlan = await _unitOfWork.SubscriptionPlanRepo.GetByIdAsync(id);
-                if (subPlan == null || subPlan.IsDeleted)
+                if (subPlan == null || subPlan.IsDeleted || subPlan.Status == PlanStatus.Active)
                 {
-                    return apiResp.SetNotFound( "Subscription plan not found");
+                    return apiResp.SetNotFound( "Subscription plan not found or already active");
                 }
                 subPlan.Status = PlanStatus.Active; 
                 await _unitOfWork.SaveChangesAsync();
@@ -69,11 +69,12 @@ namespace Application.Services
             try
             {
                 var subPlan = await _unitOfWork.SubscriptionPlanRepo.GetByIdAsync(id);
-                if (subPlan == null || subPlan.IsDeleted)
+                if (subPlan == null || subPlan.IsDeleted )
                 {
                     return apiResp.SetNotFound("Subscription plan not found");
                 }
                 subPlan.IsDeleted = true; 
+                subPlan.Status = PlanStatus.Inactive;
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Subscription plan deleted successfully");
             }
@@ -93,7 +94,7 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("No subscription plans found");
                 }
-                var result = _mapper.Map<List<SubscriptionPlanResponse>>(subscriptionPlans);
+                var result = _mapper.Map<List<AdminSubPlanResponse>>(subscriptionPlans);
                 return apiResp.SetOk(result);
             }
             catch (Exception ex)
@@ -156,6 +157,24 @@ namespace Application.Services
                     return apiResp.SetNotFound("No subscription plans found");
                 }
                 var result = _mapper.Map<List<SubscriptionPlanResponse>>(subscriptionPlans);
+                return apiResp.SetOk(result);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+        public async Task<ApiResp> ManagerGetAllSubscriptionPlansHistoryAsync()
+        {
+            var apiResp = new ApiResp();
+            try
+            {
+                var subscriptionPlans = await _unitOfWork.SubscriptionPlanRepo.GetAllAsync(x => x.IsDeleted && x.Status == PlanStatus.Inactive);
+                if (subscriptionPlans == null || !subscriptionPlans.Any())
+                {
+                    return apiResp.SetNotFound("No subscription plans history found");
+                }
+                var result = _mapper.Map<List<AdminSubPlanResponse>>(subscriptionPlans);
                 return apiResp.SetOk(result);
             }
             catch (Exception ex)
