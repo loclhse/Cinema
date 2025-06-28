@@ -10,6 +10,6 @@ namespace Infrastructure.Repos
         {
         }
         
-        // No custom methods needed - using GenericRepo functions directly in service
+      
     }
 }
