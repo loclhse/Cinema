@@ -105,6 +105,10 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Avatar, m => m.MapFrom(s => s.Profile.Avatar))
                 .ForMember(d => d.Sex, m => m.MapFrom(s => s.Profile.Sex))
                 .ForAllMembers(o => o.Condition((src, dest, srcMember) => srcMember != null));
+
+            // Payment mappings
+            CreateMap<Payment, PaymentResponse>().ReverseMap();
+               
         }
     }
 }

@@ -332,11 +332,14 @@ namespace Infrastructure.Migrations
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("text");
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("PaymentTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
@@ -347,11 +350,16 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("userId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
 
                     b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("userId");
 
                     b.ToTable("Payments");
                 });
@@ -1104,7 +1112,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Payment", b =>
                 {
-                    b.HasOne("Domain.Entities.Order", "Orders")
+                    b.HasOne("Domain.Entities.Order", "Order")
                         .WithMany("Payments")
                         .HasForeignKey("OrderId");
 
@@ -1113,9 +1121,15 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Orders");
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("userId");
+
+                    b.Navigation("Order");
 
                     b.Navigation("Subscription");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.RefreshToken", b =>

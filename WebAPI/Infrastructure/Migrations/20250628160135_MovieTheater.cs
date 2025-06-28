@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class MovieTheater : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -606,12 +606,14 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "text", nullable: true),
+                    PaymentMethod = table.Column<int>(type: "integer", nullable: true),
                     PaymentTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     AmountPaid = table.Column<decimal>(type: "numeric", nullable: true),
                     TransactionCode = table.Column<string>(type: "text", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: true),
                     OrderId = table.Column<Guid>(type: "uuid", nullable: true),
                     SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    userId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -619,6 +621,11 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_AppUsers_userId",
+                        column: x => x.userId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Payments_Orders_OrderId",
                         column: x => x.OrderId,
@@ -777,6 +784,11 @@ namespace Infrastructure.Migrations
                 name: "IX_Payments_SubscriptionId",
                 table: "Payments",
                 column: "SubscriptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_userId",
+                table: "Payments",
+                column: "userId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",

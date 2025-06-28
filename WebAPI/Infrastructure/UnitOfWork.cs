@@ -21,6 +21,7 @@ namespace Infrastructure
         public IRoomLayoutRepo RoomLayoutRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypePriceRepo { get; }
+        public IPaymentRepo PaymentRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
@@ -42,6 +43,7 @@ namespace Infrastructure
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypePriceRepo = new SeatTypePriceRepo(context);
+            PaymentRepo = new PaymentRepo(context);
             MovieRepo = new MovieRepo(context);
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
