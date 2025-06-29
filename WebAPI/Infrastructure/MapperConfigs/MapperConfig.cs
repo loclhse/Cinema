@@ -50,21 +50,22 @@ namespace Infrastructure.MapperConfigs
             CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
             CreateMap<SubscriptionPlanRequest, SubscriptionPlan>().ReverseMap();
             CreateMap<SubscriptionPlan, SubscriptionPlanResponse>().ReverseMap();
-            CreateMap<Order, OrderResponse>().ReverseMap();
-
-
             CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
-            CreateMap<SubscriptionRequest, Subscription>().ReverseMap();
-            CreateMap<Subscription, SubscriptionResponse>().ReverseMap();
-            CreateMap<AdminSubPlanResponse, SubscriptionPlan>().ReverseMap();
+           
 
+           
             CreateMap<SnackComboUpdateRequest, SnackCombo>().ReverseMap();
             CreateMap<SnackComboItem, SnackComboItemDetail>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SnackId))
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Snack.Name))
-            .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity));
-            
-            
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Snack.Name))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.ImgUrl, opt => opt.MapFrom(src => src.Snack.imgUrl))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Snack.Price))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Snack.Type))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Snack.Description));
+
+
+
             CreateMap<SnackCombo, SnackComboResponse>()
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.SnackComboItems))
                 .ReverseMap();
@@ -109,6 +110,12 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Avatar, m => m.MapFrom(s => s.Profile.Avatar))
                 .ForMember(d => d.Sex, m => m.MapFrom(s => s.Profile.Sex))
                 .ForAllMembers(o => o.Condition((src, dest, srcMember) => srcMember != null));
+
+            
+            CreateMap<Payment, PaymentResponse>().ReverseMap();
+
+
+
         }
     }
 }
