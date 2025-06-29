@@ -67,7 +67,8 @@ namespace Infrastructure
             services.AddScoped<IPromotionRepo, PromotionRepo>();
             services.AddScoped<IRoomLayoutRepo, RoomLayoutRepo>();
             services.AddScoped<ISnackRepo,SnackRepo>();
-           
+            services.AddScoped<ISnackComboRepo, SnackComboRepo>();
+            services.AddScoped<IPaymentRepo, PaymentRepo>();
             services.AddScoped<IGenreRepo, GenreRepo>();
             services.AddScoped<IMovieRepo, MovieRepo>();
             services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
@@ -97,7 +98,8 @@ namespace Infrastructure
             services.AddScoped<IPromotionService, PromotionService>();
             services.AddScoped<IShowtimeService, ShowtimeService>();
             services.AddScoped<ISnackService, SnackService>();
-           
+           services.AddScoped<ISnackComboService, SnackComboService>();
+            services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
             services.AddScoped<IBackgroundService, BackgroundService>();    
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
