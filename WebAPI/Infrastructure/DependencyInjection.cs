@@ -98,13 +98,14 @@ namespace Infrastructure
             services.AddScoped<IPromotionService, PromotionService>();
             services.AddScoped<IShowtimeService, ShowtimeService>();
             services.AddScoped<ISnackService, SnackService>();
-           services.AddScoped<ISnackComboService, SnackComboService>();
+            services.AddScoped<ISnackComboService, SnackComboService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
             services.AddScoped<IBackgroundService, BackgroundService>();    
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ISubscriptionService, SubscriptionService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

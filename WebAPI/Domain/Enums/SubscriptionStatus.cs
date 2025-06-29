@@ -10,6 +10,7 @@ namespace Domain.Enums
     {
         active,
         pending,
+        cancelled,
         expired
     }
 }
