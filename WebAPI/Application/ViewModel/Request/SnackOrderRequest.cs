@@ -9,6 +9,6 @@ namespace Application.ViewModel.Request
     public class SnackOrderRequest
     {
         public Guid SnackId { get; set; }
-        int Quantity { get; set; }
+        public int Quantity { get; set; }
     }
 }

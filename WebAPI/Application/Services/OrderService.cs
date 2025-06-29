@@ -29,12 +29,25 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
+                //gia promotion giam
+                var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
+                decimal? discountPercent = 1;
+                if(promotion != null)
+                {
+                    discountPercent = promotion.DiscountPercent;
+                }
+
+
                 //lay list snack bang id tu request
 
                 //lay list snackCombo
 
                 //lay list seatSchedules bang id tu request
                 List<SeatSchedule> seatSchedules = new();
+                if (request.SeatScheduleId == null || !request.SeatScheduleId.Any())
+                {
+                    return apiResp.SetBadRequest("SeatScheduleId cannot be null or empty.");
+                }
                 foreach (var seatId in request.SeatScheduleId)
                 {
                     var seatSchedule = await _uow.SeatScheduleRepo.GetAsync(x => x.Id == seatId);
@@ -50,14 +63,25 @@ namespace Application.Services
                     UserId = request.UserId,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
-                    TotalAfter = price, //can them promotion de chinh lai
+                    TotalAfter = price * discountPercent, // gia da giam
                     SeatSchedules = seatSchedulesMapped,
                     Snacks = request.Snack,
                     SnackCombos = request.SnackCombo,
                 };
-
                 Order order = _mapper.Map<Order>(rp);
                 await _uow.OrderRepo.AddAsync(order);
+
+                Payment payment = new Payment
+                {
+                    userId = order.UserId,
+                    PaymentMethod = request.PaymentMethod,
+                    PaymentTime = null,
+                    AmountPaid = rp.TotalAfter,
+                    OrderId = order.Id,
+                    //SubscriptionId = 
+                };
+                await _uow.PaymentRepo.AddAsync(payment);
+
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk(rp);
             }catch (Exception ex)
@@ -86,39 +110,61 @@ namespace Application.Services
             }
         }
 
-        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatSchedules, IEnumerable<SnackOrderRequest>? seatScheduleIds, IEnumerable<SnackComboOrderRequest>? snackIds)
+        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatScheduleIds, IEnumerable<SnackOrderRequest>? snackOrders, IEnumerable<SnackComboOrderRequest>? snackComboOrders)
         {
-            //decimal total = 0m;
+            decimal total = 0m;
 
-            //if (seatScheduleIds?.Any() == true)
-            //{
-            //    var seatTypePrices = (await _uow.SeatTypePriceRepo.GetAllAsync(null))
-            //                         .ToDictionary(x => x.SeatType,
-            //                                       x => x.DefaultPrice);
+            /* --------- 1. Giá ghế ---------- */
+            if (seatScheduleIds?.Any() == true)
+            {
+                // Bảng giá theo loại ghế
+                var seatTypePrices = (await _uow.SeatTypePriceRepo.GetAllAsync(null))
+                                     .ToDictionary(x => x.SeatType, x => x.DefaultPrice);
 
-            //    var schedules = await _uow.SeatScheduleRepo.GetAllAsync(
-            //                                                    ss => seatScheduleIds.Contains(ss.Id),
-            //                                                    include: q => q.Include(ss => ss.Seat!));
+                // Lấy SeatSchedule kèm Seat
+                var schedules = await _uow.SeatScheduleRepo.GetAllAsync(
+                                    ss => seatScheduleIds.Contains(ss.Id),
+                                    include: q => q.Include(ss => ss.Seat!));
 
-            //    foreach (var ss in schedules)
-            //    {
-            //        if (ss.Seat != null &&
-            //            seatTypePrices.TryGetValue(ss.Seat.SeatType, out var price))
-            //        {
-            //            total += price;
-            //        }
-            //    }
-            //}
+                foreach (var ss in schedules)
+                {
+                    if (ss.Seat != null &&
+                        seatTypePrices.TryGetValue(ss.Seat.SeatType, out var price))
+                    {
+                        total += price;
+                    }
+                }
+            }
 
-            //if (snackIds?.Any() == true)
-            //{
-            //    var snacks = await _uow.SnackRepo.GetAllAsync(s => snackIds.Contains(s.Id));
+            /* --------- 2. Snack lẻ ---------- */
+            if (snackOrders?.Any() == true)
+            {
+                var snackIds = snackOrders.Select(o => o.SnackId).Distinct().ToList();
+                var snacks = await _uow.SnackRepo.GetAllAsync(s => snackIds.Contains(s.Id));
 
-            //    total += snacks.Sum(s => s.Price);
-            //}
+                // Nhân giá * số lượng
+                total += snacks.Sum(s =>
+                {
+                    var qty = snackOrders.First(o => o.SnackId == s.Id).Quantity;
+                    return s.Price * qty;
+                });
+            }
 
-            //return total;
-            return 0;
+            /* --------- 3. Snack combo -------- */
+            if (snackComboOrders?.Any() == true)
+            {
+                var comboIds = snackComboOrders.Select(o => o.SnackComboId).Distinct().ToList();
+                var combos = await _uow.SnackComboRepo.GetAllAsync(c => comboIds.Contains(c.Id));
+
+                total += combos.Sum(c =>
+                {
+                    var qty = snackComboOrders.First(o => o.SnackComboId == c.Id).Quantity;
+                    return c.TotalPrice * qty;
+                });
+            }
+
+            return total;
+
         }
 
     }

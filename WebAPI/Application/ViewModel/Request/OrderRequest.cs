@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,9 @@ namespace Application.ViewModel.Request
     {
         public Guid? UserId { get; set; }
 
-        public string? PaymentMethod { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
+
+        public Guid? PromotionId { get; set; }
 
         public List<Guid>? SeatScheduleId { get; set; }
         
