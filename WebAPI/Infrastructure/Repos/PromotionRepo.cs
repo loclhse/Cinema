@@ -22,7 +22,7 @@ namespace Infrastructure.Repos
             return rs;
         }
 
-        public async Task<Promotion> GetPromotionById(Guid id)
+        public async Task<Promotion> GetPromotionById(Guid? id)
         {
             var rs = await _db.Where(p => p.Id == id && !p.IsDeleted).FirstOrDefaultAsync();
 #pragma warning disable CS8603 // Possible null reference return.

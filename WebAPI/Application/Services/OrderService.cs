@@ -29,6 +29,15 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
+                //gia promotion giam
+                var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
+                decimal? discountPercent = 1;
+                if(promotion != null)
+                {
+                    discountPercent = promotion.DiscountPercent;
+                }
+
+
                 //lay list snack bang id tu request
 
                 //lay list snackCombo
@@ -46,7 +55,7 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo, request.PromotionId); // gia chua giam tu promotion
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo); // gia chua giam tu promotion
 
                 var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
                 OrderResponse rp = new OrderResponse
@@ -54,14 +63,25 @@ namespace Application.Services
                     UserId = request.UserId,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
-                    TotalAfter = price, //can them promotion de chinh lai
+                    TotalAfter = price * discountPercent, // gia da giam
                     SeatSchedules = seatSchedulesMapped,
                     Snacks = request.Snack,
                     SnackCombos = request.SnackCombo,
                 };
-
                 Order order = _mapper.Map<Order>(rp);
                 await _uow.OrderRepo.AddAsync(order);
+
+                Payment payment = new Payment
+                {
+                    userId = order.UserId,
+                    PaymentMethod = request.PaymentMethod,
+                    PaymentTime = null,
+                    AmountPaid = rp.TotalAfter,
+                    OrderId = order.Id,
+                    //SubscriptionId = 
+                };
+                await _uow.PaymentRepo.AddAsync(payment);
+
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk(rp);
             }catch (Exception ex)
