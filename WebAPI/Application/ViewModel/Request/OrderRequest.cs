@@ -13,6 +13,8 @@ namespace Application.ViewModel.Request
 
         public string? PaymentMethod { get; set; }
 
+        public Guid? PromotionId { get; set; }
+
         public List<Guid>? SeatScheduleId { get; set; }
         
         public List<SnackOrderRequest>? Snack { get; set; }

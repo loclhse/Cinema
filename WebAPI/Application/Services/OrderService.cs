@@ -42,7 +42,7 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo); // gia chua giam tu promotion
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo, request.PromotionId); // gia chua giam tu promotion
 
                 var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
                 OrderResponse rp = new OrderResponse
@@ -86,7 +86,7 @@ namespace Application.Services
             }
         }
 
-        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatSchedules, IEnumerable<SnackOrderRequest>? seatScheduleIds, IEnumerable<SnackComboOrderRequest>? snackIds)
+        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatSchedules, IEnumerable<SnackOrderRequest>? seatScheduleIds, IEnumerable<SnackComboOrderRequest>? snackIds, Guid? promotion)
         {
             //decimal total = 0m;
 
