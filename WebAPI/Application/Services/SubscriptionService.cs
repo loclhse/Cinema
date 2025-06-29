@@ -42,6 +42,8 @@ namespace Application.Services
                 sub.UserId = Guid.Parse(UserId.Value);
                 sub.StartDate = DateTime.UtcNow;
                 sub.EndDate = sub.StartDate.Value.AddDays(plan.Duration);
+                sub.Name = plan.Name;
+                sub.Price = plan.Price;
                 await _uow.SubscriptionRepo.AddAsync(sub);
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Subscription added successfully!");

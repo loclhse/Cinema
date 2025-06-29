@@ -17,7 +17,7 @@ public partial class SnackCombo : BaseEntity
 
     public string? Description { get; set; }
 
-    public decimal? TotalPrice { get; set; }
+    public decimal TotalPrice { get; set; }
 
     public decimal? discount { get; set; }
 
