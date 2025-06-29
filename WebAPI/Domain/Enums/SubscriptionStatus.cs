@@ -9,6 +9,7 @@ namespace Domain.Enums
     public enum SubscriptionStatus
     {
         active,
+        pending,
         expired
     }
 }
