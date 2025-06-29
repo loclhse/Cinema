@@ -1,4 +1,4 @@
-﻿using Application.IRepos;
+using Application.IRepos;
 using Application.IServices;
 using Application.ViewModel.Response;
 using Application.ViewModel;
@@ -67,15 +67,18 @@ namespace Application.Services
                
 
                 var combo = _mapper.Map<SnackCombo>(request);
-                foreach (var snackId in request.SnackIds) // Process each SnackId individually
+                foreach (var snackItem in request.SnackItems) // Process each SnackItem with quantity
                 {
-                    var snack = await _uow.SnackRepo.GetByIdAsync(snackId);
+                    var snack = await _uow.SnackRepo.GetByIdAsync(snackItem.SnackId);
                     if (snack == null)
                     {
-                        return new ApiResp().SetNotFound(message: $"Snack with ID {snackId} not found.");
+                        return new ApiResp().SetNotFound(message: $"Snack with ID {snackItem.SnackId} not found.");
                     }
-                    combo.SnackComboItems.Add(new SnackComboItem { SnackId = snackId, Quantity = 1 });
+                    combo.SnackComboItems.Add(new SnackComboItem { SnackId = snackItem.SnackId, Quantity = snackItem.Quantity });
                 }
+
+                // Calculate total price based on snack prices, quantities, and discount
+                combo.TotalPrice = CalculateTotalPrice(combo);
 
                 await _uow.SnackComboRepo.AddAsync(combo);
                 await _uow.SaveChangesAsync(); // Commit within transaction
@@ -90,6 +93,26 @@ namespace Application.Services
                 await transaction.RollbackAsync(); // Rollback on error
                 return new ApiResp().SetBadRequest(message: $"Error adding snack combo: {ex.Message}");
             }
+        }
+
+        private decimal CalculateTotalPrice(SnackCombo snackCombo)
+        {
+            if (snackCombo?.SnackComboItems == null || !snackCombo.SnackComboItems.Any())
+                return 0;
+
+            // Calculate subtotal from all snack items
+            decimal subtotal = snackCombo.SnackComboItems
+                .Where(item => item.Snack != null && !item.IsDeleted)
+                .Sum(item => (item.Snack.Price * (item.Quantity ?? 1)));
+
+            // Apply discount if available
+            if (snackCombo.discount.HasValue && snackCombo.discount > 0)
+            {
+                decimal discountAmount = subtotal * (snackCombo.discount.Value / 100m);
+                return subtotal - discountAmount;
+            }
+
+            return subtotal;
         }
 
         public async Task<ApiResp> AddSnackToComboAsync(Guid comboId, AddSnackToComboRequest request)
@@ -126,23 +149,22 @@ namespace Application.Services
                 var existingItem = combo.SnackComboItems.FirstOrDefault(sci => sci.SnackId == request.SnackId && !sci.IsDeleted);
                 if (existingItem != null)
                 {
-                    // Update existing item quantity
                     existingItem.Quantity += request.Quantity;
                     existingItem.UpdateDate = DateTime.UtcNow;
                 }
                 else
                 {
-                    // Create new combo item
                     var newComboItem = new SnackComboItem
                     {
                         ComboId = comboId,
                         SnackId = request.SnackId,
                         Quantity = request.Quantity
                     };
-                    
-                    // Add the new item using the existing method
-                    await _uow.SnackComboRepo.AddComboItemAsync(newComboItem);
+                   await _uow.SnackComboRepo.AddComboItemAsync(newComboItem);
                 }
+
+                // Recalculate total price after adding snack
+                combo.TotalPrice = CalculateTotalPrice(combo);
 
                 await _uow.SaveChangesAsync(); 
                 await transaction.CommitAsync(); 
@@ -203,6 +225,10 @@ namespace Application.Services
 
                 item.IsDeleted = true;
                 item.UpdateDate = DateTime.UtcNow;
+                
+                // Recalculate total price after removing snack
+                combo.TotalPrice = CalculateTotalPrice(combo);
+                
                 await _uow.SnackComboRepo.UpdateAsync(combo);
                 await _uow.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -274,10 +300,14 @@ namespace Application.Services
                 {
                     return new ApiResp().SetNotFound(message: $"Snack item with SnackId {snackId} not found in combo.");
                 }
-            else
+                else
                 {
                     item.Quantity = quantity;
                     item.UpdateDate = DateTime.UtcNow;
+                    
+                    // Recalculate total price after updating quantity
+                    combo.TotalPrice = CalculateTotalPrice(combo);
+                    
                     await _uow.SnackComboRepo.UpdateAsync(combo);
                 }
 

@@ -15,5 +15,6 @@ namespace Application.IServices
         Task<ApiResp> GetAllSubscriptions();
         Task<ApiResp> UpdateSubscription(Guid Id, SubscriptionRequest subscriptionRequest);
         Task<ApiResp> DeleteSubscription(Guid Id);
+        Task<ApiResp> CancelSubscription(Guid Id);
     }
 }
