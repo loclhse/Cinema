@@ -16,7 +16,13 @@ namespace Application.ViewModel.Request
             public decimal? TotalPrice { get; set; }
             public decimal? Discount { get; set; } 
             public SnackStatus SnackComboStatus { get; set; }
-            public List<Guid>? SnackIds { get; set; } 
+            public List<SnackComboItemRequest>? SnackItems { get; set; } = new List<SnackComboItemRequest>();
         }
+
+    public class SnackComboItemRequest
+    {
+        public Guid SnackId { get; set; }
+        public int Quantity { get; set; } = 1;
     }
+}
 
