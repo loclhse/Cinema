@@ -130,6 +130,7 @@ namespace WebAPI
             //Đăng ký tác vụ ngầm
             //mỗi phút,mỗi giờ,mỗi ngày trong tháng, tháng, ngày trong tuần ứng với mỗi *
             RecurringJob.AddOrUpdate<IBackgroundService>("Change-Seat-Booking-status", s => s.ChangeSeatBookingStatus(), "* * * * *");
+            RecurringJob.AddOrUpdate<IBackgroundService>("Is-Subscription-Expired", s => s.IsSubscriptionExpired(),Cron.Daily(0, 0)); 
             // Pipeline
             if (app.Environment.IsDevelopment())
             {

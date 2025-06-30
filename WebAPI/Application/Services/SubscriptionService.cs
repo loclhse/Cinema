@@ -4,6 +4,7 @@ using Application.ViewModel.Request;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,28 @@ namespace Application.Services
             _mapper = mapper;
             _uow = unitOfWork;
         }
+
+        public async Task<ApiResp> CancelSubscription(Guid Id)
+        {
+            var apiResp = new ApiResp();
+            try
+            {
+                var subscription = await _uow.SubscriptionRepo.GetAsync(x => x.Id == Id && !x.IsDeleted);
+                if (subscription == null)
+                {
+                    return apiResp.SetNotFound("Subscription not found");
+                }
+                subscription.Status = SubscriptionStatus.cancelled;
+                await _uow.SaveChangesAsync();
+                return apiResp.SetOk("Subscription cancelled !");
+
+            }
+            catch (Exception ex)
+            {
+                return  apiResp.SetBadRequest(ex.Message);
+            }
+        }
+
         public async Task<ApiResp> CreateSubscription(SubscriptionRequest subscriptionRequest)
         {
             ApiResp apiResp = new ApiResp();
@@ -40,8 +63,8 @@ namespace Application.Services
                 }
                 var sub = _mapper.Map<Subscription>(subscriptionRequest);
                 sub.UserId = Guid.Parse(UserId.Value);
-                sub.StartDate = DateTime.UtcNow;
-                sub.EndDate = sub.StartDate.Value.AddDays(plan.Duration);
+                sub.StartDate =  DateOnly.FromDateTime(DateTime.UtcNow);
+                sub.EndDate = sub.StartDate.AddDays(plan.Duration);
                 sub.Name = plan.Name;
                 sub.Price = plan.Price;
                 await _uow.SubscriptionRepo.AddAsync(sub);
@@ -78,7 +101,18 @@ namespace Application.Services
             var apiResp = new ApiResp();
             try
             {
-                var subscriptions = await _uow.SubscriptionRepo.GetAllAsync(x => !x.IsDeleted);
+                
+                var User = _httpContextAccessor.HttpContext.User;
+                var UserId = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (UserId == null)
+                {
+                    return apiResp.SetUnauthorized("User not authenticated");
+                }
+                var subscriptions = await _uow.SubscriptionRepo.GetAllAsync(x => !x.IsDeleted && x.UserId == Guid.Parse(UserId.Value));
+                if (subscriptions == null || !subscriptions.Any())
+                {
+                    return apiResp.SetNotFound("No subscriptions found for this user");
+                }
                 var result = _mapper.Map<List<SubscriptionResponse>>(subscriptions);
                 return apiResp.SetOk(result);
             }
@@ -122,8 +156,8 @@ namespace Application.Services
                     return apiResp.SetNotFound("Subscription plan not found");
                 }
                 sub.SubscriptionPlanId = subscriptionRequest.SubscriptionPlanId;
-                sub.StartDate = DateTime.UtcNow;
-                sub.EndDate = sub.StartDate.Value.AddDays(plan.Duration);
+                sub.StartDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                sub.EndDate = sub.StartDate.AddDays(plan.Duration);
                 
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Subscription updated successfully!");
@@ -133,5 +167,7 @@ namespace Application.Services
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
+        
+       
     }
 }
