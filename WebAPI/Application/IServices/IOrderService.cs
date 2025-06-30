@@ -13,5 +13,6 @@ namespace Application.IServices
     {
         Task<ApiResp> CreateTicketOrder(OrderRequest request);
         Task<ApiResp> ViewTicketOrder(int page, int size);
+        Task<ApiResp> ViewTicketOrderByUserId(Guid userId);
     }
 }

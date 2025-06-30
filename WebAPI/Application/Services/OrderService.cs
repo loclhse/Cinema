@@ -110,6 +110,26 @@ namespace Application.Services
             }
         }
 
+        public async Task<ApiResp> ViewTicketOrderByUserId(Guid userId)
+        {
+            ApiResp apiResp=new ApiResp();
+            try
+            {
+                var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
+                if(ticket != null)
+                {
+                    return apiResp.SetOk(ticket);
+                }
+                else
+                {
+                    return apiResp.SetNotFound("Not found");
+                }
+            }catch(Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+
         private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatScheduleIds, IEnumerable<SnackOrderRequest>? snackOrders, IEnumerable<SnackComboOrderRequest>? snackComboOrders)
         {
             decimal total = 0m;
