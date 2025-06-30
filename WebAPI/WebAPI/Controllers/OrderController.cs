@@ -28,5 +28,12 @@ namespace WebAPI.Controllers
             var rs = await _service.ViewTicketOrder(page, size);
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
+
+        [HttpGet("ViewTicketByUserId")]
+        public async Task<IActionResult> GetTicketByUserId(Guid userId)
+        {
+            var rs = await _service.ViewTicketOrderByUserId(userId);
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
+        }
     }
 }
