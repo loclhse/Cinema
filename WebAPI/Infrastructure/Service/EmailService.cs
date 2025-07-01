@@ -191,5 +191,81 @@ namespace Infrastructure.Service
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
 
+        /// <summary>
+        /// Sends an e-ticket email after a successful booking.
+        /// One seat = one ticket, but all tickets are grouped in a single message.
+        /// </summary>
+        /// <param name="toEmail">Customer’s email address</param>
+        /// <param name="customerName">Name to greet the customer with</param>
+        /// <param name="movieTitle">Movie title</param>
+        /// <param name="showtimeUtc">Screening start time stored in UTC</param>
+        /// <param name="cinemaRoom">Auditorium / room name</param>
+        /// <param name="seatCodes">Seat identifiers (e.g., A1, B3)</param>
+        public async Task SendETicketAsync(
+            string toEmail,
+            string customerName,
+            string movieTitle,
+            DateTime showtimeUtc,
+            string cinemaRoom,
+            IEnumerable<string> seatCodes)
+        {
+            // 1. Convert UTC → local time (server time zone or a specific one you choose)
+            var showtimeLocal = showtimeUtc.ToLocalTime();
+
+            // 2. Build the HTML rows for each seat
+            var seatRows = new StringBuilder();
+            int index = 1;
+            foreach (var seat in seatCodes)
+            {
+                seatRows.AppendLine($@"
+            <tr>
+                <td style=""border:1px solid #ddd;padding:8px;text-align:center;"">{index++}</td>
+                <td style=""border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;"">{seat}</td>
+            </tr>");
+            }
+
+            // 3. Assemble the full email body
+            var htmlBody = $@"
+<div style=""font-family:Arial,sans-serif;line-height:1.5;color:#333;padding:20px;"">
+  <h2 style=""color:#059669;margin-top:0;"">FCinema – E-Ticket Confirmation</h2>
+
+  <p>Hello <strong>{customerName}</strong>,</p>
+  <p>You have successfully booked <strong>{seatCodes.Count()} ticket(s)</strong>. Here are the details:</p>
+
+  <h3 style=""margin-bottom:4px;"">Screening Details</h3>
+  <ul style=""margin-top:0;"">
+    <li><strong>Movie:</strong> {movieTitle}</li>
+    <li><strong>Auditorium:</strong> {cinemaRoom}</li>
+    <li><strong>Date & Time:</strong> {showtimeLocal:dddd, dd/MM/yyyy – HH:mm}</li>
+  </ul>
+
+  <h3 style=""margin-bottom:4px;"">Ticket Information</h3>
+  <table style=""border-collapse:collapse;width:100%;margin-top:0;"">
+    <thead>
+      <tr style=""background:#f3f4f6;"">
+        <th style=""border:1px solid #ddd;padding:8px;"">#</th>
+        <th style=""border:1px solid #ddd;padding:8px;"">Seat</th>
+      </tr>
+    </thead>
+    <tbody>
+      {seatRows}
+    </tbody>
+  </table>
+
+  <p style=""margin-top:16px;"">Please present this email (or the QR code in the app, if available) at the counter before the showtime.</p>
+
+  <hr />
+  <p style=""font-size:12px;color:#888;"">&copy; {DateTime.UtcNow:yyyy} FCinema. See you at the movies!</p>
+</div>";
+
+            // 4. Fire off the email
+            var subject = $"[FCinema] E-Ticket – {movieTitle} ({showtimeLocal:dd/MM/yyyy HH:mm})";
+            await SendEmailAsync(toEmail, subject, htmlBody);
+
+            _logger.LogInformation("E-ticket sent to {Email} for {Movie} – {SeatCount} seat(s)",
+                toEmail, movieTitle, seatCodes.Count());
+        }
+
+
     }
 }
