@@ -257,6 +257,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("OrderTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
 
@@ -742,7 +745,7 @@ namespace Infrastructure.Migrations
                     b.Property<int>("SnackComboStatus")
                         .HasColumnType("integer");
 
-                    b.Property<decimal?>("TotalPrice")
+                    b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
 
                     b.Property<DateTime>("UpdateDate")
