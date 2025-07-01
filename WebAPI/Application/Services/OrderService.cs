@@ -68,6 +68,7 @@ namespace Application.Services
                     SeatSchedules = seatSchedulesMapped,
                     Snacks = request.Snack,
                     SnackCombos = request.SnackCombo,
+                    Status = OrderEnum.Pending,
                 };
                 Order order = _mapper.Map<Order>(rp);
                 await _uow.OrderRepo.AddAsync(order);
@@ -133,16 +134,19 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> CancelTicketOrderById(List<Guid> seatScheduleId)
+        public async Task<ApiResp> CancelTicketOrderById(List<Guid> seatScheduleId, Guid orderId)
         {
             ApiResp apiResp = new ApiResp();
             try
             {
+                var order = await _uow.OrderRepo.GetAsync(x => x.Id == orderId && x.IsDeleted == false);
+                order.Status = OrderEnum.Faild;
                 if (!seatScheduleId.Any())
                 {
                     return apiResp.SetNotFound("Not found");
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
+
                 foreach(var seatSchedule in seats)
                 {
                     seatSchedule.Status = SeatBookingStatus.Available;
@@ -155,6 +159,32 @@ namespace Application.Services
             catch(Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId)
+        {
+            ApiResp apiResponse = new ApiResp();
+            try
+            {
+                var order = await _uow.OrderRepo.GetAsync(x => x.Id == orderId && x.IsDeleted == false);
+                order.Status = OrderEnum.Success;
+                if (!seatScheduleId.Any())
+                {
+                    return apiResponse.SetNotFound("Not found");
+                }
+                var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
+
+                foreach (var seatSchedule in seats)
+                {
+                    seatSchedule.Status = SeatBookingStatus.Booked;
+                    await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
+                }
+                await _uow.SaveChangesAsync();
+                return apiResponse.SetOk("Seat changed to Booked");
+            }
+            catch(Exception ex)
+            {
+                return apiResponse.SetBadRequest(ex.Message);
             }
         }
 

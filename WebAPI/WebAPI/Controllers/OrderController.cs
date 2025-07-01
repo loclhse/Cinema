@@ -15,7 +15,7 @@ namespace WebAPI.Controllers
             _service = service;
         }
 
-        [HttpPost("CreateTicketOrder")]
+        [HttpPost("PendingTicketOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] OrderRequest rq)
         {
             var rs = await _service.CreateTicketOrder(rq);
@@ -33,6 +33,20 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetTicketByUserId(Guid userId)
         {
             var rs = await _service.ViewTicketOrderByUserId(userId);
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
+        }
+
+        [HttpPut("CancelOrder")]
+        public async Task<IActionResult> CancelOrder(List<Guid> seatScheduleId, Guid orderId)
+        {
+            var rs = await _service.CancelTicketOrderById(seatScheduleId, orderId);
+            return rs.IsSuccess ? Ok(rs) : NotFound(rs);
+        }
+
+        [HttpPut("SuccessOrder")]
+        public async Task<IActionResult> SuccessOrder(List<Guid> seatScheduleId, Guid orderId)
+        {
+            var rs = await _service.SuccessOrder(seatScheduleId, orderId);
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
     }
