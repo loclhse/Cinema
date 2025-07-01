@@ -4,6 +4,7 @@ using Application.ViewModel.Request;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -82,6 +83,8 @@ namespace Application.Services
                 };
                 await _uow.PaymentRepo.AddAsync(payment);
 
+                await HoldSeatAsync(request.SeatScheduleId, request.UserId, null);
+
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk(rp);
             }catch (Exception ex)
@@ -125,6 +128,31 @@ namespace Application.Services
                     return apiResp.SetNotFound("Not found");
                 }
             }catch(Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+
+        public async Task<ApiResp> CancelTicketOrderById(List<Guid> seatScheduleId)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                if (!seatScheduleId.Any())
+                {
+                    return apiResp.SetNotFound("Not found");
+                }
+                var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
+                foreach(var seatSchedule in seats)
+                {
+                    seatSchedule.Status = SeatBookingStatus.Available;
+                    await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
+                }
+                await _uow.SaveChangesAsync();
+                return apiResp.SetOk("Seat changed to Available");
+                
+            }
+            catch(Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -185,6 +213,74 @@ namespace Application.Services
 
             return total;
 
+        }
+
+        public async Task<IEnumerable<SeatScheduleResponse>> HoldSeatAsync(List<Guid> seatIds, Guid? userId, string connectionId)
+        {
+            if (seatIds == null || seatIds.Count is < 1 or > 8)
+                return Enumerable.Empty<SeatScheduleResponse>();
+
+            var now = DateTime.UtcNow;
+
+            // Bắt đầu transaction
+            await using var tx = await _uow.BeginTransactionAsync();
+
+            // Lấy các SeatSchedule theo danh sách ghế và suất chiếu
+            var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatIds.Contains(s.Id));
+
+            if (seats == null || !seats.Any())
+                return Enumerable.Empty<SeatScheduleResponse>();
+
+            var succeededSeats = new List<SeatSchedule>();
+
+            foreach (var seat in seats)
+            {
+                var isExpired = seat.Status == SeatBookingStatus.Hold && seat.HoldUntil < now;
+
+                if (seat.Status == SeatBookingStatus.Hold && seat.HoldByUserId != userId && !isExpired)
+                {
+                    await tx.RollbackAsync();
+                    throw new ApplicationException($"Seat {seat.Id} is already held by another user.");
+                }
+
+                // Chỉ cho giữ nếu ghế đang available hoặc hold đã hết hạn
+                if (seat.Status == SeatBookingStatus.Available || isExpired)
+                {
+                    seat.Status = SeatBookingStatus.Hold;
+                    seat.HoldUntil = now.AddMinutes(5);
+                    seat.HoldByUserId = userId;
+                    seat.HoldByConnectionId = connectionId;
+
+                    succeededSeats.Add(seat);
+                }
+            }
+
+            // Nếu không có ghế nào được giữ thành công → không cần save
+            if (!succeededSeats.Any())
+            {
+                await tx.RollbackAsync();
+                return Enumerable.Empty<SeatScheduleResponse>();
+            }
+
+            try
+            {
+                await _uow.SaveChangesAsync();   // vẫn trong transaction
+                await tx.CommitAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await tx.RollbackAsync();               // có xung đột → huỷ
+                throw new InvalidOperationException("Someone hold this/these seat before. Please try again.");
+            }
+
+            // Map kết quả trả về
+            var result = _mapper.Map<List<SeatScheduleResponse>>(succeededSeats);
+            foreach (var item in result)
+            {
+                item.IsOwnedByCaller = true;
+            }
+
+            return result;
         }
 
     }
