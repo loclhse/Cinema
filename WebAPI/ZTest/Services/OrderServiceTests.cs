@@ -179,6 +179,7 @@ namespace ZTest.Services
         public async Task CancelTicketOrder_Should_UpdateStatus_ToAvailable()
         {
             var seatId = Guid.NewGuid();
+            var orderId = Guid.NewGuid(); // Added orderId to match the method signature  
             var seat = new SeatSchedule { Id = seatId, Status = SeatBookingStatus.Hold };
 
             _seatRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
@@ -188,7 +189,7 @@ namespace ZTest.Services
 
             _uow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            var resp = await _sut.CancelTicketOrderById(new List<Guid> { seatId });
+            var resp = await _sut.CancelTicketOrderById(new List<Guid> { seatId }, orderId);
 
             resp.StatusCode.Should().Be(HttpStatusCode.OK);
             resp.IsSuccess.Should().BeTrue();
