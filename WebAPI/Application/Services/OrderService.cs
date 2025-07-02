@@ -73,6 +73,8 @@ namespace Application.Services
                 Order order = _mapper.Map<Order>(rp);
                 await _uow.OrderRepo.AddAsync(order);
 
+                rp.Id = order.Id;
+
                 Payment payment = new Payment
                 {
                     userId = order.UserId,
