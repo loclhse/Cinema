@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250701115732_init")]
-    partial class init
+    [Migration("20250701155235_MovieTheater")]
+    partial class MovieTheater
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -759,7 +759,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SnackCombo");
+                    b.ToTable("SnacksCombo");
                 });
 
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
@@ -793,7 +793,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ComboId", "SnackId")
                         .IsUnique();
 
-                    b.ToTable("SnackComboItem");
+                    b.ToTable("SnackComboItems");
                 });
 
             modelBuilder.Entity("Domain.Entities.Subscription", b =>

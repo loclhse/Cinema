@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class MovieTheater : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -161,26 +161,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackCombo",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    ImgUrl = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    TotalPrice = table.Column<decimal>(type: "numeric", nullable: false),
-                    discount = table.Column<decimal>(type: "numeric", nullable: true),
-                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
-                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SnackCombo", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Snacks",
                 columns: table => new
                 {
@@ -200,6 +180,26 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Snacks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SnacksCombo",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    ImgUrl = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    TotalPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                    discount = table.Column<decimal>(type: "numeric", nullable: true),
+                    SnackComboStatus = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SnacksCombo", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -470,7 +470,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SnackComboItem",
+                name: "SnackComboItems",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -483,15 +483,15 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SnackComboItem", x => x.Id);
+                    table.PrimaryKey("PK_SnackComboItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SnackComboItem_SnackCombo_ComboId",
+                        name: "FK_SnackComboItems_SnacksCombo_ComboId",
                         column: x => x.ComboId,
-                        principalTable: "SnackCombo",
+                        principalTable: "SnacksCombo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SnackComboItem_Snacks_SnackId",
+                        name: "FK_SnackComboItems_Snacks_SnackId",
                         column: x => x.SnackId,
                         principalTable: "Snacks",
                         principalColumn: "Id",
@@ -859,14 +859,14 @@ namespace Infrastructure.Migrations
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItem_ComboId_SnackId",
-                table: "SnackComboItem",
+                name: "IX_SnackComboItems_ComboId_SnackId",
+                table: "SnackComboItems",
                 columns: new[] { "ComboId", "SnackId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnackComboItem_SnackId",
-                table: "SnackComboItem",
+                name: "IX_SnackComboItems_SnackId",
+                table: "SnackComboItems",
                 column: "SnackId");
 
             migrationBuilder.CreateIndex(
@@ -929,7 +929,7 @@ namespace Infrastructure.Migrations
                 name: "SeatTypePrice");
 
             migrationBuilder.DropTable(
-                name: "SnackComboItem");
+                name: "SnackComboItems");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -947,7 +947,7 @@ namespace Infrastructure.Migrations
                 name: "Showtimes");
 
             migrationBuilder.DropTable(
-                name: "SnackCombo");
+                name: "SnacksCombo");
 
             migrationBuilder.DropTable(
                 name: "Snacks");

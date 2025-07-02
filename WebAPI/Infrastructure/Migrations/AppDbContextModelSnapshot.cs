@@ -756,7 +756,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SnackCombo");
+                    b.ToTable("SnacksCombo");
                 });
 
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
@@ -790,7 +790,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ComboId", "SnackId")
                         .IsUnique();
 
-                    b.ToTable("SnackComboItem");
+                    b.ToTable("SnackComboItems");
                 });
 
             modelBuilder.Entity("Domain.Entities.Subscription", b =>

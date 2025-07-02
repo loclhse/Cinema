@@ -33,7 +33,7 @@ namespace Application.Services
                 //gia promotion giam
                 var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
                 decimal? discountPercent = 1;
-                if(promotion != null)
+                if (promotion != null)
                 {
                     discountPercent = promotion.DiscountPercent;
                 }
@@ -56,11 +56,12 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                decimal price = await CalculatePriceAsync(request.SeatScheduleId ,request.Snack, request.SnackCombo); // gia chua giam tu promotion
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo); // gia chua giam tu promotion
 
                 var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
                 OrderResponse rp = new OrderResponse
                 {
+                   
                     UserId = request.UserId,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
@@ -88,35 +89,12 @@ namespace Application.Services
 
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk(rp);
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
-
-        private async Task<decimal> CalculatePriceAsync(IEnumerable<Guid>? seatScheduleIds, IEnumerable<Guid>? snackIds)
-        {
-            decimal total = 0m;
-
-            if (seatScheduleIds?.Any() == true)
-            {
-                var seatTypePrices = (await _uow.SeatTypePriceRepo.GetAllAsync(null))
-                                     .ToDictionary(x => x.SeatType,
-                                                   x => x.DefaultPrice);
-
-                var schedules = await _uow.SeatScheduleRepo.GetAllAsync(
-                                                                ss => seatScheduleIds.Contains(ss.Id),
-                                                                include: q => q.Include(ss => ss.Seat!));
-
-                foreach (var ss in schedules)
-                {
-                    if (ss.Seat != null &&
-                        seatTypePrices.TryGetValue(ss.Seat.SeatType, out var price))
-                    {
-                        total += price;
-                    }
-                }
-            }
 
         public async Task<ApiResp> ViewTicketOrder(int page, int size)
         {
@@ -124,7 +102,7 @@ namespace Application.Services
             try
             {
                 var rs = await _uow.OrderRepo.GetAllAsync(x => x.IsDeleted == false, null, page, size);
-                if(rs != null)
+                if (rs != null)
                 {
                     return apiResp.SetOk(rs);
                 }
@@ -132,7 +110,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex);
             }
@@ -140,11 +119,11 @@ namespace Application.Services
 
         public async Task<ApiResp> ViewTicketOrderByUserId(Guid userId)
         {
-            ApiResp apiResp=new ApiResp();
+            ApiResp apiResp = new ApiResp();
             try
             {
                 var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
-                if(ticket != null)
+                if (ticket != null)
                 {
                     return apiResp.SetOk(ticket);
                 }
@@ -152,7 +131,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -171,16 +151,16 @@ namespace Application.Services
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
 
-                foreach(var seatSchedule in seats)
+                foreach (var seatSchedule in seats)
                 {
                     seatSchedule.Status = SeatBookingStatus.Available;
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Seat changed to Available");
-                
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -206,7 +186,7 @@ namespace Application.Services
                 await _uow.SaveChangesAsync();
                 return apiResponse.SetOk("Seat changed to Booked");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResponse.SetBadRequest(ex.Message);
             }
