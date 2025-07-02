@@ -117,7 +117,18 @@ namespace Infrastructure.MapperConfigs
             
             CreateMap<Payment, PaymentResponse>().ReverseMap();
 
-
+            CreateMap<OrderResponse, Order>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.OrderTime, opt => opt.MapFrom(src => src.OrderTime))
+                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.SeatSchedules, opt => opt.MapFrom(src => src.SeatSchedules))
+                .ForMember(dest => dest.TotalBonusPoint, opt => opt.Ignore()) // Nếu không có trong OrderResponse
+                .ForMember(dest => dest.SubscriptionId, opt => opt.Ignore()) // Nếu không có trong OrderResponse
+                .ForMember(dest => dest.Payments, opt => opt.Ignore()) // Bỏ qua vì được tạo riêng
+                .ForMember(dest => dest.SeatScheduleLogs, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
+                .ForMember(dest => dest.Subscription, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
+                .ForMember(dest => dest.User, opt => opt.Ignore());
 
         }
     }

@@ -238,5 +238,16 @@ namespace Application.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task<SeatScheduleResponse?> GetShowTimeBySeatScheduleAsync(Guid id)
+        {
+            var seat = await _unitOfWork.SeatScheduleRepo.GetAsync(s => s.Id == id);
+
+            if (seat == null)
+                return null;
+
+            var result = _mapper.Map<SeatScheduleResponse>(seat);
+
+            return result;
+        }
     }
 }

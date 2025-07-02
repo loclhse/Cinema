@@ -257,6 +257,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("OrderTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid");
 
