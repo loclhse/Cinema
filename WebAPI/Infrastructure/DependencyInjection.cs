@@ -67,14 +67,16 @@ namespace Infrastructure
             services.AddScoped<IPromotionRepo, PromotionRepo>();
             services.AddScoped<IRoomLayoutRepo, RoomLayoutRepo>();
             services.AddScoped<ISnackRepo,SnackRepo>();
-           
+            services.AddScoped<ISnackComboRepo, SnackComboRepo>();
+            services.AddScoped<IPaymentRepo, PaymentRepo>();
             services.AddScoped<IGenreRepo, GenreRepo>();
             services.AddScoped<IMovieRepo, MovieRepo>();
             services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
             services.AddScoped<IMovieGenreRepo, MovieGenreRepo>();
             services.AddScoped<ISeatScheduleRepo, SeatScheduleRepo>();
+            services.AddScoped<ISubscriptionPlanRepo, SubscriptionPlanRepo>();
+            services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
-
 
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -96,10 +98,14 @@ namespace Infrastructure
             services.AddScoped<IPromotionService, PromotionService>();
             services.AddScoped<IShowtimeService, ShowtimeService>();
             services.AddScoped<ISnackService, SnackService>();
-           
+            services.AddScoped<ISnackComboService, SnackComboService>();
+            services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
+            services.AddScoped<IBackgroundService, BackgroundService>();    
+            services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ISubscriptionService, SubscriptionService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

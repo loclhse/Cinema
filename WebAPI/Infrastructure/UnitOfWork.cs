@@ -22,11 +22,18 @@ namespace Infrastructure
         public IRoomLayoutRepo RoomLayoutRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypePriceRepo { get; }
+        public IPaymentRepo PaymentRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
+        public ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
+       
+
+        public ISnackComboRepo SnackComboRepo { get; }
+        public ISubscriptionRepo SubscriptionRepo { get; }
+
         public IOrderRepo OrderRepo { get; }
         public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
@@ -39,6 +46,7 @@ namespace Infrastructure
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypePriceRepo = new SeatTypePriceRepo(context);
+            PaymentRepo = new PaymentRepo(context);
             MovieRepo = new MovieRepo(context);
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
@@ -48,6 +56,9 @@ namespace Infrastructure
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);
             SeatScheduleRepo = new SeatScheduleRepo(context);
+            SubscriptionPlanRepo = new SubscriptionPlanRepo(context);
+            SnackComboRepo = new SnackComboRepo(context);
+            SubscriptionRepo = new SubscriptionRepo(context);
             OrderRepo = new OrderRepo(context);
         }
 

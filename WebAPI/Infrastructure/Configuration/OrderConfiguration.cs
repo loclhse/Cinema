@@ -21,7 +21,7 @@ namespace Infrastructure.Configuration
        
             //quan he voi payment
             builder.HasMany(o => o.Payments)
-                .WithOne(p => p.Orders)
+                .WithOne(p => p.Order)
                 .HasForeignKey(p => p.OrderId);
              
             //quan he voi seat schedule
@@ -33,6 +33,7 @@ namespace Infrastructure.Configuration
             builder.HasMany(o => o.SeatScheduleLogs)
                 .WithOne(t => t.Order)
                 .HasForeignKey(t => t.OrderId);
+
         }
     }
 }

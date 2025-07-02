@@ -45,13 +45,33 @@ namespace Infrastructure.MapperConfigs
             CreateMap<Showtime, ShowtimeUpdateRequest>().ReverseMap();
             CreateMap<Snack, SnackResponse>().ReverseMap();
             CreateMap<SnackRequest, Snack>().ReverseMap();
-            CreateMap<Order, OrderResponse>().ReverseMap();
-
-
+           
+           
+            CreateMap<SnackComboRequest, SnackCombo>().ReverseMap();
+            CreateMap<SubscriptionPlanRequest, SubscriptionPlan>().ReverseMap();
+            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>().ReverseMap();
+            CreateMap<Subscription, SubscriptionResponse>().ReverseMap();
+            CreateMap<SubscriptionRequest, Subscription>().ReverseMap();
+            CreateMap<SubscriptionPlan, AdminSubPlanResponse>().ReverseMap();
             CreateMap<Showtime, MovieTimeResponse>().ReverseMap();
            
 
            
+            CreateMap<SnackComboUpdateRequest, SnackCombo>().ReverseMap();
+            CreateMap<SnackComboItem, SnackComboItemDetail>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SnackId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Snack.Name))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.ImgUrl, opt => opt.MapFrom(src => src.Snack.imgUrl))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Snack.Price))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Snack.Type))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Snack.Description));
+
+
+
+            CreateMap<SnackCombo, SnackComboResponse>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.SnackComboItems))
+                .ReverseMap();
 
 
             CreateMap<SeatSchedule, SeatScheduleResponse>()
@@ -93,6 +113,23 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Avatar, m => m.MapFrom(s => s.Profile.Avatar))
                 .ForMember(d => d.Sex, m => m.MapFrom(s => s.Profile.Sex))
                 .ForAllMembers(o => o.Condition((src, dest, srcMember) => srcMember != null));
+
+            
+            CreateMap<Payment, PaymentResponse>().ReverseMap();
+
+            CreateMap<OrderResponse, Order>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.OrderTime, opt => opt.MapFrom(src => src.OrderTime))
+                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.SeatSchedules, opt => opt.MapFrom(src => src.SeatSchedules))
+                .ForMember(dest => dest.TotalBonusPoint, opt => opt.Ignore()) // Nếu không có trong OrderResponse
+                .ForMember(dest => dest.SubscriptionId, opt => opt.Ignore()) // Nếu không có trong OrderResponse
+                .ForMember(dest => dest.Payments, opt => opt.Ignore()) // Bỏ qua vì được tạo riêng
+                .ForMember(dest => dest.SeatScheduleLogs, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
+                .ForMember(dest => dest.Subscription, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
+                .ForMember(dest => dest.User, opt => opt.Ignore());
+
         }
     }
 }

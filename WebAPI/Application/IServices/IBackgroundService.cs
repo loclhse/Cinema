@@ -9,5 +9,6 @@ namespace Application.IServices
     public interface IBackgroundService
     {
         Task ChangeSeatBookingStatus();
+        Task IsSubscriptionExpired();
     }
 }

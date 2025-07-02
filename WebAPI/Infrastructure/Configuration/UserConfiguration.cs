@@ -34,6 +34,11 @@ namespace Infrastructure.Configuration
 
             builder.Property(u => u.Sex)
                 .HasConversion<string>();
+            //quan he voi subscription
+            builder.HasMany(u => u.Subscriptions)
+                .WithOne(s => s.User)
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
