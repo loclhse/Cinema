@@ -11,6 +11,7 @@ namespace Application.ViewModel.Response
 {
     public class OrderResponse
     {
+        public Guid Id { get; set; }
         public Guid? UserId { get; set; } 
         public DateTime? OrderTime { get; set; }
         public decimal? TotalAmount { get; set; }
