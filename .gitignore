@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /WebAPI/appsettings.json
 /WebAPI/WebAPI/student-51e6a-firebase-adminsdk-ix2ag-c9ca6c389c.json
+
+coverage-report/
+
