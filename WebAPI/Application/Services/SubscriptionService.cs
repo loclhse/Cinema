@@ -59,7 +59,7 @@ namespace Application.Services
                 var UserId = User.FindFirst(ClaimTypes.NameIdentifier);
                 if(UserId == null)
                 {
-                    return apiResp.SetUnauthorized("User not authenticated");
+                    return apiResp.SetUnauthorized(message:"User not authenticated");
                 }
                 var sub = _mapper.Map<Subscription>(subscriptionRequest);
                 sub.UserId = Guid.Parse(UserId.Value);
@@ -104,9 +104,9 @@ namespace Application.Services
                 
                 var User = _httpContextAccessor.HttpContext.User;
                 var UserId = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (UserId == null)
+                if (User == null || UserId == null || !Guid.TryParse(UserId.Value, out Guid userGuid))
                 {
-                    return apiResp.SetUnauthorized("User not authenticated");
+                    return apiResp.SetUnauthorized(message:"User not authenticated");
                 }
                 var subscriptions = await _uow.SubscriptionRepo.GetAllAsync(x => !x.IsDeleted && x.UserId == Guid.Parse(UserId.Value));
                 if (subscriptions == null || !subscriptions.Any())
