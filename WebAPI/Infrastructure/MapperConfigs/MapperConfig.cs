@@ -117,20 +117,25 @@ namespace Infrastructure.MapperConfigs
             
             CreateMap<Payment, PaymentResponse>().ReverseMap();
 
-            CreateMap<OrderResponse, Order>()
-               
+            CreateMap<Order, OrderResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.OrderTime, opt => opt.MapFrom(src => src.OrderTime))
-                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                .ForMember(dest => dest.TotalAfter, opt => opt.MapFrom(src => src.TotalAmount)) // Giả sử TotalAfter tương đương TotalAmount, nếu khác thì cần điều chỉnh
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.SeatSchedules, opt => opt.MapFrom(src => src.SeatSchedules))
-                .ForMember(dest => dest.TotalBonusPoint, opt => opt.Ignore()) // Nếu không có trong OrderResponse
-                .ForMember(dest => dest.SubscriptionId, opt => opt.Ignore()) // Nếu không có trong OrderResponse
-                .ForMember(dest => dest.Payments, opt => opt.Ignore()) // Bỏ qua vì được tạo riêng
-                .ForMember(dest => dest.SeatScheduleLogs, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
-                .ForMember(dest => dest.Subscription, opt => opt.Ignore()) // Bỏ qua vì không ánh xạ
-                .ForMember(dest => dest.User, opt => opt.Ignore());
+                .ForMember(dest => dest.Snacks, opt => opt.Ignore()) // Nếu không có ánh xạ trực tiếp từ Order
+                .ForMember(dest => dest.SnackCombos, opt => opt.Ignore()).ReverseMap();
 
+            CreateMap<SeatSchedule, SeatScheduleForOrderResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.SeatId, opt => opt.MapFrom(src => src.SeatId))
+                .ForMember(dest => dest.Label, opt => opt.MapFrom(src => src.Seat != null ? src.Seat.Label : string.Empty))
+                .ForMember(dest => dest.ShowtimeId, opt => opt.MapFrom(src => src.ShowtimeId))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+            CreateMap<OrderResponse, Order>();
+            CreateMap<SeatScheduleForOrderResponse, SeatSchedule>();
         }
     }
 }

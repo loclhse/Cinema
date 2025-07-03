@@ -30,7 +30,7 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                //gia promotion giam
+                // Lấy promotion
                 var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
                 decimal? discountPercent = 1;
                 if (promotion != null)
@@ -38,12 +38,7 @@ namespace Application.Services
                     discountPercent = promotion.DiscountPercent;
                 }
 
-
-                //lay list snack bang id tu request
-
-                //lay list snackCombo
-
-                //lay list seatSchedules bang id tu request
+                // Lấy list seatSchedules từ DB
                 List<SeatSchedule> seatSchedules = new();
                 if (request.SeatScheduleId == null || !request.SeatScheduleId.Any())
                 {
@@ -56,38 +51,39 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
-                decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo); // gia chua giam tu promotion
+                decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo);
 
-                var seatSchedulesMapped = _mapper.Map<List<SeatScheduleForOrderResponse>>(seatSchedules);
-                OrderResponse rp = new OrderResponse
+                // Tạo Order entity và gán trực tiếp các instance đã tracking
+                Order order = new Order
                 {
                    
                     UserId = request.UserId,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
-                    TotalAfter = price * discountPercent, // gia da giam
-                    SeatSchedules = seatSchedulesMapped,
-                    Snacks = request.Snack,
-                    SnackCombos = request.SnackCombo,
                     Status = OrderEnum.Pending,
+                    SeatSchedules = seatSchedules
                 };
-                Order order = _mapper.Map<Order>(rp);
                 await _uow.OrderRepo.AddAsync(order);
 
+                await _uow.SaveChangesAsync();
+
+                // Tạo payment
                 Payment payment = new Payment
                 {
                     userId = order.UserId,
                     PaymentMethod = request.PaymentMethod,
                     PaymentTime = null,
-                    AmountPaid = rp.TotalAfter,
+                    AmountPaid = price * discountPercent,
                     OrderId = order.Id,
-                    //SubscriptionId = 
                 };
                 await _uow.PaymentRepo.AddAsync(payment);
 
                 await HoldSeatAsync(request.SeatScheduleId, request.UserId, null);
 
                 await _uow.SaveChangesAsync();
+
+                // Map sang OrderResponse để trả về
+                var rp = _mapper.Map<OrderResponse>(order);
                 return apiResp.SetOk(rp);
             }
             catch (Exception ex)

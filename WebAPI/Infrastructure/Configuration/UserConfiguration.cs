@@ -39,6 +39,11 @@ namespace Infrastructure.Configuration
                 .WithOne(s => s.User)
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+            //quan he voi redeem
+            builder.HasMany(u => u.Redeems)
+                .WithOne(r => r.User)
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

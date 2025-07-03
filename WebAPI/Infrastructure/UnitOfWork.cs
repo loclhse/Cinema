@@ -1,11 +1,13 @@
 ﻿using Application;
 using Application.IRepos;
 using Application.IServices;
+using Elastic.Clients.Elasticsearch;
 using Infrastructure.Identity;
 using Infrastructure.Repos;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace Infrastructure
 {
@@ -29,13 +31,14 @@ namespace Infrastructure
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
         public ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
-       
+        public IScoreItemRepo ScoreItemRepo { get; }
 
         public ISnackComboRepo SnackComboRepo { get; }
         public ISubscriptionRepo SubscriptionRepo { get; }
 
         public IOrderRepo OrderRepo { get; }
-        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
+        public IElasticMovieRepo elasticMovieRepo { get; }
+        public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
         {
@@ -60,6 +63,8 @@ namespace Infrastructure
             SnackComboRepo = new SnackComboRepo(context);
             SubscriptionRepo = new SubscriptionRepo(context);
             OrderRepo = new OrderRepo(context);
+            ScoreItemRepo = new ScoreItemRepo(context);
+            elasticMovieRepo = new ElasticMovieRepo(elasticClient);
         }
 
         public async Task<int> SaveChangesAsync()

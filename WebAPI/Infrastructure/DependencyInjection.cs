@@ -3,6 +3,7 @@ using Application.IRepos;
 using Application.IServices;
 using Application.Services;
 using AutoMapper;
+using Elastic.Clients.Elasticsearch;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Configuration;
@@ -77,7 +78,7 @@ namespace Infrastructure
             services.AddScoped<ISubscriptionPlanRepo, SubscriptionPlanRepo>();
             services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
-
+            services.AddScoped<IElasticMovieRepo, ElasticMovieRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             #endregion
@@ -123,7 +124,14 @@ namespace Infrastructure
            
             //Đăng ký SignalR
             services.AddSignalR();
+            //Đăng ký Elasticsearch
+            services.AddSingleton(sp =>
+            {
+                var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+                    .DefaultIndex("movies");
 
+                return new ElasticsearchClient(settings);
+            });
             return services;
             
         }

@@ -1,6 +1,8 @@
 ﻿using Application.IRepos;
+using Application.ViewModel.Request;
 using Domain.Entities;
 using Domain.Enums;
+using Elastic.Clients.Elasticsearch;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,9 +15,10 @@ namespace Infrastructure.Repos
 {
     public class MovieRepo : GenericRepo<Movie>, IMovieRepo
     {
-       
+        
         public MovieRepo(AppDbContext context) : base(context)
         {
+           
         }
 
         public async Task<List<string>> GetGenreNamesForMovieAsync(Guid movieId)
@@ -75,8 +78,7 @@ namespace Infrastructure.Repos
                 .Take(limit ?? int.MaxValue)
                 .ToListAsync();
         }
-
-
+       
     }
 
 }
