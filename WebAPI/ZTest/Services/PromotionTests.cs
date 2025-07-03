@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -40,9 +41,9 @@ namespace ZTest.Services
                 EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7))
             };
 
-            var promotion = new Promotion();
+            var promotion = new Promotion { Id = Guid.NewGuid() };
             _mockMapper.Setup(m => m.Map<Promotion>(request)).Returns(promotion);
-            _mockUow.Setup(u => u.PromotionRepo.AddAsync(It.IsAny<Promotion>())).Returns(Task.CompletedTask);
+            _mockUow.Setup(u => u.PromotionRepo.AddAsync(promotion)).Returns(Task.CompletedTask);
             _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
             // Act
@@ -50,6 +51,8 @@ namespace ZTest.Services
 
             // Assert
             Assert.True(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
             Assert.Equal("Successfully updated", result.Result);
         }
 
@@ -60,7 +63,7 @@ namespace ZTest.Services
             var request = new EditPromotionRequest();
             var promotion = new Promotion();
             _mockMapper.Setup(m => m.Map<Promotion>(request)).Returns(promotion);
-            _mockUow.Setup(u => u.PromotionRepo.AddAsync(It.IsAny<Promotion>())).Returns(Task.CompletedTask);
+            _mockUow.Setup(u => u.PromotionRepo.AddAsync(promotion)).Returns(Task.CompletedTask);
             _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(0);
 
             // Act
@@ -68,7 +71,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal(System.Net.HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -83,8 +88,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
             Assert.Equal("Mapping error", result.ErrorMessage);
-            Assert.Equal(System.Net.HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -99,8 +105,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
             Assert.Equal("Not found this Promotion", result.ErrorMessage);
-            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -108,7 +115,7 @@ namespace ZTest.Services
         {
             // Arrange
             var promotionId = Guid.NewGuid();
-            var promotion = new Promotion { Id = promotionId };
+            var promotion = new Promotion { Id = promotionId, IsDeleted = false };
             _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).ReturnsAsync(promotion);
             _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
@@ -117,7 +124,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            Assert.Equal("Delete Successfully", result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
+            Assert.Equal("Delete Successfully", result.Result);
             Assert.True(promotion.IsDeleted);
         }
 
@@ -134,8 +143,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
             Assert.Equal("Promotion not found", result.ErrorMessage);
-            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -143,7 +153,7 @@ namespace ZTest.Services
         {
             // Arrange
             var promotionId = Guid.NewGuid();
-            var request = new EditPromotionRequest();
+            var request = new EditPromotionRequest { Title = "Updated Promo" };
             var promotion = new Promotion { Id = promotionId };
             _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).ReturnsAsync(promotion);
             _mockMapper.Setup(m => m.Map(request, promotion)).Returns(promotion);
@@ -154,7 +164,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            Assert.Equal(System.Net.HttpStatusCode.OK, result.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
+            Assert.Equal(promotion, result.Result);
         }
 
         [Fact]
@@ -168,8 +180,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
             Assert.Equal("Not found any Promotion", result.ErrorMessage);
-            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -184,8 +197,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.True(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
             Assert.Equal(promotions, result.Result);
-            Assert.Equal(System.Net.HttpStatusCode.OK, result.StatusCode);
         }
 
         [Fact]
@@ -200,8 +214,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
             Assert.Equal("Not found this Promotion", result.ErrorMessage);
-            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Null(result.Result);
         }
 
         [Fact]
@@ -217,8 +232,9 @@ namespace ZTest.Services
 
             // Assert
             Assert.True(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Null(result.ErrorMessage);
             Assert.Equal(promotion, result.Result);
-            Assert.Equal(System.Net.HttpStatusCode.OK, result.StatusCode);
         }
     }
 }
