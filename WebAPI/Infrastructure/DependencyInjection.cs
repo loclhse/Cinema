@@ -107,6 +107,7 @@ namespace Infrastructure
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
+            services.AddScoped<IVnPayService, VnPayService>();
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

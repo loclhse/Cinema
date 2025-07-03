@@ -1,4 +1,5 @@
 ﻿using Application.IServices;
+using Domain.Entities;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Hangfire;
@@ -6,6 +7,7 @@ using Infrastructure;
 using Infrastructure.Configuration;
 using Infrastructure.Helper;
 using Infrastructure.Identity;
+using Infrastructure.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -111,6 +113,7 @@ namespace WebAPI
                 o.AddPolicy("AllowAll",
                     p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
             });
+           
 
             var app = builder.Build();
 
