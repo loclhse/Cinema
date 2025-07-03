@@ -51,16 +51,47 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
+                List<Snack> snacks = new();
+                if(request.Snack == null || !request.Snack.Any())
+                {
+                    return apiResp.SetBadRequest("Snack cannot be null or empty");
+                }
+                foreach(var item in request.Snack)
+                {
+                    var snack = await _uow.SnackRepo.GetAsync(x => x.Id == item.SnackId);
+                    if(snack != null)
+                    {
+                        snacks.Add(snack);
+                    }
+                }
+
+                List<SnackCombo> snackCombos = new();
+                if(request.SnackCombo == null || !request.SnackCombo.Any())
+                {
+                    return apiResp.SetBadRequest();
+                }
+                foreach(var item in request.SnackCombo)
+                {
+                    var snackCombo = await _uow.SnackComboRepo.GetAsync(x => x.Id == item.SnackComboId);
+                    if( snackCombo != null)
+                    {
+                        snackCombos.Add(snackCombo);
+                    }
+                }
+
                 decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo);
 
                 // Tạo Order entity và gán trực tiếp các instance đã tracking
                 Order order = new Order
                 {
                     UserId = request.UserId,
+                    PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
                     Status = OrderEnum.Pending,
-                    SeatSchedules = seatSchedules
+                    SeatSchedules = seatSchedules,
+                    Snacks = snacks,
+                    SnackCombos = snackCombos,
                 };
                 await _uow.OrderRepo.AddAsync(order);
 
