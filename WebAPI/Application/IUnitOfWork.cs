@@ -28,5 +28,7 @@ namespace Application
         Task<int> SaveChangesAsync();
         IDbContextTransaction BeginTransaction();
         Task<IDbContextTransaction> BeginTransactionAsync();
+        IScoreItemRepo ScoreItemRepo { get; }
+        IElasticMovieRepo elasticMovieRepo { get; }
     }
 }

@@ -28,6 +28,7 @@ public partial class AppUser : BaseEntity
     //public virtual CustomerScore? CustomerScore { get; set; }
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    public virtual ICollection<Redeem> Redeems { get; set; } = new List<Redeem>();
 
     //public virtual ICollection<Promotion> Promotions { get; set; } = new List<Promotion>();
 
