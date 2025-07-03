@@ -54,62 +54,90 @@ namespace ZTest.Services
         [Fact]
         public async Task CreateTicketOrder_Should_SaveOrder_AndReturnOk()
         {
-            // Arrange
+            /* ---------- Arrange ---------- */
             var seatId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+
             var seatSch = new SeatSchedule
             {
                 Id = seatId,
-                Seat = new Seat { SeatType = SeatTypes.Standard }
+                Seat = new Seat { SeatType = SeatTypes.Standard },
+                Status = SeatBookingStatus.Available,
+                HoldUntil = DateTime.UtcNow.AddMinutes(-1)
             };
 
             var req = new OrderRequest
             {
-                UserId = Guid.NewGuid(),
+                UserId = userId,
                 PaymentMethod = PaymentMethod.Cash,
                 SeatScheduleId = new List<Guid> { seatId },
                 Snack = new List<SnackOrderRequest>(),
                 SnackCombo = new List<SnackComboOrderRequest>()
             };
 
+            /* ---- SeatScheduleRepo ---- */
             _seatRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
                      .ReturnsAsync(seatSch);
 
+            // overload 4 tham số (khi service truyền page)
             _seatRepo.Setup(r => r.GetAllAsync(
-                        It.IsAny<Expression<Func<SeatSchedule, bool>>>(),                    // filter
-                        It.IsAny<Func<IQueryable<SeatSchedule>, IIncludableQueryable<SeatSchedule, object>>>(), // include
-                        It.IsAny<int>(),                                                     // pageIndex
-                        It.IsAny<int>()                                                      // pageSize
-                    ))
-                    .ReturnsAsync(new List<SeatSchedule> { seatSch });
+                                It.IsAny<Expression<Func<SeatSchedule, bool>>>(),
+                                It.IsAny<Func<IQueryable<SeatSchedule>, IIncludableQueryable<SeatSchedule, object>>>(),
+                                It.IsAny<int>(),
+                                It.IsAny<int>()))
+                     .ReturnsAsync(new List<SeatSchedule> { seatSch });
 
+            // **overload 2 tham số (fix lỗi)**  
+            _seatRepo.Setup(r => r.GetAllAsync(
+                                It.IsAny<Expression<Func<SeatSchedule, bool>>>(),
+                                It.IsAny<Func<IQueryable<SeatSchedule>, IIncludableQueryable<SeatSchedule, object>>>()))
+                     .ReturnsAsync(new List<SeatSchedule> { seatSch });
 
+            // overload 1 tham số (HoldSeatAsync)
+            _seatRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                     .ReturnsAsync(new List<SeatSchedule> { seatSch });
+
+            _seatRepo.Setup(r => r.UpdateAsync(It.IsAny<SeatSchedule>()))
+                     .Returns(Task.CompletedTask);
+
+            /* ---- SeatTypePriceRepo ---- */
             _seatTypeRepo.Setup(r => r.GetAllAsync(null))
                          .ReturnsAsync(new List<SeatTypePrice>{
-                             new SeatTypePrice{ SeatType = SeatTypes.Standard, DefaultPrice = 100_000m }});
+                         new SeatTypePrice { SeatType = SeatTypes.Standard, DefaultPrice = 100_000m } });
 
-            _mapper.Setup(m => m.Map<List<SeatScheduleForOrderResponse>>(It.IsAny<List<SeatSchedule>>()))
-                   .Returns(new List<SeatScheduleForOrderResponse>{
-                       new SeatScheduleForOrderResponse{ Id = seatId, Label = "A1" }});
+            /* ---- Mapper ---- */
+            _mapper.Setup(m => m.Map<List<SeatScheduleResponse>>(It.IsAny<List<SeatSchedule>>()))
+                   .Returns(new List<SeatScheduleResponse>{
+                   new SeatScheduleResponse { Id = seatId, IsOwnedByCaller = true } });
 
-            // Map OrderResponse -> Order (OrderService tạo Order từ OrderResponse)
-            _mapper.Setup(m => m.Map<Order>(It.IsAny<OrderResponse>()))
-                   .Returns(new Order());
+            _mapper.Setup(m => m.Map<OrderResponse>(It.IsAny<Order>()))
+                   .Returns(new OrderResponse { Id = Guid.NewGuid() });
 
+            /* ---- Repos thêm Order / Payment ---- */
             _orderRepo.Setup(r => r.AddAsync(It.IsAny<Order>())).Returns(Task.CompletedTask);
             _paymentRepo.Setup(r => r.AddAsync(It.IsAny<Payment>())).Returns(Task.CompletedTask);
+
+            /* ---- Transaction ---- */
+            var txMock = new Mock<IDbContextTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            txMock.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(txMock.Object);
+
+            /* ---- SaveChangesAsync nhiều lần ---- */
             _uow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            // Act
+            /* ---------- Act ---------- */
             var resp = await _sut.CreateTicketOrder(req);
 
-            // Assert
+            /* ---------- Assert ---------- */
             resp.StatusCode.Should().Be(HttpStatusCode.OK);
             resp.IsSuccess.Should().BeTrue();
             resp.Result.Should().NotBeNull();
 
             _orderRepo.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
             _paymentRepo.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Once);
-            _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
+            _uow.Verify(u => u.SaveChangesAsync(), Times.AtLeast(2));
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         /* ═════ 2. SeatScheduleId rỗng → BadRequest ═════ */
@@ -178,25 +206,48 @@ namespace ZTest.Services
         [Fact]
         public async Task CancelTicketOrder_Should_UpdateStatus_ToAvailable()
         {
+            // Arrange
             var seatId = Guid.NewGuid();
-            var orderId = Guid.NewGuid(); // Added orderId to match the method signature  
-            var seat = new SeatSchedule { Id = seatId, Status = SeatBookingStatus.Hold };
+            var orderId = Guid.NewGuid();
+
+            var seat = new SeatSchedule
+            {
+                Id = seatId,
+                Status = SeatBookingStatus.Hold
+            };
+
+            var order = new Order
+            {
+                Id = orderId,
+                Status = OrderEnum.Pending,  // giả định ban đầu
+                IsDeleted = false
+            };
 
             _seatRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
                      .ReturnsAsync(new List<SeatSchedule> { seat });
+
             _seatRepo.Setup(r => r.UpdateAsync(It.IsAny<SeatSchedule>()))
                      .Returns(Task.CompletedTask);
 
+            _orderRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                      .ReturnsAsync(order);
+
             _uow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
+            // Act
             var resp = await _sut.CancelTicketOrderById(new List<Guid> { seatId }, orderId);
 
+            // Assert
             resp.StatusCode.Should().Be(HttpStatusCode.OK);
             resp.IsSuccess.Should().BeTrue();
 
             _seatRepo.Verify(r => r.UpdateAsync(It.Is<SeatSchedule>(s => s.Status == SeatBookingStatus.Available)),
                              Times.Once);
+
+            _orderRepo.Verify(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()), Times.Once);
+
             _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
+
     }
 }

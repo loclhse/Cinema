@@ -12,18 +12,29 @@ using Domain.Enums;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 using Application;
+using Application.IServices;
+using Microsoft.AspNetCore.Http;
 
 public class PaymentServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IVnPayService> _mockVnPayService;
+    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private readonly PaymentService _paymentService;
 
     public PaymentServiceTests()
     {
         _mockUow = new Mock<IUnitOfWork>();
         _mockMapper = new Mock<IMapper>();
-        _paymentService = new PaymentService(_mockUow.Object, _mockMapper.Object);
+        _mockVnPayService = new Mock<IVnPayService>();
+        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+        _paymentService = new PaymentService(
+            _mockUow.Object,
+            _mockMapper.Object,
+            _mockVnPayService.Object,
+            _mockHttpContextAccessor.Object
+        );
     }
 
     [Fact]

@@ -84,6 +84,7 @@ namespace Application.Services
                 // Tạo Order entity và gán trực tiếp các instance đã tracking
                 Order order = new Order
                 {
+                   
                     UserId = request.UserId,
                     PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
@@ -128,7 +129,7 @@ namespace Application.Services
             try
             {
                 var rs = await _uow.OrderRepo.GetAllAsync(x => x.IsDeleted == false, null, page, size);
-                if(rs != null)
+                if (rs != null)
                 {
                     return apiResp.SetOk(rs);
                 }
@@ -136,7 +137,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex);
             }
@@ -144,11 +146,11 @@ namespace Application.Services
 
         public async Task<ApiResp> ViewTicketOrderByUserId(Guid userId)
         {
-            ApiResp apiResp=new ApiResp();
+            ApiResp apiResp = new ApiResp();
             try
             {
                 var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
-                if(ticket != null)
+                if (ticket != null)
                 {
                     return apiResp.SetOk(ticket);
                 }
@@ -156,7 +158,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -175,16 +178,16 @@ namespace Application.Services
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
 
-                foreach(var seatSchedule in seats)
+                foreach (var seatSchedule in seats)
                 {
                     seatSchedule.Status = SeatBookingStatus.Available;
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Seat changed to Available");
-                
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -210,7 +213,7 @@ namespace Application.Services
                 await _uow.SaveChangesAsync();
                 return apiResponse.SetOk("Seat changed to Booked");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResponse.SetBadRequest(ex.Message);
             }

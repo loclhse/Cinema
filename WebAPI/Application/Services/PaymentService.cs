@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Application.ViewModel.Response;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Services
 {
@@ -16,11 +17,15 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+        private readonly IVnPayService _vnPayService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public PaymentService(IUnitOfWork uow, IMapper mapper)
+        public PaymentService(IUnitOfWork uow, IMapper mapper, IVnPayService vnPayService, IHttpContextAccessor httpContextAccessor)
         {
             _uow = uow;
             _mapper = mapper;
+            _vnPayService = vnPayService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ApiResp> FindPaymentByUserIdAsync(Guid userId)
@@ -102,6 +107,46 @@ namespace Application.Services
                 return new ApiResp().SetBadRequest($"Error updating payment status: {ex.Message}");
             }
         }
+
+        public async Task<ApiResp> CreateVnPayPaymentUrl(Guid orderId, HttpContext httpContext)
+        {
+            var order = await _uow.OrderRepo.GetByIdAsync(orderId);
+            if (order == null)
+                return new ApiResp().SetNotFound("Order not found.");
+
+            var url = _vnPayService.CreatePaymentUrl(order, httpContext);
+            return new ApiResp().SetOk(new { PaymentUrl = url });
+        }
+
+        public async Task<ApiResp> HandleVnPayReturn(IQueryCollection queryCollection)
+        {
+            var response = _vnPayService.ProcessResponse(queryCollection);
+
+            if (!response.IsSuccess)
+                return new ApiResp().SetBadRequest(response.Message);
+
+            // Find and update payment/order status
+            var order = await _uow.OrderRepo.GetByIdAsync(Guid.Parse(response.OrderId));
+            if (order == null)
+                return new ApiResp().SetNotFound("Order not found.");
+
+            var payment = await _uow.PaymentRepo.GetAsync(p => p.OrderId == order.Id);
+            if (payment == null)
+                return new ApiResp().SetNotFound("Payment not found.");
+
+            payment.Status = PaymentStatus.Success;
+            payment.PaymentTime = DateTime.UtcNow;
+            await _uow.PaymentRepo.UpdateAsync(payment);
+
+            order.Status = OrderEnum.Success;
+            await _uow.OrderRepo.UpdateAsync(order);
+
+            await _uow.SaveChangesAsync();
+
+            return new ApiResp().SetOk("Payment successful and order updated.");
+        }
+
+      
     }
 }
 

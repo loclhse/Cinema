@@ -112,10 +112,10 @@ namespace Application.Services
             var resp = new ApiResp();
             try
             {
-                var genre = await _uow.GenreRepo.GetAsync(x => x.Id == id && !x.IsDeleted );
+                var genre = await _uow.GenreRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
                 if (genre == null)
                 {
-                    return resp.SetNotFound("Genre does not exist!!");
+                    return resp.SetNotFound(message: "Genre does not exist!!");
                 }
                 var checkGere = await _uow.GenreRepo.GetAsync(x => x.Name == genreRequest.Name && x.IsDeleted != true);
                 if (checkGere != null)
@@ -132,5 +132,6 @@ namespace Application.Services
                 return resp.SetBadRequest(ex.Message);
             }
         }
+
     }
 }

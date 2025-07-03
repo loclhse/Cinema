@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.ViewModel
-{
+{           
     public class ApiResp
     {
         public HttpStatusCode StatusCode { get; private set; }
@@ -16,7 +16,7 @@ namespace Application.ViewModel
         public object? Result { get; private set; }
 
         public ApiResp SetOk(object? result = null) // Changed 'object' to 'object?' to allow null values  
-        {
+        {   
             IsSuccess = true;
             StatusCode = HttpStatusCode.OK;
             Result = result;
