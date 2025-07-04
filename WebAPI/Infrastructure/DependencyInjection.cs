@@ -3,6 +3,7 @@ using Application.IRepos;
 using Application.IServices;
 using Application.Services;
 using AutoMapper;
+using Domain.Entities;
 using Elastic.Clients.Elasticsearch;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -19,6 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using WebAPI.Infrastructure.Services;
 
 namespace Infrastructure
 {
@@ -107,7 +109,9 @@ namespace Infrastructure
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
-            services.AddScoped<IVnPayService, VnPayService>();
+           
+            services.AddScoped<IVnPayService,VnPayService>();
+            
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

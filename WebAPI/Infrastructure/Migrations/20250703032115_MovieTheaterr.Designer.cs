@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250701155235_MovieTheater")]
-    partial class MovieTheater
+    [Migration("20250703032115_MovieTheaterr")]
+    partial class MovieTheaterr
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -405,6 +405,37 @@ namespace Infrastructure.Migrations
                     b.ToTable("Promotions");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Redeem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TotalScore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Redeem");
+                });
+
             modelBuilder.Entity("Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -468,6 +499,79 @@ namespace Infrastructure.Migrations
                     b.HasIndex("CinemaRoomId");
 
                     b.ToTable("RoomLayout", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ScoreItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Sold")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScoreItem");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ScoreOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RedeemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ScoreItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ScoreItemId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RedeemId");
+
+                    b.HasIndex("ScoreItemId");
+
+                    b.HasIndex("ScoreItemId1");
+
+                    b.ToTable("ScoreOrder");
                 });
 
             modelBuilder.Entity("Domain.Entities.Seat", b =>
@@ -1156,6 +1260,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Redeem", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany("Redeems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "AppUser")
@@ -1176,6 +1291,29 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("CinemaRoom");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ScoreOrder", b =>
+                {
+                    b.HasOne("Domain.Entities.Redeem", "Redeem")
+                        .WithMany("ScoreOrders")
+                        .HasForeignKey("RedeemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ScoreItem", "ScoreItem")
+                        .WithMany()
+                        .HasForeignKey("ScoreItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ScoreItem", null)
+                        .WithMany("ScoreOrders")
+                        .HasForeignKey("ScoreItemId1");
+
+                    b.Navigation("Redeem");
+
+                    b.Navigation("ScoreItem");
                 });
 
             modelBuilder.Entity("Domain.Entities.Seat", b =>
@@ -1343,6 +1481,8 @@ namespace Infrastructure.Migrations
                 {
                     b.Navigation("Orders");
 
+                    b.Navigation("Redeems");
+
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("Subscriptions");
@@ -1376,6 +1516,16 @@ namespace Infrastructure.Migrations
                     b.Navigation("SeatScheduleLogs");
 
                     b.Navigation("SeatSchedules");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Redeem", b =>
+                {
+                    b.Navigation("ScoreOrders");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ScoreItem", b =>
+                {
+                    b.Navigation("ScoreOrders");
                 });
 
             modelBuilder.Entity("Domain.Entities.Seat", b =>

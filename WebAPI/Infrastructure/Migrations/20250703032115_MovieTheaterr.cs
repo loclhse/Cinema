@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class MovieTheater : Migration
+    public partial class MovieTheaterr : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -142,6 +142,26 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Promotions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ScoreItem",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Score = table.Column<int>(type: "integer", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    Sold = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScoreItem", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -522,6 +542,29 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Redeem",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TotalScore = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Redeem", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Redeem_AppUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AppUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -576,6 +619,40 @@ namespace Infrastructure.Migrations
                         principalTable: "SubscriptionPlan",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ScoreOrder",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RedeemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ScoreItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ScoreItemId1 = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScoreOrder", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ScoreOrder_Redeem_RedeemId",
+                        column: x => x.RedeemId,
+                        principalTable: "Redeem",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ScoreOrder_ScoreItem_ScoreItemId",
+                        column: x => x.ScoreItemId,
+                        principalTable: "ScoreItem",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ScoreOrder_ScoreItem_ScoreItemId1",
+                        column: x => x.ScoreItemId1,
+                        principalTable: "ScoreItem",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -798,6 +875,11 @@ namespace Infrastructure.Migrations
                 column: "userId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Redeem_UserId",
+                table: "Redeem",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
@@ -806,6 +888,21 @@ namespace Infrastructure.Migrations
                 name: "IX_RoomLayout_CinemaRoomId",
                 table: "RoomLayout",
                 column: "CinemaRoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScoreOrder_RedeemId",
+                table: "ScoreOrder",
+                column: "RedeemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScoreOrder_ScoreItemId",
+                table: "ScoreOrder",
+                column: "ScoreItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScoreOrder_ScoreItemId1",
+                table: "ScoreOrder",
+                column: "ScoreItemId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Seat_CinemaRoomId",
@@ -920,6 +1017,9 @@ namespace Infrastructure.Migrations
                 name: "RoomLayout");
 
             migrationBuilder.DropTable(
+                name: "ScoreOrder");
+
+            migrationBuilder.DropTable(
                 name: "SeatScheduleLogs");
 
             migrationBuilder.DropTable(
@@ -936,6 +1036,12 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Genres");
+
+            migrationBuilder.DropTable(
+                name: "Redeem");
+
+            migrationBuilder.DropTable(
+                name: "ScoreItem");
 
             migrationBuilder.DropTable(
                 name: "Orders");
