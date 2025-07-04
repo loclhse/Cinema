@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Application.ViewModel.Response;
 using Microsoft.AspNetCore.Http;
+using Application.IRepos;
 
 namespace Application.Services
 {
@@ -19,14 +20,18 @@ namespace Application.Services
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IAuthRepo _authRepo;
 
-        public PaymentService(IUnitOfWork uow, IMapper mapper, IVnPayService vnPayService, IHttpContextAccessor httpContextAccessor)
+
+        public PaymentService(IUnitOfWork uow, IMapper mapper, IVnPayService vnPayService, IHttpContextAccessor httpContextAccessor, IAuthRepo authRepo)
         {
             _uow = uow;
             _mapper = mapper;
             _vnPayService = vnPayService;
             _httpContextAccessor = httpContextAccessor;
+            _authRepo = authRepo;
         }
+
 
         public async Task<ApiResp> FindPaymentByUserIdAsync(Guid userId)
         {
@@ -51,7 +56,6 @@ namespace Application.Services
                 return new ApiResp().SetBadRequest($"Error finding payments: {ex.Message}");
             }
         }
-
         public async Task<ApiResp> GetAllCashPaymentAsync()
         {
             try
@@ -107,46 +111,121 @@ namespace Application.Services
                 return new ApiResp().SetBadRequest($"Error updating payment status: {ex.Message}");
             }
         }
-
-        public async Task<ApiResp> CreateVnPayPaymentUrl(Guid orderId, HttpContext httpContext)
-        {
-            var order = await _uow.OrderRepo.GetByIdAsync(orderId);
-            if (order == null)
-                return new ApiResp().SetNotFound("Order not found.");
-
-            var url = _vnPayService.CreatePaymentUrl(order, httpContext);
-            return new ApiResp().SetOk(new { PaymentUrl = url });
-        }
-
         public async Task<ApiResp> HandleVnPayReturn(IQueryCollection queryCollection)
         {
-            var response = _vnPayService.ProcessResponse(queryCollection);
+            try
+            {
+                var response = _vnPayService.ProcessResponse(queryCollection);
+                using (var transaction = await _uow.BeginTransactionAsync())
+                {
+                    var orderId = Guid.Parse(response.OrderId);
+                    var order = await _uow.OrderRepo.GetByIdAsync(orderId);
+                    if (order == null)
+                        return new ApiResp().SetNotFound("Order not found.");
 
-            if (!response.IsSuccess)
-                return new ApiResp().SetBadRequest(response.Message);
+                    var payment = await _uow.PaymentRepo.GetAsync(p => p.OrderId == order.Id);
+                    if (payment == null)
+                        return new ApiResp().SetNotFound("Payment not found.");
 
-            // Find and update payment/order status
-            var order = await _uow.OrderRepo.GetByIdAsync(Guid.Parse(response.OrderId));
-            if (order == null)
-                return new ApiResp().SetNotFound("Order not found.");
+                    if (response.Success)
+                    {
+                        
+                        payment.Status = PaymentStatus.Success;
+                        payment.PaymentTime = DateTime.UtcNow;
+                        
+                        if (decimal.TryParse(queryCollection["vnp_Amount"], out var paidAmount))
+                        {
+                            payment.AmountPaid = paidAmount / 100; 
+                        }
+                        
+                        payment.TransactionCode = queryCollection["vnp_TransactionNo"];
+                        await _uow.PaymentRepo.UpdateAsync(payment);
 
-            var payment = await _uow.PaymentRepo.GetAsync(p => p.OrderId == order.Id);
-            if (payment == null)
-                return new ApiResp().SetNotFound("Payment not found.");
+                        order.Status = OrderEnum.Success;
+                        await _uow.OrderRepo.UpdateAsync(order);
 
-            payment.Status = PaymentStatus.Success;
-            payment.PaymentTime = DateTime.UtcNow;
-            await _uow.PaymentRepo.UpdateAsync(payment);
+                        await _uow.SaveChangesAsync();
+                        await transaction.CommitAsync();
 
-            order.Status = OrderEnum.Success;
-            await _uow.OrderRepo.UpdateAsync(order);
+                        return new ApiResp().SetOk("Payment successful and order updated.");
+                    }
 
-            await _uow.SaveChangesAsync();
-
-            return new ApiResp().SetOk("Payment successful and order updated.");
+                    return new ApiResp().SetBadRequest("Payment processing failed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[VNPay][Exception] {ex.Message}");
+                return new ApiResp().SetBadRequest($"Error processing VNPay return: {ex.Message}");
+            }
         }
 
-      
+        public async Task<ApiResp> HandleVnPayReturnForSubscription(IQueryCollection queryCollection)
+        {
+            try
+            {
+               var response = _vnPayService.ProcessResponsee(queryCollection);
+               using (var transaction = await _uow.BeginTransactionAsync())
+                {
+                    var subId = Guid.Parse(response.OrderId);
+                    var sub = await _uow.SubscriptionRepo.GetByIdAsync(subId);
+                    if (sub == null)
+                    {
+                        Console.WriteLine($"[VNPay][Return] Subscription not found for subId: {subId}");
+                        return new ApiResp().SetNotFound("subscription not found.");
+                    }
+                    var payment = await _uow.PaymentRepo.GetAsync(p => p.SubscriptionId == subId);
+                    if (payment == null)
+                    {
+                        Console.WriteLine($"[VNPay][Return] Payment not found for subId: {subId}");
+                        return new ApiResp().SetNotFound("Payment not found.");
+                    }
+                    if (response.Success)
+                    {
+                        payment.Status = PaymentStatus.Success;
+                        payment.PaymentTime = DateTime.UtcNow;
+                        if (decimal.TryParse(queryCollection["vnp_Amount"], out var paidAmount))
+                        {
+                            payment.AmountPaid = paidAmount / 100;
+                           
+                        }
+                        payment.TransactionCode = queryCollection["vnp_TransactionNo"];
+                        await _uow.PaymentRepo.UpdateAsync(payment);
+
+                        sub.Status = SubscriptionStatus.active;
+                        await _uow.SubscriptionRepo.UpdateAsync(sub);
+                        if (sub.SubscriptionPlanId != null)
+                        {
+                            var plan = await _uow.SubscriptionPlanRepo.GetByIdAsync(sub.SubscriptionPlanId.Value);
+                            if (plan != null)
+                            {
+                                plan.Status = PlanStatus.Active;
+                                await _uow.SubscriptionPlanRepo.UpdateAsync(plan);
+                            }
+                        }
+                        if (sub.UserId.HasValue)
+                        {
+                            await _authRepo.RemoveUserFromRoleAsync(sub.UserId.Value, "Customer");
+                            await _authRepo.AddUserToRoleAsync(sub.UserId.Value, "Member");
+                        }
+
+                        await _uow.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                        return new ApiResp().SetOk("Payment successful and order updated.");
+                    }
+
+                    Console.WriteLine("[VNPay][Return] Payment processing failed (response.Success is false).");
+                    return new ApiResp().SetBadRequest("Payment processing failed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[VNPay][Exception] {ex.Message}\n{ex.StackTrace}");
+                return new ApiResp().SetBadRequest($"Error processing VNPay return: {ex.Message}");
+            }
+        }
+
+
     }
 }
 

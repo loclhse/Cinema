@@ -75,6 +75,20 @@ namespace Infrastructure.Repos
             return OperationResult.Success([]);
         }
 
+        public async Task<OperationResult> RemoveUserFromRoleAsync(Guid userId, string roleName)
+        {
+            var identityUser = await _userManager.FindByIdAsync(userId.ToString());
+            if (identityUser == null)
+                return OperationResult.Failed(["User not found."]);
+            var result = await _userManager.RemoveFromRoleAsync(identityUser, roleName);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                return OperationResult.Failed(errors);
+            }
+            return OperationResult.Success([]);
+        }
+
         public async Task<(DomainUser? user, string[] roles)> GetUserWithRolesAsync(string userName)
         {
             // 1. Tìm ApplicationUser theo UserName

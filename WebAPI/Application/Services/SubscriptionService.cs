@@ -69,6 +69,16 @@ namespace Application.Services
                 sub.Price = plan.Price;
                 await _uow.SubscriptionRepo.AddAsync(sub);
                 await _uow.SaveChangesAsync();
+                var payment = new Payment
+                {
+                    userId = sub.UserId,
+                    PaymentMethod = PaymentMethod.VNPay,
+                    SubscriptionId = sub.Id,
+                    Status = PaymentStatus.Pending,
+                    AmountPaid = (decimal)sub.Price,
+                };
+                await _uow.PaymentRepo.AddAsync(payment);
+                await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Subscription added successfully!");
             }
             catch (Exception ex)

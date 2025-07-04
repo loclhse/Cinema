@@ -22,6 +22,7 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+       
 
         public UserService(IUnitOfWork uow, IMapper mapper)
         {

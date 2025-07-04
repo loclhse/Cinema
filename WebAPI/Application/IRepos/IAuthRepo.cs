@@ -31,6 +31,11 @@ namespace Application.IRepos
         /// </summary>
         Task<OperationResult> AddUserToRoleAsync(Guid userId, string roleName);
 
+        /// <summary>
+        /// Xóa role của một user (đồng thời tạo ApplicationUser phía Infrastructure).
+        /// Trả về OperationResult: nếu Failed, có thể lấy Errors để hiển thị.
+        /// </summary>
+        Task<OperationResult> RemoveUserFromRoleAsync(Guid userId, string roleName);
 
         /// <summary>
         /// Lấy DomainUser + danh sách roles (string[]) theo userName.
