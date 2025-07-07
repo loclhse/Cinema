@@ -4,6 +4,7 @@ using Application.IServices;
 using Application.Services;
 using AutoMapper;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Configuration;
@@ -12,6 +13,8 @@ using Infrastructure.Persistence;
 using Infrastructure.Repos;
 using Infrastructure.Service;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -127,7 +130,7 @@ namespace Infrastructure
             services.AddSingleton(sp =>
             {
                 var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
-                    .DefaultIndex("movies");
+                    .DefaultIndex("movies"); // Tùy bạn
 
                 return new ElasticsearchClient(settings);
             });
