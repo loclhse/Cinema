@@ -30,5 +30,6 @@ namespace Application
         Task<IDbContextTransaction> BeginTransactionAsync();
         IScoreItemRepo ScoreItemRepo { get; }
         IElasticMovieRepo elasticMovieRepo { get; }
+        ISnackOrderRepo SnackOrderRepo { get; }
     }
 }

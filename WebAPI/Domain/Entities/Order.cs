@@ -19,8 +19,7 @@ public partial class Order : BaseEntity
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<SeatSchedule>? SeatSchedules { get; set; } = new List<SeatSchedule>();
     public virtual ICollection<SeatScheduleLog> SeatScheduleLogs { get; set; } = new List<SeatScheduleLog>();
-    public virtual ICollection<Snack>? Snacks { get; set; } = new List<Snack>();
-    public virtual ICollection<SnackCombo>? SnackCombos { get; set; } = new List<SnackCombo>();
+    public virtual ICollection<SnackOrder> SnackOrders { get; set; } = new List<SnackOrder>();
     public virtual Subscription? Subscription { get; set; }
     public virtual AppUser? User { get; set; }
 }

@@ -9,8 +9,6 @@ namespace Domain.Entities;
 
 public partial class Snack : BaseEntity
 {
-    
-
     public string? Name { get; set; }
 
     public SnackType? Type { get; set; }

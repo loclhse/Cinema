@@ -79,6 +79,7 @@ namespace Infrastructure
             services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
             services.AddScoped<IElasticMovieRepo, ElasticMovieRepo>();
+            services.AddScoped<ISnackOrderRepo, SnackOrderRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             #endregion

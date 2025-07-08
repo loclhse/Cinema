@@ -1,5 +1,4 @@
-﻿using Application.ViewModel.Response;
-using Domain.Entities;
+﻿using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace Application.IRepos
 {
-    public interface IOrderRepo : IGenericRepo<Order>
+    public interface ISnackOrderRepo : IGenericRepo<SnackOrder>
     {
-        Task<Order> GetOrderById (Guid id);
     }
 }
