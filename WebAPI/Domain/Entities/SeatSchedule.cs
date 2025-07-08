@@ -12,7 +12,7 @@ namespace Domain.Entities
     {
         public Guid SeatId { get; set; }
         public Guid ShowtimeId { get; set; }
-        public Guid? OrderId { get; set; }  
+        public Guid? OrderId { get; set; }
 
         public SeatBookingStatus Status { get; set; } = SeatBookingStatus.Available;
 

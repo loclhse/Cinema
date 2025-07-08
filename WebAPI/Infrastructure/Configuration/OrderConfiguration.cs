@@ -33,7 +33,6 @@ namespace Infrastructure.Configuration
             builder.HasMany(o => o.SeatScheduleLogs)
                 .WithOne(t => t.Order)
                 .HasForeignKey(t => t.OrderId);
-
         }
     }
 }

@@ -19,8 +19,8 @@ namespace Application.ViewModel.Response
         public decimal? TotalAfter { get; set; }
         public OrderEnum? Status { get; set; }
 
-        public List<SeatScheduleForOrderResponse> SeatSchedules { get; set; } = new List<SeatScheduleForOrderResponse>();
-        public List<SnackOrderRequest>? Snacks { get; set; } = new List<SnackOrderRequest>();
-        public List<SnackComboOrderRequest>? SnackCombos { get; set; } = new List<SnackComboOrderRequest>();
+        public List<Guid> SeatSchedules { get; set; } = new List<Guid>();
+        public ICollection<SnackOrderResponse>? Snacks { get; set; } = new List<SnackOrderResponse>();
+
     }
 }

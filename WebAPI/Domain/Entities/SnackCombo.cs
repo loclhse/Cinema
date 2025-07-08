@@ -9,7 +9,6 @@ namespace Domain.Entities;
 
 public partial class SnackCombo : BaseEntity
 {
-   
 
     public string? Name { get; set; }
 
