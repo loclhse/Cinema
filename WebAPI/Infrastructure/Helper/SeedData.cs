@@ -164,6 +164,7 @@ namespace Infrastructure.Helper
                     Description = "Shibuya teen musician Ichika meets Hatsune Miku after hearing her song in a store...",
                     ReleaseDate = DateOnly.FromDateTime(DateTime.Now),
                     Duration = 110,
+                    MovieStatus= MovieStatus.NowShowing,
                     Director = "Hiroyuki Hata",
                     Img = "https://m.media-amazon.com/images/M/MV5BOGRkNjk4MzktNjEyMi00MmIyLTkxODItZGI4M2QzMmI5ZThkXkEyXkFqcGc@._V1_.jpg",
                     TrailerUrl = "https://www.youtube.com/watch?v=3bD1dfiRMu4&pp=0gcJCfwAo7VqN5tD",
