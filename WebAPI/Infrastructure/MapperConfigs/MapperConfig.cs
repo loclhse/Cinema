@@ -117,6 +117,8 @@ namespace Infrastructure.MapperConfigs
             
             CreateMap<Payment, PaymentResponse>().ReverseMap();
 
+            
+
             CreateMap<Order, OrderResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
@@ -136,6 +138,9 @@ namespace Infrastructure.MapperConfigs
 
             CreateMap<OrderResponse, Order>();
             CreateMap<SeatScheduleForOrderResponse, SeatSchedule>();
+            CreateMap<ScoreItem, ItemResponse>().ReverseMap();
+            CreateMap<ScoreItem, ItemRequest>().ReverseMap();
+
         }
     }
 }

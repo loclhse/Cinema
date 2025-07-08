@@ -12,18 +12,33 @@ using Domain.Enums;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 using Application;
+using Application.IServices;
+using Microsoft.AspNetCore.Http;
+using Application.IRepos;
 
 public class PaymentServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<IVnPayService> _mockVnPayService;
+    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
+    private readonly Mock<IAuthRepo> _mockAuthRepo;
     private readonly PaymentService _paymentService;
 
     public PaymentServiceTests()
     {
         _mockUow = new Mock<IUnitOfWork>();
         _mockMapper = new Mock<IMapper>();
-        _paymentService = new PaymentService(_mockUow.Object, _mockMapper.Object);
+        _mockVnPayService = new Mock<IVnPayService>();
+        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+        _mockAuthRepo = new Mock<IAuthRepo>();
+        _paymentService = new PaymentService(
+            _mockUow.Object,
+            _mockMapper.Object,
+            _mockVnPayService.Object,
+            _mockHttpContextAccessor.Object,
+            _mockAuthRepo.Object
+        );
     }
 
     [Fact]
@@ -59,7 +74,7 @@ public class PaymentServiceTests
     {
         var payments = new List<Payment>
     {
-        new Payment { Id = Guid.NewGuid(), PaymentMethod = PaymentMethod.Cash }
+        new Payment { Id = Guid.NewGuid(), PaymentMethod = PaymentMethod.Cash, IsDeleted = false }
     };
         var responses = new List<PaymentResponse>
     {
@@ -68,14 +83,18 @@ public class PaymentServiceTests
 
         _mockUow.Setup(u => u.PaymentRepo.GetAllAsync(
                 It.IsAny<Expression<Func<Payment, bool>>>(),
-                It.IsAny<Func<IQueryable<Payment>, IIncludableQueryable<Payment, object>>>(),
-                It.IsAny<int>(),
-                It.IsAny<int>()))
+                It.IsAny<Func<IQueryable<Payment>, IIncludableQueryable<Payment, object>>>()))
             .ReturnsAsync(payments);
 
         _mockMapper.Setup(m => m.Map<List<PaymentResponse>>(payments)).Returns(responses);
 
         var result = await _paymentService.GetAllCashPaymentAsync();
+
+        // Debug output
+        Console.WriteLine($"IsSuccess: {result.IsSuccess}");
+        Console.WriteLine($"StatusCode: {result.StatusCode}");
+        Console.WriteLine($"ErrorMessage: {result.ErrorMessage}");
+        Console.WriteLine($"Result: {result.Result}");
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Result);

@@ -3,6 +3,7 @@ using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MimeKit.Cryptography;
 
 namespace Infrastructure;
 
@@ -44,7 +45,10 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public virtual DbSet<Snack> Snacks { get; set; }
 
-   
+    public virtual DbSet<SnackCombo> SnacksCombo { get; set; }
+
+    public virtual DbSet<SnackComboItem> SnackComboItems { get; set; }
+
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }

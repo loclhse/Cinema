@@ -51,16 +51,48 @@ namespace Application.Services
                         seatSchedules.Add(seatSchedule);
                 }
 
+                List<Snack> snacks = new();
+                if(request.Snack == null || !request.Snack.Any())
+                {
+                    return apiResp.SetBadRequest("Snack cannot be null or empty");
+                }
+                foreach(var item in request.Snack)
+                {
+                    var snack = await _uow.SnackRepo.GetAsync(x => x.Id == item.SnackId);
+                    if(snack != null)
+                    {
+                        snacks.Add(snack);
+                    }
+                }
+
+                List<SnackCombo> snackCombos = new();
+                if(request.SnackCombo == null || !request.SnackCombo.Any())
+                {
+                    return apiResp.SetBadRequest();
+                }
+                foreach(var item in request.SnackCombo)
+                {
+                    var snackCombo = await _uow.SnackComboRepo.GetAsync(x => x.Id == item.SnackComboId);
+                    if( snackCombo != null)
+                    {
+                        snackCombos.Add(snackCombo);
+                    }
+                }
+
                 decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo);
 
                 // Tạo Order entity và gán trực tiếp các instance đã tracking
                 Order order = new Order
                 {
+                   
                     UserId = request.UserId,
+                    PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
                     TotalAmount = price,
                     Status = OrderEnum.Pending,
-                    SeatSchedules = seatSchedules
+                    SeatSchedules = seatSchedules,
+                    Snacks = snacks,
+                    SnackCombos = snackCombos,
                 };
                 await _uow.OrderRepo.AddAsync(order);
 
@@ -97,7 +129,7 @@ namespace Application.Services
             try
             {
                 var rs = await _uow.OrderRepo.GetAllAsync(x => x.IsDeleted == false, null, page, size);
-                if(rs != null)
+                if (rs != null)
                 {
                     return apiResp.SetOk(rs);
                 }
@@ -105,7 +137,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex);
             }
@@ -113,11 +146,11 @@ namespace Application.Services
 
         public async Task<ApiResp> ViewTicketOrderByUserId(Guid userId)
         {
-            ApiResp apiResp=new ApiResp();
+            ApiResp apiResp = new ApiResp();
             try
             {
                 var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
-                if(ticket != null)
+                if (ticket != null)
                 {
                     return apiResp.SetOk(ticket);
                 }
@@ -125,7 +158,8 @@ namespace Application.Services
                 {
                     return apiResp.SetNotFound("Not found");
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -144,16 +178,16 @@ namespace Application.Services
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
 
-                foreach(var seatSchedule in seats)
+                foreach (var seatSchedule in seats)
                 {
                     seatSchedule.Status = SeatBookingStatus.Available;
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
                 await _uow.SaveChangesAsync();
                 return apiResp.SetOk("Seat changed to Available");
-                
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
@@ -179,7 +213,7 @@ namespace Application.Services
                 await _uow.SaveChangesAsync();
                 return apiResponse.SetOk("Seat changed to Booked");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResponse.SetBadRequest(ex.Message);
             }

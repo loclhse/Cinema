@@ -13,6 +13,7 @@ namespace Application.ViewModel.Response
     {
         public Guid Id { get; set; }
         public Guid? UserId { get; set; } 
+        public PaymentMethod? PaymentMethod { get; set; }
         public DateTime? OrderTime { get; set; }
         public decimal? TotalAmount { get; set; }
         public decimal? TotalAfter { get; set; }

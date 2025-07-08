@@ -257,6 +257,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("OrderTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("Status")
                         .HasColumnType("integer");
 
@@ -799,6 +802,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
@@ -821,6 +827,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
 
                     b.ToTable("Snacks");
                 });
@@ -846,6 +854,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("SnackComboStatus")
                         .HasColumnType("integer");
 
@@ -860,7 +871,9 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SnackCombo");
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("SnacksCombo");
                 });
 
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
@@ -894,7 +907,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ComboId", "SnackId")
                         .IsUnique();
 
-                    b.ToTable("SnackComboItem");
+                    b.ToTable("SnackComboItems");
                 });
 
             modelBuilder.Entity("Domain.Entities.Subscription", b =>
@@ -1389,6 +1402,20 @@ namespace Infrastructure.Migrations
                     b.Navigation("Movie");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Snack", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", null)
+                        .WithMany("Snacks")
+                        .HasForeignKey("OrderId");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SnackCombo", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", null)
+                        .WithMany("SnackCombos")
+                        .HasForeignKey("OrderId");
+                });
+
             modelBuilder.Entity("Domain.Entities.SnackComboItem", b =>
                 {
                     b.HasOne("Domain.Entities.SnackCombo", "Combo")
@@ -1513,6 +1540,10 @@ namespace Infrastructure.Migrations
                     b.Navigation("SeatScheduleLogs");
 
                     b.Navigation("SeatSchedules");
+
+                    b.Navigation("SnackCombos");
+
+                    b.Navigation("Snacks");
                 });
 
             modelBuilder.Entity("Domain.Entities.Redeem", b =>
