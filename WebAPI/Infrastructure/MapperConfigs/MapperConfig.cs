@@ -138,6 +138,9 @@ namespace Infrastructure.MapperConfigs
 
             CreateMap<OrderResponse, Order>();
             CreateMap<SeatScheduleForOrderResponse, SeatSchedule>();
+            CreateMap<ScoreItem, ItemResponse>().ReverseMap();
+            CreateMap<ScoreItem, ItemRequest>().ReverseMap();
+
         }
     }
 }
