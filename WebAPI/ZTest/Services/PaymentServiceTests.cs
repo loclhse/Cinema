@@ -25,21 +25,19 @@ public class PaymentServiceTests
     private readonly Mock<IAuthRepo> _mockAuthRepo;
     private readonly PaymentService _paymentService;
 
-    public PaymentServiceTests()
-    {
-        _mockUow = new Mock<IUnitOfWork>();
-        _mockMapper = new Mock<IMapper>();
-        _mockVnPayService = new Mock<IVnPayService>();
-        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-        _mockAuthRepo = new Mock<IAuthRepo>();
-        _paymentService = new PaymentService(
-            _mockUow.Object,
-            _mockMapper.Object,
-            _mockVnPayService.Object,
-            _mockHttpContextAccessor.Object,
-            _mockAuthRepo.Object
-        );
-    }
+    //public PaymentServiceTests()
+    //{
+    //    _mockUow = new Mock<IUnitOfWork>();
+    //    _mockMapper = new Mock<IMapper>();
+    //    _mockVnPayService = new Mock<IVnPayService>();
+    //    _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+    //    _paymentService = new PaymentService(
+    //        _mockUow.Object,
+    //        _mockMapper.Object,
+    //        _mockVnPayService.Object,
+    //        _mockHttpContextAccessor.Object
+    //    );
+    //}
 
     [Fact]
     public async Task FindPaymentByUserIdAsync_ShouldReturnOk_WhenPaymentsExist()
