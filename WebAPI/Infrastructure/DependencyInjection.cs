@@ -3,7 +3,9 @@ using Application.IRepos;
 using Application.IServices;
 using Application.Services;
 using AutoMapper;
+using Domain.Entities;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Configuration;
@@ -12,6 +14,8 @@ using Infrastructure.Persistence;
 using Infrastructure.Repos;
 using Infrastructure.Service;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using WebAPI.Infrastructure.Services;
 
 namespace Infrastructure
 {
@@ -79,6 +84,7 @@ namespace Infrastructure
             services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
             services.AddScoped<IElasticMovieRepo, ElasticMovieRepo>();
+            services.AddScoped<IScoreItemRepo, ScoreItemRepo>();
             services.AddScoped<ISnackOrderRepo, SnackOrderRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -108,7 +114,10 @@ namespace Infrastructure
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
-            services.AddScoped<IVnPayService, VnPayService>();
+           
+            services.AddScoped<IVnPayService,VnPayService>();
+            services.AddScoped<IScoreItemService, ScoreItemService>();
+
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -129,7 +138,7 @@ namespace Infrastructure
             services.AddSingleton(sp =>
             {
                 var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
-                    .DefaultIndex("movies");
+                    .DefaultIndex("movies"); // Tùy bạn
 
                 return new ElasticsearchClient(settings);
             });

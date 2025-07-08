@@ -18,8 +18,9 @@ namespace Application.IServices
         Task<ApiResp> FindPaymentByUserIdAsync(Guid userId);
         Task<ApiResp> GetAllCashPaymentAsync();
         Task<ApiResp> ChangeStatusFromPendingToSuccessAsync(Guid id);
-        Task<ApiResp> CreateVnPayPaymentUrl(Guid orderId, HttpContext httpContext);
         Task<ApiResp> HandleVnPayReturn(IQueryCollection queryCollection);
+
+        Task<ApiResp> HandleVnPayReturnForSubscription(IQueryCollection queryCollection);
 
     }
 } 

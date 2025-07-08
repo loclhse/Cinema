@@ -126,6 +126,10 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
 
             CreateMap<OrderResponse, Order>();
+            CreateMap<SeatScheduleForOrderResponse, SeatSchedule>();
+            CreateMap<ScoreItem, ItemResponse>().ReverseMap();
+            CreateMap<ScoreItem, ItemRequest>().ReverseMap();
+
 
 
             CreateMap<Snack, SnackOrderRequest>()
