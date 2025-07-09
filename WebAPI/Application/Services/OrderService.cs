@@ -32,6 +32,13 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
+                decimal? discount = 1;
+                var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
+                if(promotion != null)
+                {
+                    discount = promotion.DiscountPercent;
+                }
+
                 List<SeatSchedule> seatSchedules = new();
                 if (request.SeatScheduleId != null)
                 {
@@ -54,7 +61,7 @@ namespace Application.Services
                     UserId = request.UserId,
                     PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
-                    TotalAmount = total,
+                    TotalAmount = total * discount,
                     Status = OrderEnum.Pending,
                     SeatSchedules = seatSchedules
                 };
@@ -105,7 +112,7 @@ namespace Application.Services
                     PaymentMethod = order.PaymentMethod,
                     OrderTime = order.OrderTime,
                     TotalAmount = order.TotalAmount,
-                    TotalAfter = order.TotalAmount, // Có thể xử lý khác nếu bạn có khuyến mãi
+                    TotalAfter = order.TotalAmount * discount, // Có thể xử lý khác nếu bạn có khuyến mãi
                     Status = order.Status,
                     SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
                     Snacks = savedOrder.SnackOrders?
@@ -126,12 +133,36 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> ViewTicketOrder(int page, int size)
+        public async Task<ApiResp> ViewTicketOrder()
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                return apiResp.SetNotFound();
+                var orders = await _uow.OrderRepo.GetAllOrderAsync(
+                    o => o.SeatSchedules,
+                    o => o.SnackOrders
+                );
+
+                var responses = orders.Select(order => new OrderResponse
+                {
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    PaymentMethod = order.PaymentMethod,
+                    OrderTime = order.OrderTime,
+                    TotalAmount = order.TotalAmount,
+                    TotalAfter = order.TotalAmount,
+                    Status = order.Status,
+                    SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
+                    Snacks = order.SnackOrders?.Select(s => new SnackOrderResponse
+                    {
+                        Id = s.Id,
+                        OrderId = s.OrderId,
+                        SnackId = s.SnackId,
+                        Quantity = s.Quantity
+                    }).ToList() ?? new List<SnackOrderResponse>()
+                }).ToList();
+
+                return apiResp.SetOk(responses);
             }
             catch (Exception ex)
             {
@@ -144,15 +175,38 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
-                if (ticket != null)
+                var orders = await _uow.OrderRepo.GetAllAsync(
+            o => o.UserId == userId,
+            include: query => query
+                .Include(o => o.SeatSchedules)
+                .Include(o => o.SnackOrders)
+        );
+
+                var responses = orders.Select(order => new OrderResponse
                 {
-                    return apiResp.SetOk(ticket);
-                }
-                else
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    PaymentMethod = order.PaymentMethod,
+                    OrderTime = order.OrderTime,
+                    TotalAmount = order.TotalAmount,
+                    TotalAfter = order.TotalAmount, // hoặc xử lý giảm giá nếu có
+                    Status = order.Status,
+                    SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
+                    Snacks = order.SnackOrders?.Select(snack => new SnackOrderResponse
+                    {
+                        Id = snack.Id,
+                        OrderId = snack.OrderId,
+                        SnackId = snack.SnackId,
+                        Quantity = snack.Quantity
+                    }).ToList()
+                }).ToList();
+
+                if(responses == null)
                 {
-                    return apiResp.SetNotFound("Not found");
+                    return apiResp.SetNotFound();
                 }
+
+                return apiResp.SetOk(responses);
             }
             catch (Exception ex)
             {
