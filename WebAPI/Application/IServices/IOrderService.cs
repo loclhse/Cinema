@@ -12,7 +12,7 @@ namespace Application.IServices
     public interface IOrderService
     {
         Task<ApiResp> CreateTicketOrder(OrderRequest request);
-        Task<ApiResp> ViewTicketOrder(int page, int size);
+        Task<ApiResp> ViewTicketOrder();
         Task<ApiResp> ViewTicketOrderByUserId(Guid userId);
         Task<ApiResp> CancelTicketOrderById(List<Guid> seatScheduleId, Guid orderId);
         Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId);

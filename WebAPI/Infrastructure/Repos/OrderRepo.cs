@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +34,16 @@ namespace Infrastructure.Repos
             return order;
         }
 
+        public async Task<List<Order>> GetAllOrderAsync(params Expression<Func<Order, object>>[] includes)
+        {
+            IQueryable<Order> query = _context.Set<Order>();
 
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.ToListAsync();
+        }
     }
 }
