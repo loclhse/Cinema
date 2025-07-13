@@ -146,6 +146,10 @@ namespace WebAPI
             app.UseRouting();
             app.UseCors("AllowAll");
 
+            // Add custom middleware to log all requests
+           
+
+
             app.UseAuthentication();
             app.UseAuthorization();
 

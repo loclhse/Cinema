@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using Application.ViewModel;
 
 
 namespace WebAPI.Infrastructure.Services
@@ -30,7 +31,7 @@ namespace WebAPI.Infrastructure.Services
 
 
 
-        public string CreatePaymentUrl(Order order, HttpContext context)
+        public ApiResp CreatePaymentUrl(Order order, HttpContext context)
         {
             var tick = DateTime.Now.Ticks.ToString();
 
@@ -50,10 +51,10 @@ namespace WebAPI.Infrastructure.Services
             // Remove empty values and exclude secure hash fields
 
             var paymentUrl = vnpay.CreateRequestUrl(_configuration["VnPay:PayUrl"], _configuration["VnPay:HashSecret"]);
-            return paymentUrl;
+            return new ApiResp().SetOk(new { PaymentUrl = paymentUrl });
         }
 
-        public string CreatePaymentUrlForSubscription(Subscription sub, HttpContext context)
+        public ApiResp CreatePaymentUrlForSubscription(Subscription sub, HttpContext context)
         {
             var tick = DateTime.Now.Ticks.ToString();
 
@@ -73,7 +74,7 @@ namespace WebAPI.Infrastructure.Services
             // Remove empty values and exclude secure hash fields
 
             var paymentUrl = vnpay.CreateRequestUrl(_configuration["VnPay:PayUrl"], _configuration["VnPay:HashSecret"]);
-            return paymentUrl;
+            return new ApiResp().SetOk(new { PaymentUrl = paymentUrl });
         }
 
 
