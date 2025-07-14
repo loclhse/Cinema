@@ -44,6 +44,10 @@ namespace Infrastructure.Configuration
                 .WithOne(r => r.User)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(x => x.ScoreLog)
+                .WithOne(x => x.AppUser)
+                .HasForeignKey(x => x.UserId);
         }
     }
 }
