@@ -26,8 +26,9 @@ namespace Infrastructure.Repos
                 .Query(q => q
                     .MultiMatch(m => m
                     .Query(keyword)
-                        .Fields(new[] { "title", "director", "rated", "genreNames" })
-
+                        .Fields(new[] { "title^3", "director", "rated", "genreNames^2" })
+                    .Fuzziness(new Fuzziness("AUTO")) 
+                    .MaxExpansions(10) 
                     )
                 )
                 .Size(limit)

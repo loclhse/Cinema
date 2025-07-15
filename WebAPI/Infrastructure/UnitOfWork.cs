@@ -38,6 +38,7 @@ namespace Infrastructure
 
         public IOrderRepo OrderRepo { get; }
         public IElasticMovieRepo elasticMovieRepo { get; }
+        public IRedeemRepo redeemRepo { get; } 
         public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -65,6 +66,7 @@ namespace Infrastructure
             OrderRepo = new OrderRepo(context);
             ScoreItemRepo = new ScoreItemRepo(context);
             elasticMovieRepo = new ElasticMovieRepo(elasticClient);
+            redeemRepo = new RedeemRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
