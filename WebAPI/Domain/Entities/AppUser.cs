@@ -19,13 +19,13 @@ public partial class AppUser : BaseEntity
 
     public string? Address { get; set; }
     public string? Avatar { get; set; }
-
+    public int Score { get; set; } = 0;
     public Sex Sex { get; set; }
     public string? Assign { get; set; }
     public double Salary { get; set; }
     public string? Position { get; set; }
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-    //public virtual CustomerScore? CustomerScore { get; set; }
+    public virtual ICollection<ScoreLog> ScoreLog { get; set; } = new List<ScoreLog>();
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     public virtual ICollection<Redeem> Redeems { get; set; } = new List<Redeem>();

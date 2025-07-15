@@ -7,8 +7,10 @@ using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -30,92 +32,100 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                // Lấy promotion
+                decimal? discount = 1;
                 var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
-                decimal? discountPercent = 1;
-                if (promotion != null)
+                if(promotion != null)
                 {
-                    discountPercent = promotion.DiscountPercent;
+                    discount = promotion.DiscountPercent;
                 }
 
-                // Lấy list seatSchedules từ DB
                 List<SeatSchedule> seatSchedules = new();
-                if (request.SeatScheduleId == null || !request.SeatScheduleId.Any())
+                if (request.SeatScheduleId != null)
                 {
-                    return apiResp.SetBadRequest("SeatScheduleId cannot be null or empty.");
-                }
-                foreach (var seatId in request.SeatScheduleId)
-                {
-                    var seatSchedule = await _uow.SeatScheduleRepo.GetAsync(x => x.Id == seatId);
-                    if (seatSchedule != null)
-                        seatSchedules.Add(seatSchedule);
-                }
-
-                List<Snack> snacks = new();
-                if(request.Snack == null || !request.Snack.Any())
-                {
-                    return apiResp.SetBadRequest("Snack cannot be null or empty");
-                }
-                foreach(var item in request.Snack)
-                {
-                    var snack = await _uow.SnackRepo.GetAsync(x => x.Id == item.SnackId);
-                    if(snack != null)
+                    foreach (var id in request.SeatScheduleId)
                     {
-                        snacks.Add(snack);
+                        var item = await _uow.SeatScheduleRepo.GetAsync(x => x.Id == id && x.IsDeleted == false);
+                        if (item != null)
+                            seatSchedules.Add(item);
                     }
                 }
 
-                List<SnackCombo> snackCombos = new();
-                if(request.SnackCombo == null || !request.SnackCombo.Any())
-                {
-                    return apiResp.SetBadRequest();
-                }
-                foreach(var item in request.SnackCombo)
-                {
-                    var snackCombo = await _uow.SnackComboRepo.GetAsync(x => x.Id == item.SnackComboId);
-                    if( snackCombo != null)
-                    {
-                        snackCombos.Add(snackCombo);
-                    }
-                }
+                // 2. Tạo Order trước (chưa thêm SnackOrder)
+                var orderId = Guid.NewGuid();
 
-                decimal price = await CalculatePriceAsync(request.SeatScheduleId, request.Snack, request.SnackCombo);
+                var total = await CalculatePriceAsync(request.SeatScheduleId, request.SnackOrders, request.SnackComboOrders);
 
-                // Tạo Order entity và gán trực tiếp các instance đã tracking
                 Order order = new Order
                 {
-                   
+                    Id = orderId,
                     UserId = request.UserId,
                     PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
-                    TotalAmount = price,
+                    TotalAmount = total * discount,
                     Status = OrderEnum.Pending,
-                    SeatSchedules = seatSchedules,
-                    Snacks = snacks,
-                    SnackCombos = snackCombos,
+                    SeatSchedules = seatSchedules
                 };
-                await _uow.OrderRepo.AddAsync(order);
 
-                await _uow.SaveChangesAsync();
+                await _uow.OrderRepo.AddAsync(order); // Thêm Order trước
+                await _uow.SaveChangesAsync(); // Lưu để tránh lỗi FK
 
-                // Tạo payment
-                Payment payment = new Payment
+                // 3. Tạo SnackOrders sau khi Order đã tồn tại
+                if (request.SnackOrders != null)
                 {
-                    userId = order.UserId,
-                    PaymentMethod = request.PaymentMethod,
-                    PaymentTime = null,
-                    AmountPaid = price * discountPercent,
-                    OrderId = order.Id,
+                    foreach (var item in request.SnackOrders)
+                    {
+                        var snackOrder = new SnackOrder
+                        {
+                            OrderId = orderId,
+                            SnackId = item.SnackId,
+                            Quantity = item.Quantity,
+                            SnackOrderEnum = SnackOrderEnum.SNACK
+                        };
+                        await _uow.SnackOrderRepo.AddAsync(snackOrder);
+                    }
+                }
+
+                if (request.SnackComboOrders != null)
+                {
+                    foreach (var item in request.SnackComboOrders)
+                    {
+                        var snackComboOrder = new SnackOrder
+                        {
+                            OrderId = orderId,
+                            SnackId = item.SnackComboId,
+                            Quantity = item.Quantity,
+                            SnackOrderEnum = SnackOrderEnum.SNACKCOMBO
+                        };
+                        await _uow.SnackOrderRepo.AddAsync(snackComboOrder);
+                    }
+                }
+
+                await _uow.SaveChangesAsync(); // Lưu SnackOrders
+
+                // 4. Load lại Order để ánh xạ
+                var savedOrder = await _uow.OrderRepo.GetOrderById(orderId);
+
+                OrderResponse orderResponse = new OrderResponse
+                {
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    PaymentMethod = order.PaymentMethod,
+                    OrderTime = order.OrderTime,
+                    TotalAmount = order.TotalAmount,
+                    TotalAfter = order.TotalAmount * discount, // Có thể xử lý khác nếu bạn có khuyến mãi
+                    Status = order.Status,
+                    SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
+                    Snacks = savedOrder.SnackOrders?
+                        .Select(s => new SnackOrderResponse
+                        {
+                            Id = s.Id,
+                            OrderId = s.OrderId,
+                            SnackId = s.SnackId,
+                            Quantity = s.Quantity,
+                            SnackOrderEnum = s.SnackOrderEnum
+                        }).ToList()
                 };
-                await _uow.PaymentRepo.AddAsync(payment);
-
-                await HoldSeatAsync(request.SeatScheduleId, request.UserId, null);
-
-                await _uow.SaveChangesAsync();
-
-                // Map sang OrderResponse để trả về
-                var rp = _mapper.Map<OrderResponse>(order);
-                return apiResp.SetOk(rp);
+                return apiResp.SetOk(orderResponse);
             }
             catch (Exception ex)
             {
@@ -123,20 +133,36 @@ namespace Application.Services
             }
         }
 
-        public async Task<ApiResp> ViewTicketOrder(int page, int size)
+        public async Task<ApiResp> ViewTicketOrder()
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                var rs = await _uow.OrderRepo.GetAllAsync(x => x.IsDeleted == false, null, page, size);
-                if (rs != null)
+                var orders = await _uow.OrderRepo.GetAllOrderAsync(
+                    o => o.SeatSchedules,
+                    o => o.SnackOrders
+                );
+
+                var responses = orders.Select(order => new OrderResponse
                 {
-                    return apiResp.SetOk(rs);
-                }
-                else
-                {
-                    return apiResp.SetNotFound("Not found");
-                }
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    PaymentMethod = order.PaymentMethod,
+                    OrderTime = order.OrderTime,
+                    TotalAmount = order.TotalAmount,
+                    TotalAfter = order.TotalAmount,
+                    Status = order.Status,
+                    SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
+                    Snacks = order.SnackOrders?.Select(s => new SnackOrderResponse
+                    {
+                        Id = s.Id,
+                        OrderId = s.OrderId,
+                        SnackId = s.SnackId,
+                        Quantity = s.Quantity
+                    }).ToList() ?? new List<SnackOrderResponse>()
+                }).ToList();
+
+                return apiResp.SetOk(responses);
             }
             catch (Exception ex)
             {
@@ -149,15 +175,38 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                var ticket = await _uow.OrderRepo.GetAsync(x => x.UserId == userId);
-                if (ticket != null)
+                var orders = await _uow.OrderRepo.GetAllAsync(
+            o => o.UserId == userId,
+            include: query => query
+                .Include(o => o.SeatSchedules)
+                .Include(o => o.SnackOrders)
+        );
+
+                var responses = orders.Select(order => new OrderResponse
                 {
-                    return apiResp.SetOk(ticket);
-                }
-                else
+                    Id = order.Id,
+                    UserId = order.UserId,
+                    PaymentMethod = order.PaymentMethod,
+                    OrderTime = order.OrderTime,
+                    TotalAmount = order.TotalAmount,
+                    TotalAfter = order.TotalAmount, // hoặc xử lý giảm giá nếu có
+                    Status = order.Status,
+                    SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
+                    Snacks = order.SnackOrders?.Select(snack => new SnackOrderResponse
+                    {
+                        Id = snack.Id,
+                        OrderId = snack.OrderId,
+                        SnackId = snack.SnackId,
+                        Quantity = snack.Quantity
+                    }).ToList()
+                }).ToList();
+
+                if(responses == null)
                 {
-                    return apiResp.SetNotFound("Not found");
+                    return apiResp.SetNotFound();
                 }
+
+                return apiResp.SetOk(responses);
             }
             catch (Exception ex)
             {

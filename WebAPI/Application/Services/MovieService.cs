@@ -151,20 +151,21 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
-                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
-                {
-                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
-                }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted, include: query => query.Include(m => m.MovieGenres));
-                var oldGenres = movie.MovieGenres.ToList();
-                foreach (var mg in oldGenres)
-                {
-                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
-                }
 
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
+                }
+
+                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
+                {
+                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
+                }
+                var oldGenres = movie.MovieGenres.ToList();
+                foreach (var mg in oldGenres)
+                {
+                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
                 }
                 
                  foreach (var genreId in movieRequest.GenreIds)

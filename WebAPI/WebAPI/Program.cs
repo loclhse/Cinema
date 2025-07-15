@@ -121,9 +121,6 @@ namespace WebAPI
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                var context = services.GetRequiredService<AppDbContext>();
-                await context.Database.MigrateAsync();
-
                 await SeedData.EnsureSeedDataAsync(services);
             }
             //SignalR
@@ -132,7 +129,7 @@ namespace WebAPI
             app.UseHangfireDashboard();
             //Đăng ký tác vụ ngầm
             //mỗi phút,mỗi giờ,mỗi ngày trong tháng, tháng, ngày trong tuần ứng với mỗi *
-            RecurringJob.AddOrUpdate<IBackgroundService>("Change-Seat-Booking-status", s => s.ChangeSeatBookingStatus(), "* * * * *");
+            //RecurringJob.AddOrUpdate<IBackgroundService>("Change-Seat-Booking-status", s => s.ChangeSeatBookingStatus(), "* * * * *");
             RecurringJob.AddOrUpdate<IBackgroundService>("Is-Subscription-Expired", s => s.IsSubscriptionExpired(),Cron.Daily(0, 0)); 
             // Pipeline
             if (app.Environment.IsDevelopment())
@@ -145,6 +142,10 @@ namespace WebAPI
 
             app.UseRouting();
             app.UseCors("AllowAll");
+
+            // Add custom middleware to log all requests
+           
+
 
             app.UseAuthentication();
             app.UseAuthorization();

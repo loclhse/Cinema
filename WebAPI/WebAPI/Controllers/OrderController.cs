@@ -1,6 +1,7 @@
 ﻿using Application.IServices;
 using Application.ViewModel.Request;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -19,13 +20,21 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> CreateOrder([FromBody] OrderRequest rq)
         {
             var rs = await _service.CreateTicketOrder(rq);
+            if(rs.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return BadRequest(rs);
+            }
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
 
         [HttpGet("GetAllTicketOrder")]
-        public async Task<IActionResult> GetAllTicketOrder(int page, int size)
+        public async Task<IActionResult> GetAllTicketOrder()
         {
-            var rs = await _service.ViewTicketOrder(page, size);
+            var rs = await _service.ViewTicketOrder();
+            if (rs.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return BadRequest(rs);
+            }
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
 
@@ -33,6 +42,10 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetTicketByUserId(Guid userId)
         {
             var rs = await _service.ViewTicketOrderByUserId(userId);
+            if (rs.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return BadRequest(rs);
+            }
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
 
@@ -40,6 +53,10 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> CancelOrder(List<Guid> seatScheduleId, Guid orderId)
         {
             var rs = await _service.CancelTicketOrderById(seatScheduleId, orderId);
+            if (rs.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return BadRequest(rs);
+            }
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
 
@@ -47,6 +64,10 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> SuccessOrder(List<Guid> seatScheduleId, Guid orderId)
         {
             var rs = await _service.SuccessOrder(seatScheduleId, orderId);
+            if (rs.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return BadRequest(rs);
+            }
             return rs.IsSuccess ? Ok(rs) : NotFound(rs);
         }
     }

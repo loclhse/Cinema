@@ -117,17 +117,6 @@ namespace Infrastructure.MapperConfigs
             
             CreateMap<Payment, PaymentResponse>().ReverseMap();
 
-            
-
-            CreateMap<Order, OrderResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-                .ForMember(dest => dest.OrderTime, opt => opt.MapFrom(src => src.OrderTime))
-                .ForMember(dest => dest.TotalAfter, opt => opt.MapFrom(src => src.TotalAmount)) // Giả sử TotalAfter tương đương TotalAmount, nếu khác thì cần điều chỉnh
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.SeatSchedules, opt => opt.MapFrom(src => src.SeatSchedules))
-                .ForMember(dest => dest.Snacks, opt => opt.Ignore()) // Nếu không có ánh xạ trực tiếp từ Order
-                .ForMember(dest => dest.SnackCombos, opt => opt.Ignore()).ReverseMap();
 
             CreateMap<SeatSchedule, SeatScheduleForOrderResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -141,6 +130,12 @@ namespace Infrastructure.MapperConfigs
             CreateMap<ScoreItem, ItemResponse>().ReverseMap();
             CreateMap<ScoreItem, ItemRequest>().ReverseMap();
 
+
+
+            CreateMap<Snack, SnackOrderRequest>()
+                .ReverseMap();
+            CreateMap<SnackCombo, SnackComboOrderRequest>()
+                .ReverseMap();
         }
     }
 }

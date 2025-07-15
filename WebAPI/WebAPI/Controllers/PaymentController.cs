@@ -80,11 +80,6 @@ namespace WebAPI.Controllers
                     return NotFound(new { Message = "Order not found." });
 
                 var url = _vnPayService.CreatePaymentUrl(order, HttpContext);
-                if (string.IsNullOrEmpty(url) || !Uri.TryCreate(url, UriKind.Absolute, out _))
-                {
-                    Console.WriteLine("[VNPay][Error] Failed to create valid payment URL.");
-                    return BadRequest(new { Message = "Failed to create VNPay payment URL." });
-                }
                 return Ok(new { PaymentUrl = url });
             }
             catch (Exception ex)
@@ -104,11 +99,7 @@ namespace WebAPI.Controllers
                     return NotFound(new { Message = "Order not found." });
                 
                 var url = _vnPayService.CreatePaymentUrlForSubscription(subscription, HttpContext);
-                if (string.IsNullOrEmpty(url) || !Uri.TryCreate(url, UriKind.Absolute, out _))
-                {
-                    Console.WriteLine("[VNPay][Error] Failed to create valid payment URL.");
-                    return BadRequest(new { Message = "Failed to create VNPay payment URL." });
-                }
+               
                 return Ok(new { PaymentUrl = url });
             }
             catch (Exception ex)
