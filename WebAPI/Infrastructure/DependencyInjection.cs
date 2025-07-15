@@ -86,6 +86,7 @@ namespace Infrastructure
             services.AddScoped<IElasticMovieRepo, ElasticMovieRepo>();
             services.AddScoped<IScoreItemRepo, ScoreItemRepo>();
             services.AddScoped<ISnackOrderRepo, SnackOrderRepo>();
+            services.AddScoped<IRedeemRepo,RedeemRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             #endregion
@@ -117,6 +118,7 @@ namespace Infrastructure
            
             services.AddScoped<IVnPayService,VnPayService>();
             services.AddScoped<IScoreItemService, ScoreItemService>();
+            services.AddScoped<IRedeemService, RedeemService>();
 
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
