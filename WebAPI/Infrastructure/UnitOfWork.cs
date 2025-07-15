@@ -38,6 +38,7 @@ namespace Infrastructure
 
         public IOrderRepo OrderRepo { get; }
         public IElasticMovieRepo elasticMovieRepo { get; }
+        public IRedeemRepo redeemRepo { get; } 
         public ISnackOrderRepo SnackOrderRepo { get; }
 
         public IScoreLogRepo ScoreLogRepo { get; }
@@ -70,6 +71,7 @@ namespace Infrastructure
             SnackOrderRepo = new SnackOrderRepo(context);
             ScoreItemRepo = new ScoreItemRepo(context);
             elasticMovieRepo = new ElasticMovieRepo(elasticClient);
+            redeemRepo = new RedeemRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
