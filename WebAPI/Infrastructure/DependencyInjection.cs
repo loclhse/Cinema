@@ -87,6 +87,7 @@ namespace Infrastructure
             services.AddScoped<IScoreItemRepo, ScoreItemRepo>();
             services.AddScoped<ISnackOrderRepo, SnackOrderRepo>();
             services.AddScoped<IRedeemRepo,RedeemRepo>();
+            services.AddScoped<IScoreLogRepo, ScoreLogRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             #endregion
