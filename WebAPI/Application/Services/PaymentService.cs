@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Application.ViewModel.Response;
 using Microsoft.AspNetCore.Http;
 using Application.IRepos;
+using Domain.Entities;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services
 {
@@ -144,6 +146,37 @@ namespace Application.Services
                         order.Status = OrderEnum.Success;
                         await _uow.OrderRepo.UpdateAsync(order);
 
+                        // Award score to user and log it
+                        if (order.UserId.HasValue && payment.AmountPaid.HasValue)
+                        {
+                            try
+                            {
+                                var user = await _uow.UserRepo.GetByIdAsync(order.UserId.Value);
+                                if (user != null)
+                                {
+                                    int points = (int)payment.AmountPaid.Value/1000;
+                                    user.Score += points;
+                                    var scoreLog = new ScoreLog
+                                    {
+                                        UserId = user.Id,
+                                        PointsChanged = points,
+                                        ActionType = "PaymentReward"
+                                    };
+                                    await _uow.ScoreLogRepo.AddAsync(scoreLog);
+                                    await _uow.UserRepo.UpdateAsync(user);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[ScoreLog Bonus][Warning] User not found for UserId: {order.UserId.Value}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[ScoreLog Bonus][Exception] {ex.Message}\n{ex.StackTrace}");
+                                return new ApiResp().SetBadRequest($"Payment succeeded but failed to bonus score: {ex.Message}");
+                            }
+                        }
+
                         await _uow.SaveChangesAsync();
                         await transaction.CommitAsync();
 
@@ -162,6 +195,7 @@ namespace Application.Services
 
         public async Task<ApiResp> HandleVnPayReturnForSubscription(IQueryCollection queryCollection)
         {
+            var errors = new List<string>();
             try
             {
                var response = _vnPayService.ProcessResponsee(queryCollection);
@@ -207,6 +241,33 @@ namespace Application.Services
                         {
                             await _authRepo.RemoveUserFromRoleAsync(sub.UserId.Value, "Customer");
                             await _authRepo.AddUserToRoleAsync(sub.UserId.Value, "Member");
+                        }
+
+                        if (sub.UserId.HasValue && payment.AmountPaid.HasValue)
+                        {
+                            try
+                            {
+                                var user = await _uow.UserRepo.GetByIdAsync(sub.UserId.Value);
+                                if (user != null)
+                                {
+                                    int points = (int)payment.AmountPaid.Value/1000;
+                                    user.Score += points;
+                                    var scoreLog = new ScoreLog
+                                    {
+                                        UserId = user.Id,
+                                        PointsChanged = points,
+                                        ActionType = "PaymentReward"
+                                    };
+                                    await _uow.ScoreLogRepo.AddAsync(scoreLog);
+                                    await _uow.UserRepo.UpdateAsync(user);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                var errorMsg = $"[ScoreLog Bonus][Exception] {ex.Message}\n{ex.StackTrace}";
+                                Console.WriteLine(errorMsg);
+                                errors.Add(errorMsg);
+                            }
                         }
 
                         await _uow.SaveChangesAsync();

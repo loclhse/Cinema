@@ -11,7 +11,7 @@ namespace Domain.Entities
         public string? Name { get; set; }
         public string? Description { get; set; }
         public int Score { get; set; }
-        public string? ImageUrl { get; set; }
+        public string? ImageUrl { get; set; } 
         public int Quantity { get; set; } 
         public int Sold { get; set; } 
         public virtual  ICollection<ScoreOrder> ScoreOrders { get; set; } = new List<ScoreOrder>();

@@ -29,7 +29,6 @@ namespace Infrastructure.Repos
             include: query => query.Include(m => m.MovieGenres).ThenInclude(mg => mg.Genre)
             );
 #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
-
             if (movie == null)
             {
                 throw new Exception("Movie not found.");

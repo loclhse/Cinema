@@ -134,9 +134,9 @@ namespace WebAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return Content($"Payment failed: {result.ErrorMessage ?? "Unknown error"}", "text/html");
+                return Content($"Payment failed. Pls checkout your process again!");
             }
-            return Content("Payment successful!", "text/html");
+            return Content("Payment successful");
         }
     }
 } 

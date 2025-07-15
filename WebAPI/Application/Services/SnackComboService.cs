@@ -60,10 +60,7 @@ namespace Application.Services
                 {
                     return new ApiResp().SetBadRequest(message: "Snack combo name is required.");
                 }
-                if (request.TotalPrice <= 0)
-                {
-                    return new ApiResp().SetBadRequest(message: "Total price must be greater than zero.");
-                }
+               
                
 
                 var combo = _mapper.Map<SnackCombo>(request);
@@ -74,7 +71,7 @@ namespace Application.Services
                     {
                         return new ApiResp().SetNotFound(message: $"Snack with ID {snackItem.SnackId} not found.");
                     }
-                    combo.SnackComboItems.Add(new SnackComboItem { SnackId = snackItem.SnackId, Quantity = snackItem.Quantity });
+                    combo.SnackComboItems.Add(new SnackComboItem { SnackId = snackItem.SnackId, Quantity = snackItem.Quantity, Snack = snack });
                 }
 
                 // Calculate total price based on snack prices, quantities, and discount
@@ -100,12 +97,20 @@ namespace Application.Services
             if (snackCombo?.SnackComboItems == null || !snackCombo.SnackComboItems.Any())
                 return 0;
 
-            // Calculate subtotal from all snack items
-            decimal subtotal = snackCombo.SnackComboItems
-                .Where(item => item.Snack != null && !item.IsDeleted)
-                .Sum(item => (item.Snack.Price * (item.Quantity ?? 1)));
+            decimal subtotal = 0;
+            foreach (var item in snackCombo.SnackComboItems)
+            {
+                if (item.Snack == null || item.IsDeleted) continue;
+                decimal snackPrice = item.Snack.Price;
+                // Apply snack discount if available
+                if (item.Snack.discount.HasValue && item.Snack.discount.Value > 0)
+                {
+                    snackPrice -= snackPrice * (item.Snack.discount.Value / 100m);
+                }
+                subtotal += snackPrice * (item.Quantity ?? 1);
+            }
 
-            // Apply discount if available
+            // Apply combo discount if available
             if (snackCombo.discount.HasValue && snackCombo.discount > 0)
             {
                 decimal discountAmount = subtotal * (snackCombo.discount.Value / 100m);
