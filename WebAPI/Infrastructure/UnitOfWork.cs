@@ -39,6 +39,8 @@ namespace Infrastructure
         public IOrderRepo OrderRepo { get; }
         public IElasticMovieRepo elasticMovieRepo { get; }
         public ISnackOrderRepo SnackOrderRepo { get; }
+
+        public IScoreLogRepo ScoreLogRepo { get; }
         public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -55,7 +57,8 @@ namespace Infrastructure
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
-            
+            ScoreLogRepo = new ScoreLogRepo(context);
+
             SnackRepo = new SnackRepo(context);
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);

@@ -58,6 +58,7 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public DbSet<SeatScheduleLog> SeatScheduleLogs { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }
     public DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
+    public virtual DbSet<ScoreLog> ScoreLog { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

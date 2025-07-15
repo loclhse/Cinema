@@ -31,5 +31,6 @@ namespace Application
         IScoreItemRepo ScoreItemRepo { get; }
         IElasticMovieRepo elasticMovieRepo { get; }
         ISnackOrderRepo SnackOrderRepo { get; }
+        IScoreLogRepo ScoreLogRepo { get; }
     }
 }
