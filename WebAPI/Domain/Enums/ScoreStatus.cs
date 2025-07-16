@@ -8,7 +8,7 @@ namespace Domain.Enums
 {
     public enum ScoreStatus
     {
-        panding,
+        pending,
         paid,
         cancelled
     }
