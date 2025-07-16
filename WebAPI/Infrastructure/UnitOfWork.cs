@@ -42,6 +42,7 @@ namespace Infrastructure
         public ISnackOrderRepo SnackOrderRepo { get; }
 
         public IScoreLogRepo ScoreLogRepo { get; }
+        public IScoreOrderRepo ScoreOrderRepo { get; }
         public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -72,6 +73,7 @@ namespace Infrastructure
             ScoreItemRepo = new ScoreItemRepo(context);
             elasticMovieRepo = new ElasticMovieRepo(elasticClient);
             redeemRepo = new RedeemRepo(context);
+            ScoreOrderRepo = new ScoreOrderRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
