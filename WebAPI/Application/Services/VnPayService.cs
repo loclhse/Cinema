@@ -51,7 +51,7 @@ namespace WebAPI.Infrastructure.Services
             // Remove empty values and exclude secure hash fields
 
             var paymentUrl = vnpay.CreateRequestUrl(_configuration["VnPay:PayUrl"], _configuration["VnPay:HashSecret"]);
-            return new ApiResp().SetOk(new { PaymentUrl = paymentUrl });
+            return new ApiResp().SetOk(paymentUrl);
         }
 
         public ApiResp CreatePaymentUrlForSubscription(Subscription sub, HttpContext context)
@@ -74,7 +74,7 @@ namespace WebAPI.Infrastructure.Services
             // Remove empty values and exclude secure hash fields
 
             var paymentUrl = vnpay.CreateRequestUrl(_configuration["VnPay:PayUrl"], _configuration["VnPay:HashSecret"]);
-            return new ApiResp().SetOk(new { PaymentUrl = paymentUrl });
+            return new ApiResp().SetOk(paymentUrl);
         }
 
 
