@@ -255,12 +255,16 @@ namespace Application.Services
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
-        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId)
+        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId)
         {
             ApiResp apiResponse = new ApiResp();
             try
             {
                 var order = await _uow.OrderRepo.GetAsync(x => x.Id == orderId && x.IsDeleted == false);
+                if(order == null)
+                {
+                    return apiResponse.SetNotFound("Not found Order");
+                }
                 order.Status = OrderEnum.Success;
                 if (!seatScheduleId.Any())
                 {
@@ -273,6 +277,19 @@ namespace Application.Services
                     seatSchedule.Status = SeatBookingStatus.Booked;
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
+
+                int point = (int) (order.TotalAmount / 100);
+
+                if(point > 0)
+                {
+                    var user = await _uow.UserRepo.GetByIdAsync(userId);
+                    if (user == null)
+                    {
+                        return apiResponse.SetNotFound("Not found User");
+                    }
+                    user.Score += point;
+                }
+
                 await _uow.SaveChangesAsync();
                 return apiResponse.SetOk("Seat changed to Booked");
             }
