@@ -61,9 +61,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpPut("SuccessOrder")]
-        public async Task<IActionResult> SuccessOrder(List<Guid> seatScheduleId, Guid orderId)
+        public async Task<IActionResult> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId)
         {
-            var rs = await _service.SuccessOrder(seatScheduleId, orderId);
+            var rs = await _service.SuccessOrder(seatScheduleId, orderId, userId);
             if (rs.StatusCode == HttpStatusCode.BadRequest)
             {
                 return BadRequest(rs);
