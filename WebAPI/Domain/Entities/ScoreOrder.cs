@@ -10,6 +10,7 @@ namespace Domain.Entities
     {
         public Guid RedeemId { get; set; }
         public Guid ScoreItemId { get; set; }
+        public int Quantity { get; set; }
         public virtual ScoreItem? ScoreItem { get; set; }
         public virtual Redeem? Redeem { get; set; }
     }

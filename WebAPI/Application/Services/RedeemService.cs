@@ -28,42 +28,34 @@ namespace Application.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<ApiResp> CreateRedeemAsync(RedeemRequest request)
+        public async Task<ApiResp> CreateRedeemAsync(Guid userId,List<RedeemRequest> requests)
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                if (request.ScoreItemId == null || !request.ScoreItemId.Any())
-                {
-                    return apiResp.SetBadRequest("Score item IDs cannot be empty");
-                }
-                var user = _httpContextAccessor.HttpContext.User;
-                var userId = user.FindFirst(ClaimTypes.NameIdentifier);
-                if (userId == null)
-                {
-                    return apiResp.SetUnauthorized(message: "User not authenticated");
-                }
-                var redeem = _mapper.Map<Redeem>(request);
-                redeem.UserId = Guid.Parse(userId.Value); 
-                foreach(var item in request.ScoreItemId)
-                {
-                    var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item);
-                    if (scoreItem == null)
+                var redeem = new Redeem();
+                redeem.UserId = userId;
+                
+                    foreach (var item in requests)
                     {
-                        return apiResp.SetNotFound("Score item not found");
+                        var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
+                        if (scoreItem == null)
+                        {
+                            return apiResp.SetNotFound("Score item not found");
+                        }
+                        if (item.Quantity > scoreItem.Quantity)
+                        {
+                            return apiResp.SetBadRequest("The items are not enought for you to exchange!!!");
+                        }
+                        redeem.ScoreOrders.Add(new ScoreOrder
+                        {
+                            Quantity = item.Quantity,
+                            ScoreItem = scoreItem,
+                            Redeem = redeem
+                        });
+                        redeem.TotalScore += scoreItem.Score * item.Quantity;
                     }
-                    if(redeem.Quantity > scoreItem.Quantity)
-                    {
-                        return apiResp.SetBadRequest("The items are not enought for you to exchange!!!");
-                    }
-                    scoreItem.Quantity -= redeem.Quantity;
-                    redeem.ScoreOrders.Add(new ScoreOrder
-                    {
-                        ScoreItem = scoreItem,
-                        Redeem = redeem
-                    });
-                    redeem.TotalScore += scoreItem.Score * redeem.Quantity;
-                }
+                
                 await _unitOfWork.redeemRepo.AddAsync(redeem);
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Redeem create successfully!");
@@ -89,18 +81,18 @@ namespace Application.Services
                 redeemResponse.ItemNames = ItemNames;
                 return apiResp.SetOk(redeemResponse);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
 
-        public async Task<ApiResp> GetRedeemsByAccountAsync(Guid accountId)
+        public async Task<ApiResp> GetPendingRedeemsByAccountAsync(Guid accountId)
         {
             ApiResp apiResp = new ApiResp();
             try
             {
-                var redeems = await _unitOfWork.redeemRepo.GetAllAsync(x => x.UserId == accountId && !x.IsDeleted);
+                var redeems = await _unitOfWork.redeemRepo.GetAllAsync(x => x.UserId == accountId && !x.IsDeleted && x.status == ScoreStatus.pending);
                 var rs = new List<RedeemResponse>();
                 if (redeems == null || !redeems.Any())
                 {
@@ -120,7 +112,31 @@ namespace Application.Services
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
-
+        public async Task<ApiResp> GetPaidRedeemsByAccountAsync(Guid accountId)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var redeems = await _unitOfWork.redeemRepo.GetAllAsync(x => x.UserId == accountId && !x.IsDeleted && x.status == ScoreStatus.paid);
+                var rs = new List<RedeemResponse>();
+                if (redeems == null || !redeems.Any())
+                {
+                    return apiResp.SetNotFound("No redeems found for this account");
+                }
+                foreach (var redeem in redeems)
+                {
+                    var itemName = await _unitOfWork.redeemRepo.GetItemNamesByRedeemId(redeem.Id);
+                    var redeemResponse = _mapper.Map<RedeemResponse>(redeem);
+                    redeemResponse.ItemNames = itemName;
+                    rs.Add(redeemResponse);
+                }
+                return apiResp.SetOk(rs);
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
 
         public async Task<ApiResp> GetAllRedeemsAsync()
         {
@@ -162,6 +178,86 @@ namespace Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Redeem cancelled successfully!");
 
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+        public async Task<ApiResp> updateRedeemAsync(Guid redeemId, List<RedeemRequest> requests)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var redeem = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == redeemId && !x.IsDeleted);
+                if (redeem == null)
+                {
+                    return apiResp.SetNotFound("Redeem not found");
+                }
+                redeem.ScoreOrders.Clear();
+                redeem.TotalScore = 0;
+                    foreach (var item in requests)
+                    {
+                        var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
+                        if (scoreItem == null)
+                        {
+                            return apiResp.SetNotFound("Score item not found");
+                        }
+                        if (item.Quantity > scoreItem.Quantity)
+                        {
+                            return apiResp.SetBadRequest("The items are not enough for you to exchange!!!");
+                        }
+                        await _unitOfWork.ScoreOrderRepo.AddAsync(new ScoreOrder
+                        {
+                            ScoreItem = scoreItem,
+                            Redeem = redeem
+                        });
+                        redeem.TotalScore += scoreItem.Score * item.Quantity;
+                    }
+                
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk("Redeem updated successfully!");
+            }
+            catch (Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
+        public async Task<ApiResp> redeemItem(Guid id, Guid userId)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+               
+                var order = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == id && !x.IsDeleted && x.status == ScoreStatus.pending);
+                var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == userId && !u.IsDeleted);
+                if (order == null)
+                {
+                    return apiResp.SetNotFound("Redeem not found or already processed");
+                }
+                if (userScore.Score < order.TotalScore)
+                {
+                    return apiResp.SetBadRequest("Your score is not enough!");
+                }
+                order.status = ScoreStatus.paid;
+               foreach(var item in order.ScoreOrders)
+                {
+                    var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
+                    if (scoreItem == null)
+                    {
+                        return apiResp.SetNotFound("Score item not found");
+                    }
+                    scoreItem.Quantity -= item.Quantity;
+                    if (scoreItem.Quantity < 0)
+                    {
+                        return apiResp.SetBadRequest("The items are not enough for you to exchange!!!");
+                    }
+                    await _unitOfWork.ScoreItemRepo.UpdateAsync(scoreItem);
+                }
+                userScore.Score -= order.TotalScore;
+                await _unitOfWork.UserRepo.UpdateAsync(userScore);
+                await _unitOfWork.SaveChangesAsync();
+                return apiResp.SetOk("Redeem successful!");
             }
             catch (Exception ex)
             {

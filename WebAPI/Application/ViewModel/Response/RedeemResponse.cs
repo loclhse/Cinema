@@ -10,9 +10,11 @@ namespace Application.ViewModel.Response
 {
     public class RedeemResponse
     {
+        public Guid Id { get; set; }
         public int TotalScore { get; set; }
-        public int Quantity { get; set; }
+        //public int Quantity { get; set; }
         public ScoreStatus status { get; set; }
         public List<string> ItemNames { get; set; }
     }
+
 }

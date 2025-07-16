@@ -80,7 +80,7 @@ namespace Application.Services
                 await _uow.PaymentRepo.AddAsync(payment);
                 await _uow.SaveChangesAsync();
                 var result = _mapper.Map<SubscriptionResponse>(sub);
-                return apiResp.SetOk(sub);
+                return apiResp.SetOk(result);
             }
             catch (Exception ex)
             {
