@@ -15,6 +15,6 @@ namespace Application.IServices
         Task<ApiResp> ViewTicketOrder();
         Task<ApiResp> ViewTicketOrderByUserId(Guid userId);
         Task<ApiResp> CancelTicketOrderById(List<Guid> seatScheduleId, Guid orderId);
-        Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId);
+        Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId);
     }
 }

@@ -9,7 +9,7 @@ namespace Application.ViewModel.Request
 {
     public class RedeemRequest
     {
-        public List<Guid> ScoreItemId { get; set; }
+        public Guid ScoreItemId { get; set; }
         public int Quantity { get; set; } = 1; 
     }
 }

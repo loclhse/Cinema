@@ -10,10 +10,13 @@ namespace Application.IServices
 {
     public interface IRedeemService
     {
-        Task<ApiResp> CreateRedeemAsync(RedeemRequest request);
+        Task<ApiResp> CreateRedeemAsync(Guid userId, List<RedeemRequest> request);
         Task<ApiResp> GetRedeemAsync(Guid redeemId);
         Task<ApiResp> GetAllRedeemsAsync();
-        Task<ApiResp> GetRedeemsByAccountAsync(Guid accountId);
+        Task<ApiResp> GetPendingRedeemsByAccountAsync(Guid accountId);
+        Task<ApiResp> GetPaidRedeemsByAccountAsync(Guid accountId);
         Task<ApiResp> CancelRedeemAsync(Guid id);
+        Task<ApiResp> redeemItem(Guid id, Guid userId);
+        Task<ApiResp> updateRedeemAsync(Guid redeemId, List<RedeemRequest> requests);
     }
 }
