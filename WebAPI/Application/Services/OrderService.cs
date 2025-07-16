@@ -69,6 +69,20 @@ namespace Application.Services
                 await _uow.OrderRepo.AddAsync(order); // Thêm Order trước
                 await _uow.SaveChangesAsync(); // Lưu để tránh lỗi FK
 
+                // Create a pending payment for the order
+                var payment = new Payment
+                {
+                    OrderId = orderId,
+                    userId = request.UserId,
+                    PaymentMethod = request.PaymentMethod,
+                    Status = PaymentStatus.Pending,
+                    AmountPaid = null,
+                    PaymentTime = null,
+                    TransactionCode = null
+                };
+                await _uow.PaymentRepo.AddAsync(payment);
+                await _uow.SaveChangesAsync();
+
                 // 3. Tạo SnackOrders sau khi Order đã tồn tại
                 if (request.SnackOrders != null)
                 {
