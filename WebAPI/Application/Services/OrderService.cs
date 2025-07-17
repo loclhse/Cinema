@@ -32,7 +32,7 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                decimal? discount = 1;
+                decimal? discount = 0;
                 var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
                 if(promotion != null)
                 {
@@ -278,7 +278,7 @@ namespace Application.Services
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
 
-                int point = (int) (order.TotalAmount / 100);
+                int point = (int) (order.TotalAmount);
 
                 if(point > 0)
                 {
@@ -291,7 +291,7 @@ namespace Application.Services
                 }
 
                 await _uow.SaveChangesAsync();
-                return apiResponse.SetOk($"Seat changed to Booked\nPoint Plus: +{point}");
+                return apiResponse.SetOk(point);
             }
             catch (Exception ex)
             {
