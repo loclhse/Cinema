@@ -80,7 +80,7 @@ namespace WebAPI.Controllers
                     return NotFound(new { Message = "Order not found." });
 
                 var url = _vnPayService.CreatePaymentUrl(order, HttpContext);
-                return Ok(new { PaymentUrl = url });
+                return Ok(url);
             }
             catch (Exception ex)
             {
@@ -100,7 +100,7 @@ namespace WebAPI.Controllers
                 
                 var url = _vnPayService.CreatePaymentUrlForSubscription(subscription, HttpContext);
                
-                return Ok(new { PaymentUrl = url });
+                return Ok(url);
             }
             catch (Exception ex)
             {
