@@ -13,10 +13,13 @@ namespace Infrastructure.Configuration
     {
         public void Configure(EntityTypeBuilder<ScoreLog> builder)
         {
-
             builder.HasOne(x => x.AppUser)
                 .WithMany(x => x.ScoreLog)
-                .HasForeignKey(x => x.UserId);
+                .HasForeignKey(x => x.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Property(x => x.UserId).IsRequired();
         }
     }
 }

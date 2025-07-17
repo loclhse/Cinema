@@ -62,7 +62,6 @@ namespace Application.Services
                         Movie = movie
                     });
                 }
-
                 await _unitOfWork.MovieRepo.AddAsync(movie);
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.elasticMovieRepo.IndexMovieAsync(movie);

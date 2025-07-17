@@ -79,7 +79,8 @@ namespace Application.Services
                 };
                 await _uow.PaymentRepo.AddAsync(payment);
                 await _uow.SaveChangesAsync();
-                return apiResp.SetOk("Subscription added successfully!");
+                var result = _mapper.Map<SubscriptionResponse>(sub);
+                return apiResp.SetOk(result);
             }
             catch (Exception ex)
             {

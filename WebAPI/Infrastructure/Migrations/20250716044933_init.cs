@@ -549,6 +549,7 @@ namespace Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     TotalScore = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
                     status = table.Column<int>(type: "integer", nullable: false),
                     CreateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdateDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

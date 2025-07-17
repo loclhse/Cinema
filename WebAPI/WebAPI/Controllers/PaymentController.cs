@@ -80,7 +80,7 @@ namespace WebAPI.Controllers
                     return NotFound(new { Message = "Order not found." });
 
                 var url = _vnPayService.CreatePaymentUrl(order, HttpContext);
-                return Ok(new { PaymentUrl = url });
+                return Ok(url);
             }
             catch (Exception ex)
             {
@@ -100,7 +100,7 @@ namespace WebAPI.Controllers
                 
                 var url = _vnPayService.CreatePaymentUrlForSubscription(subscription, HttpContext);
                
-                return Ok(new { PaymentUrl = url });
+                return Ok(url);
             }
             catch (Exception ex)
             {
@@ -134,9 +134,9 @@ namespace WebAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return Content($"Payment failed: {result.ErrorMessage ?? "Unknown error"}", "text/html");
+                return Content($"Payment failed. Pls checkout your process again!");
             }
-            return Content("Payment successful!", "text/html");
+            return Content("Payment successful");
         }
     }
 } 

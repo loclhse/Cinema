@@ -4,6 +4,7 @@ using System.Text.Json;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+<<<<<<<< HEAD:WebAPI/Infrastructure/Migrations/20250715042258_init.Designer.cs
+    [Migration("20250715042258_init")]
+========
+    [Migration("20250716044933_init")]
+>>>>>>>> 442585605c0ca04070794e3b9639faf2224def88:WebAPI/Infrastructure/Migrations/20250716044933_init.Designer.cs
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -419,6 +426,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
 
                     b.Property<int>("TotalScore")
                         .HasColumnType("integer");

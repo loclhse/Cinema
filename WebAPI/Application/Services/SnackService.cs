@@ -68,10 +68,7 @@ namespace Application.Services
                 {
                     return new ApiResp().SetBadRequest(message: "Snack name is required.");
                 }
-                if (request.Quantity <= 0)
-                {
-                    return new ApiResp().SetBadRequest(message: "Quantity must be greater than zero.");
-                }
+               
 
                 var snack = _mapper.Map<Snack>(request);
                 await _uow.SnackRepo.AddAsync(snack);
@@ -93,10 +90,7 @@ namespace Application.Services
                 {
                     return new ApiResp().SetBadRequest(message: "Snack name is required.");
                 }
-                if (request.Quantity <= 0)
-                {
-                    return new ApiResp().SetBadRequest(message: "Quantity must be greater than zero.");
-                }
+               
 
                 var existingSnack = await _uow.SnackRepo.GetByIdAsync(id);
                 if (existingSnack == null)

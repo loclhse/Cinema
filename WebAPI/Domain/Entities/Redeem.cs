@@ -10,7 +10,7 @@ namespace Domain.Entities
     public class Redeem : BaseEntity {
     public Guid UserId { get; set; } 
     public int TotalScore { get; set; }  
-    public ScoreStatus status { get; set; }
+    public ScoreStatus status { get; set; } = ScoreStatus.pending;
     public virtual AppUser? User { get; set; } 
     public virtual ICollection<ScoreOrder> ScoreOrders { get; set; } = new List<ScoreOrder>();
     }

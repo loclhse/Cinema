@@ -9,6 +9,7 @@ namespace Domain.Enums
     public enum ScoreStatus
     {
         pending,
-        paid
+        paid,
+        cancelled
     }
 }

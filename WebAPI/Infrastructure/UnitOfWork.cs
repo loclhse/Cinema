@@ -38,7 +38,11 @@ namespace Infrastructure
 
         public IOrderRepo OrderRepo { get; }
         public IElasticMovieRepo elasticMovieRepo { get; }
+        public IRedeemRepo redeemRepo { get; } 
         public ISnackOrderRepo SnackOrderRepo { get; }
+
+        public IScoreLogRepo ScoreLogRepo { get; }
+        public IScoreOrderRepo ScoreOrderRepo { get; }
         public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
@@ -55,7 +59,8 @@ namespace Infrastructure
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
-            
+            ScoreLogRepo = new ScoreLogRepo(context);
+
             SnackRepo = new SnackRepo(context);
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);
@@ -67,6 +72,8 @@ namespace Infrastructure
             SnackOrderRepo = new SnackOrderRepo(context);
             ScoreItemRepo = new ScoreItemRepo(context);
             elasticMovieRepo = new ElasticMovieRepo(elasticClient);
+            redeemRepo = new RedeemRepo(context);
+            ScoreOrderRepo = new ScoreOrderRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()
