@@ -70,7 +70,7 @@ namespace Application.Services
 
                 if (payments == null || !payments.Any())
                 {
-                    return new ApiResp().SetNotFound("No cash payments found.");
+                    return new ApiResp().SetNotFound(null, "No cash payments found.");
                 }
                 var paymentResponses = _mapper.Map<List<PaymentResponse>>(payments);
                 return new ApiResp().SetOk(paymentResponses);
@@ -78,7 +78,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return new ApiResp().SetBadRequest($"Error retrieving cash payments: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error retrieving cash payments: {ex.Message}");
             }
         }
         
@@ -95,7 +95,7 @@ namespace Application.Services
 
                 if (payment.Status != PaymentStatus.Pending)
                 {
-                    return new ApiResp().SetBadRequest($"Payment with ID {id} is not in Pending status.");
+                    return new ApiResp().SetBadRequest(null, $"Payment with ID {id} is not in Pending status.");
                 }
 
                 
@@ -123,11 +123,11 @@ namespace Application.Services
                     var orderId = Guid.Parse(response.OrderId);
                     var order = await _uow.OrderRepo.GetByIdAsync(orderId);
                     if (order == null)
-                        return new ApiResp().SetNotFound("Order not found.");
+                        return new ApiResp().SetNotFound(null, "Order not found.");
 
                     var payment = await _uow.PaymentRepo.GetAsync(p => p.OrderId == order.Id);
                     if (payment == null)
-                        return new ApiResp().SetNotFound("Payment not found.");
+                        return new ApiResp().SetNotFound(null, "Payment not found.");
 
                     if (response.Success)
                     {
@@ -150,11 +150,12 @@ namespace Application.Services
                         if (order.UserId.HasValue && payment.AmountPaid.HasValue)
                         {
                             try
+                        
                             {
                                 var user = await _uow.UserRepo.GetByIdAsync(order.UserId.Value);
                                 if (user != null)
                                 {
-                                    int points = (int)payment.AmountPaid.Value/1000;
+                                    int points = (int)payment.AmountPaid.Value ;
                                     user.Score += points;
                                     var scoreLog = new ScoreLog
                                     {
@@ -189,7 +190,7 @@ namespace Application.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[VNPay][Exception] {ex.Message}");
-                return new ApiResp().SetBadRequest($"Error processing VNPay return: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error processing VNPay return: {ex.Message}");
             }
         }
 
@@ -250,7 +251,7 @@ namespace Application.Services
                                 var user = await _uow.UserRepo.GetByIdAsync(sub.UserId.Value);
                                 if (user != null)
                                 {
-                                    int points = (int)payment.AmountPaid.Value/1000;
+                                    int points = (int)payment.AmountPaid.Value;
                                     user.Score += points;
                                     var scoreLog = new ScoreLog
                                     {

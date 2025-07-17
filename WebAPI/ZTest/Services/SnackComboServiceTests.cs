@@ -52,7 +52,7 @@ public class SnackComboServiceTests
     public async Task AddAsync_ReturnsCreated_WhenValidRequest()
     {
         var request = new SnackComboRequest { Name = "Combo 2", TotalPrice = 100, SnackItems = new List<SnackComboItemRequest>() };
-        var combo = new SnackCombo { Id = Guid.NewGuid(), Name = "Combo 2", TotalPrice = 100 };
+        var combo = new SnackCombo { Id = Guid.NewGuid(), Name = "Combo 2", TotalPrice = 100, SnackComboItems = new List<SnackComboItem>() };
         var comboResponse = new SnackComboResponse { Id = combo.Id, Name = "Combo 2" };
         var transaction = new Mock<IDbContextTransaction>();
         _mockMapper.Setup(m => m.Map<SnackCombo>(request)).Returns(combo);

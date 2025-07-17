@@ -74,7 +74,7 @@ namespace Application.Services
                 await _uow.SnackRepo.AddAsync(snack);
                 await _uow.SaveChangesAsync(); 
                 var response = _mapper.Map<SnackResponse>(snack);
-                return new ApiResp().SetOk(response).SetApiResponse(HttpStatusCode.Created, true);
+                return new ApiResp().SetOk(response).SetApiResponse(HttpStatusCode.Created, true, null, response);
             }
             catch (Exception ex)
             {

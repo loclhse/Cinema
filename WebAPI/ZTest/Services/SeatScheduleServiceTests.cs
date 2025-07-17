@@ -59,21 +59,16 @@ namespace UnitTests.Services
         [Fact]
         public async Task GetSeatSchedulesByShowtimeAsync_ReturnsMappedSeats_WhenSeatsExist()
         {
-            // Arrange
             var showtimeId = Guid.NewGuid();
-            var seats = new List<SeatSchedule> { new SeatSchedule { Id = Guid.NewGuid(), ShowtimeId = showtimeId } };
-            var mapped = new List<SeatScheduleResponse> { new SeatScheduleResponse { Id = seats[0].Id } };
-
-            _mockSeatScheduleRepo.Setup(r => r.GetAllAsync(
-                It.IsAny<Expression<Func<SeatSchedule, bool>>>())
-            ).ReturnsAsync(seats);
-            _mockMapper.Setup(m => m.Map<IEnumerable<SeatScheduleResponse>>(seats)).Returns(mapped);
-
-            // Act
+            var seatSchedule = new SeatSchedule { Id = Guid.NewGuid(), ShowtimeId = showtimeId };
+            var seatScheduleResponse = new SeatScheduleResponse { Id = seatSchedule.Id };
+            _mockUow.Setup(u => u.SeatScheduleRepo.GetAllAsync(
+                It.IsAny<Expression<Func<SeatSchedule, bool>>>(),
+                It.IsAny<Func<IQueryable<SeatSchedule>, IIncludableQueryable<SeatSchedule, object>>>()
+            )).ReturnsAsync(new List<SeatSchedule> { seatSchedule });
+            _mockMapper.Setup(m => m.Map<IEnumerable<SeatScheduleResponse>>(It.IsAny<List<SeatSchedule>>()))
+                .Returns(new List<SeatScheduleResponse> { seatScheduleResponse });
             var result = await _service.GetSeatSchedulesByShowtimeAsync(showtimeId);
-
-            // Assert
-            Assert.NotNull(result);
             Assert.Single(result);
         }
 

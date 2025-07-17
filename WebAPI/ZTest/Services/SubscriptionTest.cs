@@ -55,6 +55,8 @@ namespace ZTest.Services
             _unitOfWorkMock.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(plan.Id)).ReturnsAsync(plan);
             _mapperMock.Setup(m => m.Map<Subscription>(request)).Returns(subscription);
             _unitOfWorkMock.Setup(u => u.SubscriptionRepo.AddAsync(It.IsAny<Subscription>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.PaymentRepo.AddAsync(It.IsAny<Payment>())).Returns(Task.CompletedTask);
+            _mapperMock.Setup(m => m.Map<SubscriptionResponse>(It.IsAny<Subscription>())).Returns(new SubscriptionResponse());
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
             var result = await _service.CreateSubscription(request);
