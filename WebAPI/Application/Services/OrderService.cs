@@ -61,7 +61,7 @@ namespace Application.Services
                     UserId = request.UserId,
                     PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
-                    TotalAmount = total * discount,
+                    TotalAmount = total - (total * (discount/100)),
                     Status = OrderEnum.Pending,
                     SeatSchedules = seatSchedules
                 };
@@ -125,8 +125,8 @@ namespace Application.Services
                     UserId = order.UserId,
                     PaymentMethod = order.PaymentMethod,
                     OrderTime = order.OrderTime,
-                    TotalAmount = order.TotalAmount,
-                    TotalAfter = order.TotalAmount * discount, // Có thể xử lý khác nếu bạn có khuyến mãi
+                    TotalAmount = order.TotalAmount + (total * (discount/100)),
+                    TotalAfter = order.TotalAmount, // Có thể xử lý khác nếu bạn có khuyến mãi
                     Status = order.Status,
                     SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
                     Snacks = savedOrder.SnackOrders?
@@ -291,7 +291,7 @@ namespace Application.Services
                 }
 
                 await _uow.SaveChangesAsync();
-                return apiResponse.SetOk("Seat changed to Booked");
+                return apiResponse.SetOk($"Seat changed to Booked\nPoint Plus: +{point}");
             }
             catch (Exception ex)
             {
