@@ -32,13 +32,16 @@ namespace Application.Services
             ApiResp apiResp = new ApiResp();
             try
             {
-                decimal? discount = 1;
+                if (request.SeatScheduleId == null || !request.SeatScheduleId.Any())
+                {
+                    return apiResp.SetBadRequest("SeatScheduleId cannot be null or empty.");
+                }
+                decimal? discount = 0;
                 var promotion = await _uow.PromotionRepo.GetPromotionById(request.PromotionId);
                 if(promotion != null)
                 {
                     discount = promotion.DiscountPercent;
                 }
-
                 List<SeatSchedule> seatSchedules = new();
                 if (request.SeatScheduleId != null)
                 {
@@ -49,27 +52,20 @@ namespace Application.Services
                             seatSchedules.Add(item);
                     }
                 }
-
-                // 2. Tạo Order trước (chưa thêm SnackOrder)
                 var orderId = Guid.NewGuid();
-
                 var total = await CalculatePriceAsync(request.SeatScheduleId, request.SnackOrders, request.SnackComboOrders);
-
                 Order order = new Order
                 {
                     Id = orderId,
                     UserId = request.UserId,
                     PaymentMethod = request.PaymentMethod,
                     OrderTime = DateTime.UtcNow,
-                    TotalAmount = total * discount,
+                    TotalAmount = total - (total * (discount/100)),
                     Status = OrderEnum.Pending,
                     SeatSchedules = seatSchedules
                 };
-
-                await _uow.OrderRepo.AddAsync(order); // Thêm Order trước
-                await _uow.SaveChangesAsync(); // Lưu để tránh lỗi FK
-
-                // Create a pending payment for the order
+                await _uow.OrderRepo.AddAsync(order);
+                await _uow.SaveChangesAsync();
                 var payment = new Payment
                 {
                     OrderId = orderId,
@@ -82,8 +78,6 @@ namespace Application.Services
                 };
                 await _uow.PaymentRepo.AddAsync(payment);
                 await _uow.SaveChangesAsync();
-
-                // 3. Tạo SnackOrders sau khi Order đã tồn tại
                 if (request.SnackOrders != null)
                 {
                     foreach (var item in request.SnackOrders)
@@ -98,7 +92,6 @@ namespace Application.Services
                         await _uow.SnackOrderRepo.AddAsync(snackOrder);
                     }
                 }
-
                 if (request.SnackComboOrders != null)
                 {
                     foreach (var item in request.SnackComboOrders)
@@ -113,20 +106,16 @@ namespace Application.Services
                         await _uow.SnackOrderRepo.AddAsync(snackComboOrder);
                     }
                 }
-
-                await _uow.SaveChangesAsync(); // Lưu SnackOrders
-
-                // 4. Load lại Order để ánh xạ
+                await _uow.SaveChangesAsync();
                 var savedOrder = await _uow.OrderRepo.GetOrderById(orderId);
-
                 OrderResponse orderResponse = new OrderResponse
                 {
                     Id = order.Id,
                     UserId = order.UserId,
                     PaymentMethod = order.PaymentMethod,
                     OrderTime = order.OrderTime,
-                    TotalAmount = order.TotalAmount,
-                    TotalAfter = order.TotalAmount * discount, // Có thể xử lý khác nếu bạn có khuyến mãi
+                    TotalAmount = order.TotalAmount + (total * (discount/100)),
+                    TotalAfter = order.TotalAmount,
                     Status = order.Status,
                     SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
                     Snacks = savedOrder.SnackOrders?
@@ -143,7 +132,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -180,7 +169,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -195,7 +184,11 @@ namespace Application.Services
                 .Include(o => o.SeatSchedules)
                 .Include(o => o.SnackOrders)
         );
-
+                if (orders == null)
+                {
+                    // If null, treat as error (BadRequest)
+                    return apiResp.SetBadRequest(null, "Error retrieving orders.");
+                }
                 var responses = orders.Select(order => new OrderResponse
                 {
                     Id = order.Id,
@@ -203,7 +196,7 @@ namespace Application.Services
                     PaymentMethod = order.PaymentMethod,
                     OrderTime = order.OrderTime,
                     TotalAmount = order.TotalAmount,
-                    TotalAfter = order.TotalAmount, // hoặc xử lý giảm giá nếu có
+                    TotalAfter = order.TotalAmount,
                     Status = order.Status,
                     SeatSchedules = order.SeatSchedules?.Select(ss => ss.Id).ToList() ?? new List<Guid>(),
                     Snacks = order.SnackOrders?.Select(snack => new SnackOrderResponse
@@ -214,17 +207,15 @@ namespace Application.Services
                         Quantity = snack.Quantity
                     }).ToList()
                 }).ToList();
-
-                if(responses == null)
+                if(responses.Count == 0)
                 {
                     return apiResp.SetNotFound();
                 }
-
                 return apiResp.SetOk(responses);
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -234,10 +225,14 @@ namespace Application.Services
             try
             {
                 var order = await _uow.OrderRepo.GetAsync(x => x.Id == orderId && x.IsDeleted == false);
+                if (order == null)
+                {
+                    return apiResp.SetBadRequest(null, "Order not found");
+                }
                 order.Status = OrderEnum.Faild;
                 if (!seatScheduleId.Any())
                 {
-                    return apiResp.SetNotFound("Not found");
+                    return apiResp.SetNotFound();
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
 
@@ -252,7 +247,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId)
@@ -263,12 +258,12 @@ namespace Application.Services
                 var order = await _uow.OrderRepo.GetAsync(x => x.Id == orderId && x.IsDeleted == false);
                 if(order == null)
                 {
-                    return apiResponse.SetNotFound("Not found Order");
+                    return apiResponse.SetNotFound(null, "Not found Order");
                 }
                 order.Status = OrderEnum.Success;
                 if (!seatScheduleId.Any())
                 {
-                    return apiResponse.SetNotFound("Not found");
+                    return apiResponse.SetNotFound(null, "Not found");
                 }
                 var seats = await _uow.SeatScheduleRepo.GetAllAsync(s => seatScheduleId.Contains(s.Id));
 
@@ -278,24 +273,24 @@ namespace Application.Services
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
 
-                int point = (int) (order.TotalAmount / 100);
+                int point = (int) (order.TotalAmount);
 
                 if(point > 0)
                 {
                     var user = await _uow.UserRepo.GetByIdAsync(userId);
                     if (user == null)
                     {
-                        return apiResponse.SetNotFound("Not found User");
+                        return apiResponse.SetNotFound(null, "Not found User");
                     }
                     user.Score += point;
                 }
 
                 await _uow.SaveChangesAsync();
-                return apiResponse.SetOk("Seat changed to Booked");
+                return apiResponse.SetOk(point);
             }
             catch (Exception ex)
             {
-                return apiResponse.SetBadRequest(ex.Message);
+                return apiResponse.SetBadRequest(null, ex.Message);
             }
         }
 
