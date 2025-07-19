@@ -11,6 +11,10 @@ using AutoMapper;
 using Domain.Entities;
 using Application;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Query;
 
 public class SnackComboServiceTests
 {
@@ -236,5 +240,190 @@ public class SnackComboServiceTests
         var result = await _comboService.AddSnackToComboAsync(comboId, request);
         Assert.False(result.IsSuccess);
         Assert.Contains("Error adding snack to combo", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetAllSnackCombosAsync_ReturnsNotFound_WhenEmpty()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetAllAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>(), It.IsAny<Func<IQueryable<SnackCombo>, IIncludableQueryable<SnackCombo, object>>>())).ReturnsAsync(new List<SnackCombo>());
+        var result = await _comboService.GetAllSnackCombosAsync();
+        Assert.False(result.IsSuccess);
+        Assert.Equal("No snack combos found.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetAllSnackCombosAsync_ReturnsBadRequest_OnException()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetAllAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>(), It.IsAny<Func<IQueryable<SnackCombo>, IIncludableQueryable<SnackCombo, object>>>())).ThrowsAsync(new Exception("fail"));
+        var result = await _comboService.GetAllSnackCombosAsync();
+        Assert.False(result.IsSuccess);
+        Assert.Equal("fail", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteSnackFromComboAsync_ReturnsNotFound_WhenComboNotFound()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ReturnsAsync((SnackCombo)null);
+        var result = await _comboService.DeleteSnackFromComboAsync(Guid.NewGuid(), Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Snack combo not found.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteSnackFromComboAsync_ReturnsNotFound_WhenItemNotFound()
+    {
+        var combo = new SnackCombo { SnackComboItems = new List<SnackComboItem>() };
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ReturnsAsync(combo);
+        var result = await _comboService.DeleteSnackFromComboAsync(Guid.NewGuid(), Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Snack item with SnackId", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteSnackFromComboAsync_ReturnsBadRequest_OnException()
+    {
+        var combo = new SnackCombo { SnackComboItems = new List<SnackComboItem>() };
+        var transaction = new Mock<IDbContextTransaction>();
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception("fail"));
+        var result = await _comboService.DeleteSnackFromComboAsync(Guid.NewGuid(), Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error deleting snack from combo", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetComboWithItemsAsync_ReturnsNotFound_WhenNotFound()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ReturnsAsync((SnackCombo)null);
+        var result = await _comboService.GetComboWithItemsAsync(Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Snack combo not found.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetComboWithItemsAsync_ReturnsBadRequest_OnException()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception("fail"));
+        var result = await _comboService.GetComboWithItemsAsync(Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error retrieving combo with items", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsNotFound_OnKeyNotFoundException()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.DeleteAsync(It.IsAny<Guid>())).Throws(new KeyNotFoundException("not found"));
+        var result = await _comboService.DeleteAsync(Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Equal("not found", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsBadRequest_OnException()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.DeleteAsync(It.IsAny<Guid>())).Throws(new Exception("fail"));
+        var result = await _comboService.DeleteAsync(Guid.NewGuid());
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error deleting snack combo", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateSnackQuantityInComboAsync_ReturnsNotFound_WhenComboNotFound()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ReturnsAsync((SnackCombo)null);
+        var result = await _comboService.UpdateSnackQuantityInComboAsync(Guid.NewGuid(), Guid.NewGuid(), 2);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Snack combo not found.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateSnackQuantityInComboAsync_ReturnsNotFound_WhenItemNotFound()
+    {
+        var combo = new SnackCombo { SnackComboItems = new List<SnackComboItem>() };
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ReturnsAsync(combo);
+        var result = await _comboService.UpdateSnackQuantityInComboAsync(Guid.NewGuid(), Guid.NewGuid(), 2);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Snack item with SnackId", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateSnackQuantityInComboAsync_ReturnsBadRequest_OnException()
+    {
+        var combo = new SnackCombo { SnackComboItems = new List<SnackComboItem>() };
+        var transaction = new Mock<IDbContextTransaction>();
+        _mockUow.Setup(u => u.SnackComboRepo.GetComboWithItemsAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception("fail"));
+        var result = await _comboService.UpdateSnackQuantityInComboAsync(Guid.NewGuid(), Guid.NewGuid(), 2);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error updating snack quantity", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenIdInvalid()
+    {
+        var result = await _comboService.UpdateAsync(Guid.Empty, new SnackComboUpdateRequest());
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid ID format.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenRequestNull()
+    {
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), null);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Request body cannot be null.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsNotFound_WhenComboNotFound()
+    {
+        _mockUow.Setup(u => u.SnackComboRepo.GetAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>())).ReturnsAsync((SnackCombo)null);
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), new SnackComboUpdateRequest());
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Snack combo with ID", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenNameMissing()
+    {
+        var combo = new SnackCombo();
+        _mockUow.Setup(u => u.SnackComboRepo.GetAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>())).ReturnsAsync(combo);
+        var request = new SnackComboUpdateRequest { Name = "", TotalPrice = 10 };
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), request);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Name is required.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenPriceInvalid()
+    {
+        var combo = new SnackCombo();
+        _mockUow.Setup(u => u.SnackComboRepo.GetAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>())).ReturnsAsync(combo);
+        var request = new SnackComboUpdateRequest { Name = "Combo", TotalPrice = 0 };
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), request);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Total price must be greater than zero.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsOk_WhenValid()
+    {
+        var combo = new SnackCombo();
+        _mockUow.Setup(u => u.SnackComboRepo.GetAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>())).ReturnsAsync(combo);
+        var request = new SnackComboUpdateRequest { Name = "Combo", TotalPrice = 10 };
+        _mockMapper.Setup(m => m.Map(request, combo)).Returns(combo);
+        _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), request);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Snack combo updated successfully.", result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_OnException()
+    {
+        var combo = new SnackCombo();
+        _mockUow.Setup(u => u.SnackComboRepo.GetAsync(It.IsAny<Expression<Func<SnackCombo, bool>>>())).Throws(new Exception("fail"));
+        var request = new SnackComboUpdateRequest { Name = "Combo", TotalPrice = 10 };
+        var result = await _comboService.UpdateAsync(Guid.NewGuid(), request);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("fail", result.ErrorMessage);
     }
 } 
