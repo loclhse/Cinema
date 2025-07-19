@@ -138,4 +138,4 @@ public class SeatServiceTests
         _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ThrowsAsync(new Exception("fail"));
         await Assert.ThrowsAsync<Exception>(() => _seatService.UpdateSeatAvailabilityAsync(seatIds, true));
     }
-} 
+}
