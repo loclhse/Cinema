@@ -54,6 +54,36 @@ namespace ZTest.Services
             _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
+        [Fact]
+        public async Task CreateGenreAsync_ShouldReturnBadRequest_WhenGenreIsNull()
+        {
+            _mapper.Setup(m => m.Map<Genre>(It.IsAny<GenreRequest>())).Returns((Genre)null);
+            var result = await _sut.CreateGenreAsync(new GenreRequest { Name = "Test" });
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Enter Data please!!!", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task CreateGenreAsync_ShouldReturnBadRequest_WhenGenreAlreadyExists()
+        {
+            var genreRequest = new GenreRequest { Name = "Action" };
+            var genre = new Genre { Name = "Action" };
+            _mapper.Setup(m => m.Map<Genre>(genreRequest)).Returns(genre);
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).ReturnsAsync(genre);
+            var result = await _sut.CreateGenreAsync(genreRequest);
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Genre already exists!!!", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task CreateGenreAsync_ShouldReturnBadRequest_OnException()
+        {
+            _mapper.Setup(m => m.Map<Genre>(It.IsAny<GenreRequest>())).Throws(new Exception("fail"));
+            var result = await _sut.CreateGenreAsync(new GenreRequest { Name = "Test" });
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
+        }
+
         /* Test DeleteGenreAsync */
         [Fact]
         public async Task DeleteGenreAsync_GenreExists_ShouldDelete()
@@ -71,6 +101,24 @@ namespace ZTest.Services
             Assert.Null(result.ErrorMessage); // Check if there's no error message
             Assert.True(genre.IsDeleted); // Ensure the genre is marked as deleted
             _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteGenreAsync_ShouldReturnNotFound_WhenGenreNotFound()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).ReturnsAsync((Genre)null);
+            var result = await _sut.DeleteGenreAsync(Guid.NewGuid());
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Genre not found!!!", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteGenreAsync_ShouldReturnBadRequest_OnException()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).Throws(new Exception("fail"));
+            var result = await _sut.DeleteGenreAsync(Guid.NewGuid());
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
         }
 
         /* Test GetAllGenresAsync */
@@ -92,6 +140,25 @@ namespace ZTest.Services
             Assert.True(result.IsSuccess); // Check if the operation was successful
             Assert.Null(result.ErrorMessage); // Check if there's no error message
             Assert.Equal(response, result.Result); // Check if the returned result matches the expected response
+        }
+
+        [Fact]
+        public async Task GetAllGenresAsync_ShouldReturnNotFound_WhenEmpty()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAllAsync(It.IsAny<Expression<Func<Genre, bool>>>())).ReturnsAsync(new List<Genre>());
+            _mapper.Setup(m => m.Map<List<GenreResponse>>(It.IsAny<List<Genre>>())).Returns(new List<GenreResponse>());
+            var result = await _sut.GetAllGenresAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal("No genres found.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllGenresAsync_ShouldReturnBadRequest_OnException()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAllAsync(It.IsAny<Expression<Func<Genre, bool>>>())).Throws(new Exception("fail"));
+            var result = await _sut.GetAllGenresAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
         }
 
         /* ---------- Tests for UpdateGenreAsync ---------- */
@@ -143,6 +210,48 @@ namespace ZTest.Services
             Assert.Equal("Genre does not exist!!", resp.ErrorMessage);
 
             _uow.Verify(u => u.SaveChangesAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateGenreAsync_ShouldReturnBadRequest_WhenNameExists()
+        {
+            var genreId = Guid.NewGuid();
+            var existingGenre = new Genre { Id = genreId, Name = "Action", IsDeleted = false };
+            var updateRequest = new GenreRequest { Name = "Adventure" };
+            _uow.SetupSequence(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>() ))
+                .ReturnsAsync(existingGenre)
+                .ReturnsAsync(new Genre { Name = "Adventure" });
+            var resp = await _sut.UpdateGenreAsync(genreId, updateRequest);
+            Assert.False(resp.IsSuccess);
+            Assert.Equal("Genre already exists!!!", resp.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateGenreAsync_ShouldReturnBadRequest_OnException()
+        {
+            var genreId = Guid.NewGuid();
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).Throws(new Exception("fail"));
+            var resp = await _sut.UpdateGenreAsync(genreId, new GenreRequest { Name = "Test" });
+            Assert.False(resp.IsSuccess);
+            Assert.Equal("fail", resp.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetGenresAsync_ShouldReturnNotFound_WhenNotFound()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).ReturnsAsync((Genre)null);
+            var result = await _sut.GetGenresAsync(Guid.NewGuid());
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Genre does not exist!!", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetGenresAsync_ShouldReturnBadRequest_OnException()
+        {
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).Throws(new Exception("fail"));
+            var result = await _sut.GetGenresAsync(Guid.NewGuid());
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
         }
 
 
