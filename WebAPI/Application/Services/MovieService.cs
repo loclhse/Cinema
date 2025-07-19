@@ -1,4 +1,5 @@
-﻿using Application.IServices;
+﻿using Application.IRepos;
+using Application.IServices;
 using Application.ViewModel;
 using Application.ViewModel.Request;
 using Application.ViewModel.Response;
@@ -19,7 +20,7 @@ namespace Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<MovieService> _logger;
-        
+
         public MovieService(ILogger<MovieService> logger, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
@@ -61,9 +62,9 @@ namespace Application.Services
                         Movie = movie
                     });
                 }
-
                 await _unitOfWork.MovieRepo.AddAsync(movie);
                 await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.elasticMovieRepo.IndexMovieAsync(movie);
                 return resp.SetOk("Movie created successfully.");
             }
             catch (Exception ex)
@@ -150,20 +151,21 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
-                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
-                {
-                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
-                }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted, include: query => query.Include(m => m.MovieGenres));
-                var oldGenres = movie.MovieGenres.ToList();
-                foreach (var mg in oldGenres)
-                {
-                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
-                }
 
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
+                }
+
+                if (movieRequest.GenreIds == null || !movieRequest.GenreIds.Any())
+                {
+                    return resp.SetBadRequest("GenreIds cannot be null or empty.");
+                }
+                var oldGenres = movie.MovieGenres.ToList();
+                foreach (var mg in oldGenres)
+                {
+                    await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
                 }
                 
                  foreach (var genreId in movieRequest.GenreIds)
@@ -260,6 +262,33 @@ namespace Application.Services
         //        return resp.SetBadRequest(ex.Message);
         //    }
         //}
+        public async Task<ApiResp> ElasticSearchMovie(string keyWord)
+        {
+            ApiResp apiResp = new ApiResp();
+            try
+            {
+                var movies = await _unitOfWork.elasticMovieRepo.elasticSearchMoviesAsync(keyWord);
+                if (!movies.Any())
+                {
+                    return apiResp.SetNotFound("Not found");
+                }
+                var ids = movies.Select(m => m.Id).ToList();
+                var moviesDBList = await _unitOfWork.MovieRepo.GetAllAsync(x => ids.Contains(x.Id) && !x.IsDeleted);
+                var result = new List<MovieResponse>();
+                foreach (var movie in moviesDBList)
+                {
+                        var GenreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
+                        var response = _mapper.Map<MovieResponse>(movie);
+                        response.GenreNames = GenreNames;
+                        result.Add(response);
+                    }
+                return apiResp.SetOk(result);
+
+            }catch(Exception ex)
+            {
+                return apiResp.SetBadRequest(ex.Message);
+            }
+        }
     }
     
 }

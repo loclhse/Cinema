@@ -9,8 +9,6 @@ namespace Domain.Entities;
 
 public partial class Snack : BaseEntity
 {
-    
-
     public string? Name { get; set; }
 
     public SnackType? Type { get; set; }
@@ -27,5 +25,7 @@ public partial class Snack : BaseEntity
 
     public SnackStatus SnackStatus { get; set; }
 
-   
+    public virtual ICollection<SnackComboItem> SnackComboItems { get; set; } = new List<SnackComboItem>();
+
+
 }

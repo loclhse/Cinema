@@ -3,6 +3,7 @@ using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MimeKit.Cryptography;
 
 namespace Infrastructure;
 
@@ -44,7 +45,10 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
 
     public virtual DbSet<Snack> Snacks { get; set; }
 
-   
+    public virtual DbSet<SnackCombo> SnacksCombo { get; set; }
+
+    public virtual DbSet<SnackComboItem> SnackComboItems { get; set; }
+
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -52,6 +56,9 @@ public partial class AppDbContext : IdentityDbContext<ApplicationUser, AppRole, 
     public DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
     public DbSet<OtpValid> OtpValids { get; set; }
     public DbSet<SeatScheduleLog> SeatScheduleLogs { get; set; }
+    public DbSet<Subscription> Subscriptions { get; set; }
+    public DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
+    public virtual DbSet<ScoreLog> ScoreLog { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

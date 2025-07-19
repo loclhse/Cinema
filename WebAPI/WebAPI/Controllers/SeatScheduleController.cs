@@ -26,7 +26,22 @@ namespace WebAPI.Controllers
             var seatSchedules = await _seatScheduleService.GetSeatSchedulesByShowtimeAsync(id);
 
             // Nếu không tìm thấy lịch ghế nào
-            if (seatSchedules == null || !seatSchedules.Any())
+            if (seatSchedules == null || !seatSchedules.Any()) // Fix: Ensure seatSchedules is a collection
+            {
+                return NotFound($"No seat schedules found for showtime with ID: {id}");
+            }
+
+            return Ok(seatSchedules);
+        }
+
+        [HttpGet("GetShowTimeBySeatSchedule/{id}")]
+        public async Task<IActionResult> GetShowTimeBySeatScheduleAsync(Guid id)
+        {
+            // Giả sử bạn có một service hoặc DbContext để lấy dữ liệu
+            var seatSchedules = await _seatScheduleService.GetShowTimeBySeatScheduleAsync(id);
+
+            // Nếu không tìm thấy lịch ghế nào
+            if (seatSchedules == null)
             {
                 return NotFound($"No seat schedules found for showtime with ID: {id}");
             }
@@ -41,7 +56,7 @@ namespace WebAPI.Controllers
             var seatSchedules = await _seatScheduleService.GetHoldSeatByUserIdAsync(showTimeId, userId);
 
             // Nếu không tìm thấy lịch ghế nào
-            if (seatSchedules == null || !seatSchedules.Any())
+            if (seatSchedules == null || !seatSchedules.Any()) 
             {
                 return NotFound($"No hold seat found for showtime with user ID: {userId}");
             }

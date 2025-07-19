@@ -15,20 +15,20 @@ namespace Infrastructure.Repositories
         public readonly DbSet<T> _db;
         public readonly AppDbContext _context;
 
-        //Kiet
+
         public GenericRepo(AppDbContext context)
         {
             _context = context;
             _db = _context.Set<T>();
         }
-        //Kiet
+
         public async Task AddAsync(T entity)
         {
             await _db.AddAsync(entity);
         }
-        //Kiet
+
         public async Task<int> CountAsync() => await _db.CountAsync();
-        //Kiet
+
         public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter,
                                                Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null,
                                                int pageIndex = 1,
@@ -42,18 +42,39 @@ namespace Infrastructure.Repositories
                 query = query.Where(filter);
             }
 
-            //query.IgnoreQueryFilters();
+            query.IgnoreQueryFilters();
 
             if (include != null)
             {
                 query = include(query);
             }
             return await query
-                //.Skip((pageIndex - 1) * pageSize)
-                //.Take(pageSize)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
-        //Kiet
+
+        public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter,
+                                               Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
+        {
+            IQueryable<T> query = _db;
+
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+
+            if (include != null)
+            {
+                query = include(query);
+            }
+            return await query
+                .ToListAsync();
+        }
+
+
         public async Task<List<T>> GetAllAsync(System.Linq.Expressions.Expression<Func<T, bool>>? filter)
         {
             if (filter != null)
@@ -62,7 +83,7 @@ namespace Infrastructure.Repositories
             }
             return await _db.ToListAsync();
         }
-        //Kiet
+
         public async Task<T> GetAsync(System.Linq.Expressions.Expression<Func<T, bool>> filter)
         {
 #nullable disable
@@ -70,7 +91,7 @@ namespace Infrastructure.Repositories
             return await query.FirstOrDefaultAsync(filter);
 #nullable restore
         }
-        //Kiet
+
         public async Task<T> GetAsync(System.Linq.Expressions.Expression<Func<T, bool>> filter, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
         {
 
@@ -84,7 +105,7 @@ namespace Infrastructure.Repositories
 #pragma warning restore CS8603 // Possible null reference return.
 
         }
-        //Kiet
+
         public async Task RemoveByIdAsync(object id)
         {
 #nullable disable
@@ -96,7 +117,7 @@ namespace Infrastructure.Repositories
             }
             else throw new Exception();
         }
-        //Kiet
+
         public async Task AddRangeAsync(List<T> entities)
         {
             await _db.AddRangeAsync(entities);

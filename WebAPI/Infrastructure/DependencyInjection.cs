@@ -3,6 +3,9 @@ using Application.IRepos;
 using Application.IServices;
 using Application.Services;
 using AutoMapper;
+using Domain.Entities;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Configuration;
@@ -11,6 +14,8 @@ using Infrastructure.Persistence;
 using Infrastructure.Repos;
 using Infrastructure.Service;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using WebAPI.Infrastructure.Services;
 
 namespace Infrastructure
 {
@@ -67,15 +73,21 @@ namespace Infrastructure
             services.AddScoped<IPromotionRepo, PromotionRepo>();
             services.AddScoped<IRoomLayoutRepo, RoomLayoutRepo>();
             services.AddScoped<ISnackRepo,SnackRepo>();
-           
+            services.AddScoped<ISnackComboRepo, SnackComboRepo>();
+            services.AddScoped<IPaymentRepo, PaymentRepo>();
             services.AddScoped<IGenreRepo, GenreRepo>();
             services.AddScoped<IMovieRepo, MovieRepo>();
             services.AddScoped<IShowtimeRepo,ShowtimeRepo>();
             services.AddScoped<IMovieGenreRepo, MovieGenreRepo>();
             services.AddScoped<ISeatScheduleRepo, SeatScheduleRepo>();
+            services.AddScoped<ISubscriptionPlanRepo, SubscriptionPlanRepo>();
+            services.AddScoped<ISubscriptionRepo, SubscriptionRepo>();
             services.AddScoped<IOrderRepo, OrderRepo>();
-
-
+            services.AddScoped<IElasticMovieRepo, ElasticMovieRepo>();
+            services.AddScoped<IScoreItemRepo, ScoreItemRepo>();
+            services.AddScoped<ISnackOrderRepo, SnackOrderRepo>();
+            services.AddScoped<IRedeemRepo,RedeemRepo>();
+            services.AddScoped<IScoreLogRepo, ScoreLogRepo>();
             // 4. Đăng ký JwtTokenGenerator (sinh JWT)
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             #endregion
@@ -96,10 +108,19 @@ namespace Infrastructure
             services.AddScoped<IPromotionService, PromotionService>();
             services.AddScoped<IShowtimeService, ShowtimeService>();
             services.AddScoped<ISnackService, SnackService>();
-           
+            services.AddScoped<ISnackComboService, SnackComboService>();
+            services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISeatScheduleService, SeatScheduleService>();
+            services.AddScoped<IBackgroundService, BackgroundService>();    
+            services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ISubscriptionService, SubscriptionService>();
+           
+            services.AddScoped<IVnPayService,VnPayService>();
+            services.AddScoped<IScoreItemService, ScoreItemService>();
+            services.AddScoped<IRedeemService, RedeemService>();
+
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -116,7 +137,14 @@ namespace Infrastructure
            
             //Đăng ký SignalR
             services.AddSignalR();
+            //Đăng ký Elasticsearch
+            services.AddSingleton(sp =>
+            {
+                var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+                    .DefaultIndex("movies"); // Tùy bạn
 
+                return new ElasticsearchClient(settings);
+            });
             return services;
             
         }

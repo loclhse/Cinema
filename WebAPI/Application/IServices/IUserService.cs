@@ -27,7 +27,7 @@ namespace Application.IServices
         public enum SearchKey
         {
             IdentityCard,
-            PhoneNumeber,
+            PhoneNumber,
             Name,
         }
 

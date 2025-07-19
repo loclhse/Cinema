@@ -14,6 +14,8 @@ namespace Application.IServices
         // Cập nhật trạng thái ghế (Available, Booked, Held)
         Task<OperationResult> UpdateSeatStatusAsync(List<Guid> seatScheduleIds, SeatBookingStatus status);
 
+        Task<SeatScheduleResponse?> GetShowTimeBySeatScheduleAsync(Guid id);
+
         // Giữ ghế (Hold) với thời gian giữ
         Task<IEnumerable<SeatScheduleResponse>> HoldSeatAsync(Guid showtimeId, List<Guid> seatIds, Guid userId, string connectionId);
 

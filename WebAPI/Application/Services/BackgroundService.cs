@@ -12,9 +12,9 @@ namespace Application.Services
     public class BackgroundService : IBackgroundService
     {
         private readonly IUnitOfWork _unitOfWork;
-         public BackgroundService(IUnitOfWork unitOfWork)
+        public BackgroundService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork= unitOfWork;
+            _unitOfWork = unitOfWork;
         }
         public async Task ChangeSeatBookingStatus()
         {
@@ -29,6 +29,25 @@ namespace Application.Services
                 seat.HoldUntil = null;
             }
 
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // Có thể log ra để kiểm tra nếu cần:
+                Console.WriteLine($"[Hangfire] RowVersion conflict: {ex.Message}");
+                // Không cần throw lại nếu bạn coi như cleanup nhẹ, lần sau quét tiếp
+            }
+        }
+        public async Task IsSubscriptionExpired()
+        {
+            var currentTime = DateOnly.FromDateTime(DateTime.UtcNow);
+            var expiredSubscriptions = await _unitOfWork.SubscriptionRepo.GetAllAsync(s => s.Status == SubscriptionStatus.active && s.EndDate == currentTime);
+            foreach (var subscription in expiredSubscriptions)
+            {
+                subscription.Status = SubscriptionStatus.expired;
+            }
             try
             {
                 await _unitOfWork.SaveChangesAsync();

@@ -55,19 +55,19 @@ namespace Application.Services
                 var showtime = _mapper.Map<Showtime>(showtimeResquest);
                 if (showtime == null)
                 {
-                    return apiResp.SetBadRequest("Invalid showtime data.");
+                    return apiResp.SetBadRequest(null, "Invalid showtime data.");
                 }
 
                 var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == movieId && !m.IsDeleted);
                 if (movie == null)
                 {
-                    return apiResp.SetNotFound("Movie does not exist!");
+                    return apiResp.SetNotFound();
                 }
 
                 var cinemaRoom = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == roomId && !c.IsDeleted);
                 if (cinemaRoom == null)
                 {
-                    return apiResp.SetNotFound("Cinema room does not exist!");
+                    return apiResp.SetNotFound();
                 }
 
                 showtime.Duration = movie.Duration + 45; // Add buffer time for movie length
@@ -78,7 +78,7 @@ namespace Application.Services
                 // Check if Showtime already exists
                 if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime))
                 {
-                    return apiResp.SetBadRequest("Showtime already exists in the same cinema room and date.");
+                    return apiResp.SetBadRequest();
                 }
 
                 await _unitOfWork.ShowtimeRepo.AddAsync(showtime);
@@ -87,7 +87,7 @@ namespace Application.Services
                 var seats = await _unitOfWork.SeatRepo.GetAllAsync(s => s.CinemaRoomId == roomId && !s.IsDeleted);
                 if (!seats.Any())
                 {
-                    return apiResp.SetNotFound($"No seats found in the {cinemaRoom.Name} cinema room.");
+                    return apiResp.SetNotFound(null, $"No seats found in the {cinemaRoom.Name} cinema room.");
                 }
 
                 var seatSchedules = seats.Select(seat => new SeatSchedule
@@ -103,7 +103,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -116,7 +116,7 @@ namespace Application.Services
                 var showtime = await _unitOfWork.ShowtimeRepo.GetAsync(x => x.Id == id);
                 if (showtime == null)
                 {
-                    return apiResp.SetNotFound("Showtime not found.");
+                    return apiResp.SetNotFound(null, "Showtime not found.");
                 }
                 showtime.IsDeleted = true;
                 await _unitOfWork.SaveChangesAsync();
@@ -124,7 +124,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return new ApiResp().SetBadRequest(ex.Message);
+                return new ApiResp().SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> GetAllShowtimesAsync()
@@ -135,14 +135,14 @@ namespace Application.Services
                 var showtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(s => !s.IsDeleted);
                 if (showtimes == null || !showtimes.Any())
                 {
-                    return resp.SetNotFound("No showtimes found.");
+                    return resp.SetNotFound(null, "No showtimes found.");
                 }
                 var result = _mapper.Map<List<ShowtimeResponse>>(showtimes);
                 return resp.SetOk(result);
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -154,12 +154,12 @@ namespace Application.Services
                 var showtime = await _unitOfWork.ShowtimeRepo.GetAsync(s => s.Id == id && !s.IsDeleted);
                 if (showtime == null)
                 {
-                    return resp.SetNotFound("Showtime not found.");
+                    return resp.SetNotFound(null, "Showtime not found.");
                 }
                 var Room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtime.CinemaRoomId && !c.IsDeleted);
                 if (Room == null)
                 {
-                    return resp.SetNotFound("Cinema room not found.");
+                    return resp.SetNotFound(null, "Cinema room not found.");
                 }
                 var result = _mapper.Map<RoomShowtimeResponse>(showtime);
                 result.RoomName = Room.Name;
@@ -167,7 +167,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -179,31 +179,31 @@ namespace Application.Services
                 var showtime = await _unitOfWork.ShowtimeRepo.GetAsync(s => s.Id == id && !s.IsDeleted);
                 if (showtime == null)
                 {
-                    return resp.SetNotFound("Showtime not found.");
+                    return resp.SetNotFound();
                 }
                 var movie = await _unitOfWork.MovieRepo.GetAsync(m => m.Id == showtimeUpdateRequest.MovieId && !m.IsDeleted);
                 if (movie == null)
                 {
-                    return resp.SetNotFound("Movie does not exist!!!");
+                    return resp.SetNotFound();
                 }
                 var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == showtimeUpdateRequest.CinemaRoomId && !c.IsDeleted);
                 if (room == null)
                 {
-                    return resp.SetNotFound("Cinema room does not exist!!!");
+                    return resp.SetNotFound();
                 }
                 _mapper.Map(showtimeUpdateRequest, showtime);
                 showtime.Duration = movie.Duration + 45;
                 showtime.EndTime = showtime.StartTime.AddMinutes((double)showtime.Duration);
                 if (await IsShowtimeExistsAsync(showtime.Date, showtime.CinemaRoomId, showtime.StartTime, showtime.EndTime) == true)
                 {
-                    return resp.SetBadRequest("Showtime already exists in the same cinema room and date.");
+                    return resp.SetBadRequest();
                 }
                 await _unitOfWork.SaveChangesAsync();
                 return resp.SetOk("Updated successfully!");
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
 
         }
@@ -213,6 +213,10 @@ namespace Application.Services
             try
             {
                 var showtimes = await _unitOfWork.ShowtimeRepo.GetAllAsync(x=> x.MovieId == id);
+                if (showtimes == null || !showtimes.Any())
+                {
+                    return apiResp.SetNotFound();
+                }
                 foreach (var time in showtimes)
                 {
                     var room = await _unitOfWork.CinemaRoomRepo.GetAsync(c => c.Id == time.CinemaRoomId && !c.IsDeleted);
@@ -220,10 +224,6 @@ namespace Application.Services
                     {
                         time.CinemaRoomId = room.Id;
                     }
-                }
-                if (showtimes == null)
-                {
-                    apiResp.SetNotFound("Showtime for this movie does not exist!!!");
                 }
                 var result = _mapper.Map<List<MovieTimeResponse>>(showtimes);
                 foreach (var item in result)
@@ -234,7 +234,7 @@ namespace Application.Services
                 return apiResp.SetOk(result);
             }catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
     }

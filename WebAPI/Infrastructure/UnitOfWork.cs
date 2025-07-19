@@ -1,11 +1,13 @@
 ﻿using Application;
 using Application.IRepos;
 using Application.IServices;
+using Elastic.Clients.Elasticsearch;
 using Infrastructure.Identity;
 using Infrastructure.Repos;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace Infrastructure
 {
@@ -22,13 +24,26 @@ namespace Infrastructure
         public IRoomLayoutRepo RoomLayoutRepo { get; }
         public ISeatRepo SeatRepo { get; }
         public ISeatTypePriceRepo SeatTypePriceRepo { get; }
+        public IPaymentRepo PaymentRepo { get; }
         public IGenreRepo GenreRepo { get; }
         public IPromotionRepo PromotionRepo { get; }
         public IShowtimeRepo ShowtimeRepo { get; }
         public IMovieGenreRepo MovieGenreRepo { get; }
         public ISeatScheduleRepo SeatScheduleRepo { get; }
+        public ISubscriptionPlanRepo SubscriptionPlanRepo { get; }
+        public IScoreItemRepo ScoreItemRepo { get; }
+
+        public ISnackComboRepo SnackComboRepo { get; }
+        public ISubscriptionRepo SubscriptionRepo { get; }
+
         public IOrderRepo OrderRepo { get; }
-        public UnitOfWork(AppDbContext context, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
+        public IElasticMovieRepo elasticMovieRepo { get; }
+        public IRedeemRepo redeemRepo { get; } 
+        public ISnackOrderRepo SnackOrderRepo { get; }
+
+        public IScoreLogRepo ScoreLogRepo { get; }
+        public IScoreOrderRepo ScoreOrderRepo { get; }
+        public UnitOfWork(AppDbContext context, ElasticsearchClient elasticClient, UserManager<ApplicationUser> userManager, ILogger<AuthRepo> logger, IUserRepo userRepo,
             IAuthRepo authRepo,
             IOtpValidRepo otpValidRepo)
         {
@@ -39,16 +54,26 @@ namespace Infrastructure
             CinemaRoomRepo = new CinemaRoomRepo(context);
             SeatRepo = new SeatRepo(context);
             SeatTypePriceRepo = new SeatTypePriceRepo(context);
+            PaymentRepo = new PaymentRepo(context);
             MovieRepo = new MovieRepo(context);
             GenreRepo = new GenreRepo(context);
             PromotionRepo = new PromotionRepo(context);
             RoomLayoutRepo = new RoomLayoutRepo(context);
-            
+            ScoreLogRepo = new ScoreLogRepo(context);
+
             SnackRepo = new SnackRepo(context);
             ShowtimeRepo = new ShowtimeRepo(context);
             MovieGenreRepo = new MovieGenreRepo(context);
             SeatScheduleRepo = new SeatScheduleRepo(context);
+            SubscriptionPlanRepo = new SubscriptionPlanRepo(context);
+            SnackComboRepo = new SnackComboRepo(context);
+            SubscriptionRepo = new SubscriptionRepo(context);
             OrderRepo = new OrderRepo(context);
+            SnackOrderRepo = new SnackOrderRepo(context);
+            ScoreItemRepo = new ScoreItemRepo(context);
+            elasticMovieRepo = new ElasticMovieRepo(elasticClient);
+            redeemRepo = new RedeemRepo(context);
+            ScoreOrderRepo = new ScoreOrderRepo(context);
         }
 
         public async Task<int> SaveChangesAsync()

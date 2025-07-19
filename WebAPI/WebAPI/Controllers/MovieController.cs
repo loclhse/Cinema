@@ -83,7 +83,16 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-
+        [HttpGet("ElasticSearchMovie")]
+        public async Task<IActionResult> ElasticSearchMoive(string keyword)
+        {
+            var response = await _movieService.ElasticSearchMovie(keyword);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
 
 
 
