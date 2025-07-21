@@ -144,7 +144,110 @@ namespace ZTest.Services
 
             _uow.Verify(u => u.SaveChangesAsync(), Times.Never);
         }
+        [Fact]
+        public async Task GetGenresAsync_Should_Return_NotFound_When_Genre_Does_Not_Exist()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
 
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ReturnsAsync((Genre)null); 
 
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetGenresAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); 
+
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetGenresAsync_Should_Return_Ok_When_Genre_Exists()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
+            var genre = new Genre { Id = genreId, Name = "Action" };
+            var genreResponse = new GenreResponse { Id = genreId, Name = "Action" };
+
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ReturnsAsync(genre); 
+            _mapper.Setup(m => m.Map<GenreResponse>(genre)).Returns(genreResponse);
+
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.Result);
+            Assert.Equal(genreResponse, result.Result);
+        }
+
+        [Fact]
+        public async Task CreateGenreAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var genreRequest = new GenreRequest { Name = "Action" };
+            _mapper.Setup(m => m.Map<Genre>(genreRequest)).Returns(new Genre());
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Gây ra ngoại lệ
+
+            // Act
+            var result = await _sut.CreateGenreAsync(genreRequest);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteGenreAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Gây ra ngoại lệ
+
+            // Act
+            var result = await _sut.DeleteGenreAsync(genreId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateGenreAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
+            var updateRequest = new GenreRequest { Name = "Updated Name" };
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Gây ra ngoại lệ
+
+            // Act
+            var result = await _sut.UpdateGenreAsync(genreId, updateRequest);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
     }
 }

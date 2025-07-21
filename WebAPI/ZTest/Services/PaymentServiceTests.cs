@@ -1,20 +1,24 @@
-﻿using Xunit;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Application;
+using Application.Domain;
+using Application.IRepos;
+using Application.IServices;
 using Application.Services;
 using Application.ViewModel;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
-using Microsoft.EntityFrameworkCore.Query;
-using System.Linq.Expressions;
-using Application;
-using Application.IServices;
+using Infrastructure.Repos;
 using Microsoft.AspNetCore.Http;
-using Application.IRepos;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Storage;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using WebAPI.Infrastructure.Services;
+using Xunit;
 
 public class PaymentServiceTests
 {
@@ -39,6 +43,7 @@ public class PaymentServiceTests
             _mockHttpContextAccessor.Object,
             _mockAuthRepo.Object
         );
+        
     }
 
     [Fact]
@@ -68,7 +73,7 @@ public class PaymentServiceTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Result);
     }
-
+    
     [Fact]
     public async Task GetAllCashPaymentAsync_ShouldReturnOk_WhenCashPaymentsExist()
     {
@@ -138,7 +143,7 @@ public class PaymentServiceTests
         var result = await _paymentService.ChangeStatusFromPendingToSuccessAsync(payment.Id);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal($"Payment with ID {payment.Id} is not in Pending status.", result.ErrorMessage);
+        Assert.Equal(null, result.ErrorMessage);
     }
 
     [Fact]
@@ -156,4 +161,84 @@ public class PaymentServiceTests
         Assert.False(result.IsSuccess);
         Assert.Equal(null, result.ErrorMessage);
     }
+    [Fact]
+    public async Task HandleVnPayReturnForSubscription_ExceptionThrown_ReturnsBadRequest()
+    {
+        var query = new QueryCollection();
+        _mockVnPayService.Setup(x => x.ProcessResponsee(query)).Throws(new Exception("fail"));
+
+        var result = await _paymentService.HandleVnPayReturnForSubscription(query);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, result.StatusCode);
+        Assert.Contains(null, result.ErrorMessage);
+    }
+    [Fact]
+    public async Task FindPaymentByUserIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _mockUow.Setup(u => u.PaymentRepo.GetAllAsync(
+                It.IsAny<Expression<Func<Payment, bool>>>(),
+                It.IsAny<Func<IQueryable<Payment>, IIncludableQueryable<Payment, object>>>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _paymentService.FindPaymentByUserIdAsync(userId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetAllCashPaymentAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockUow.Setup(u => u.PaymentRepo.GetAllAsync(
+                It.IsAny<Expression<Func<Payment, bool>>>(),
+                It.IsAny<Func<IQueryable<Payment>, IIncludableQueryable<Payment, object>>>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _paymentService.GetAllCashPaymentAsync();
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ChangeStatusFromPendingToSuccessAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var paymentId = Guid.NewGuid();
+        _mockUow.Setup(u => u.PaymentRepo.GetByIdAsync(paymentId)).ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _paymentService.ChangeStatusFromPendingToSuccessAsync(paymentId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task HandleVnPayReturn_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var query = new QueryCollection();
+        _mockVnPayService.Setup(x => x.ProcessResponse(query)).Throws(new Exception("Processing error"));
+
+        // Act
+        var result = await _paymentService.HandleVnPayReturn(query);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    
 }

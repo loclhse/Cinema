@@ -107,4 +107,66 @@ public class SnackServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal("Snack deleted successfully.", result.Result);
     }
+    [Fact]
+    public async Task GetByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var snackId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _snackService.GetByIdAsync(snackId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error retrieving snack: Database error", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task AddAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var request = new SnackRequest { Name = "Chips", Quantity = 10 };
+        _mockMapper.Setup(m => m.Map<Snack>(request)).Returns(new Snack());
+        _mockUow.Setup(u => u.SnackRepo.AddAsync(It.IsAny<Snack>())).ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _snackService.AddAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error adding snack: Database error", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var snackId = Guid.NewGuid();
+        var request = new SnackRequest { Name = "Updated", Quantity = 5 };
+        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ReturnsAsync(new Snack { Id = snackId });
+        _mockUow.Setup(u => u.SnackRepo.UpdateAsync(It.IsAny<Snack>())).ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _snackService.UpdateAsync(snackId, request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error updating snack: Database error", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var snackId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SnackRepo.DeleteAsync(snackId)).ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _snackService.DeleteAsync(snackId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Error deleting snack: Database error", result.ErrorMessage);
+    }
 } 

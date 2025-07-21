@@ -130,5 +130,122 @@ namespace ZTest.Services
             Assert.True(result.IsSuccess);
             Assert.IsType<ApiResp>(result);
         }
+        [Fact]
+        public async Task CreateNewSubscriptionPlanAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var request = new SubscriptionPlanRequest { Name = "Test" };
+            var plan = new SubscriptionPlan { Id = Guid.NewGuid() };
+
+            _mockMapper.Setup(m => m.Map<SubscriptionPlan>(request)).Returns(plan);
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.AddAsync(plan)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.CreateNewSubscriptionPlanAsync(request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ActiveSubscriptionPlanAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var plan = new SubscriptionPlan { Id = id, IsDeleted = false, Status = PlanStatus.Inactive };
+
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync(plan);
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.ActiveSubscriptionPlanAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteSubscriptionPlanAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var plan = new SubscriptionPlan { Id = id, IsDeleted = false };
+
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync(plan);
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.DeleteSubscriptionPlanAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetSubscriptionPlanByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetSubscriptionPlanByIdAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateInActiveSubscriptionPlanAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var request = new SubscriptionPlanRequest { Name = "Update" };
+            var plan = new SubscriptionPlan { Id = id, Status = PlanStatus.Inactive };
+
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync(plan);
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.UpdateInActiveSubscriptionPlanAsync(id, request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UserGetAllSubscriptionPlansAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
+                           .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.UserGetAllSubscriptionPlansAsync();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ManagerGetAllSubscriptionPlansHistoryAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
+                           .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.ManagerGetAllSubscriptionPlansHistoryAsync();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
     }
 }
