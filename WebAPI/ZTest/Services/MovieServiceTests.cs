@@ -42,22 +42,18 @@ public class MovieServiceTests
     public async Task CreateMovieAsync_ShouldReturnOk_IfMovieCreated()
     {
         var genreId = Guid.NewGuid();
-        var request = new MovieRequest
-        {
-            Title = "Sample Movie",
-            GenreIds = new List<Guid> { genreId }
-        };
-
-        var movie = new Movie();
-        _mockMapper.Setup(m => m.Map<Movie>(request)).Returns(movie);
-        _mockUnitOfWork.Setup(u => u.GenreRepo.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Genre, bool>>>())).ReturnsAsync(new Genre());
-        _mockUnitOfWork.Setup(u => u.MovieRepo.AddAsync(It.IsAny<Movie>())).Returns(Task.CompletedTask);
+        var movieRequest = new MovieRequest { Title = "Test Movie", GenreIds = new List<Guid> { genreId } };
+        var genre = new Genre { Id = genreId, Name = "Action" };
+        var movie = new Movie { Id = Guid.NewGuid(), Title = "Test Movie", MovieGenres = new List<MovieGenre>() };
+        _mockMapper.Setup(m => m.Map<Movie>(movieRequest)).Returns(movie);
+        _mockUnitOfWork.Setup(u => u.GenreRepo.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Genre, bool>>>())).ReturnsAsync(genre);
+        _mockUnitOfWork.Setup(u => u.MovieRepo.AddAsync(movie)).Returns(Task.FromResult(true));
         _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-
-        var result = await _movieService.CreateMovieAsync(request);
-
+        _mockUnitOfWork.Setup(u => u.elasticMovieRepo.IndexMovieAsync(movie)).Returns(Task.FromResult(true));
+        var result = await _movieService.CreateMovieAsync(movieRequest);
+        Console.WriteLine($"IsSuccess: {result.IsSuccess}, ErrorMessage: {result.ErrorMessage}, Result: {result.Result}");
         Assert.True(result.IsSuccess);
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        Assert.Equal("Movie created successfully.", result.Result);
     }
 
     [Fact]

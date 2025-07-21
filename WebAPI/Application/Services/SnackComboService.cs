@@ -83,7 +83,7 @@ namespace Application.Services
 
                 var response = _mapper.Map<SnackComboResponse>(combo);
 
-                return new ApiResp().SetOk(response).SetApiResponse(HttpStatusCode.Created, true);
+                return new ApiResp().SetOk(response).SetApiResponse(HttpStatusCode.Created, true, null, response);
             }
             catch (Exception ex)
             {
@@ -128,11 +128,11 @@ namespace Application.Services
                 
                 if (comboId == Guid.Empty)
                 {
-                    return new ApiResp().SetBadRequest("Invalid combo ID format.");
+                    return new ApiResp().SetBadRequest(message: "Invalid combo ID format.");
                 }
                 if (request == null || request.SnackId == Guid.Empty)
                 {
-                    return new ApiResp().SetBadRequest("Valid snack ID is required.");
+                    return new ApiResp().SetBadRequest(message: "Valid snack ID is required.");
                 }
                 
 
@@ -140,14 +140,14 @@ namespace Application.Services
                 var combo = await _uow.SnackComboRepo.GetComboWithItemsAsync(comboId);
                 if (combo == null)
                 {
-                    return new ApiResp().SetNotFound("Snack combo not found.");
+                    return new ApiResp().SetNotFound(null, "Snack combo not found.");
                 }
 
                
                 var snack = await _uow.SnackRepo.GetByIdAsync(request.SnackId);
                 if (snack == null)
                 {
-                    return new ApiResp().SetNotFound($"Snack with ID {request.SnackId} not found.");
+                    return new ApiResp().SetNotFound(message: $"Snack with ID {request.SnackId} not found.");
                 }
 
                 
@@ -199,7 +199,7 @@ namespace Application.Services
                 var snackCombos = await _uow.SnackComboRepo.GetAllAsync(x => !x.IsDeleted, include: query => query.Include(sc => sc.SnackComboItems).ThenInclude(sc => sc.Snack));
                 if (snackCombos == null || !snackCombos.Any())
                 {
-                    return resp.SetNotFound("No snack combos found.");
+                    return resp.SetNotFound(message: "No snack combos found.");
                 }
 
                 var responses = _mapper.Map<List<SnackComboResponse>>(snackCombos);
@@ -340,28 +340,28 @@ namespace Application.Services
                    
                     if (id == Guid.Empty)
                     {
-                        return resp.SetBadRequest("Invalid ID format.");
+                        return resp.SetBadRequest(message: "Invalid ID format.");
                     }
                     if (request == null)
                     {
-                        return resp.SetBadRequest("Request body cannot be null.");
+                        return resp.SetBadRequest(message: "Request body cannot be null.");
                     }
 
                    
                     var existingCombo = await _uow.SnackComboRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
                     if (existingCombo == null)
                     {
-                        return resp.SetNotFound($"Snack combo with ID {id} not found.");
+                        return resp.SetNotFound(message: $"Snack combo with ID {id} not found.");
                     }
 
                    
                     if (string.IsNullOrWhiteSpace(request.Name))
                     {
-                        return resp.SetBadRequest("Name is required.");
+                        return resp.SetBadRequest(message: "Name is required.");
                     }
                     if (request.TotalPrice <= 0)
                     {
-                        return resp.SetBadRequest("Total price must be greater than zero.");
+                        return resp.SetBadRequest(message: "Total price must be greater than zero.");
                     }
 
                     

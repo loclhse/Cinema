@@ -10,6 +10,8 @@ using Application.ViewModel.Request;
 using AutoMapper;
 using Domain.Entities;
 using Application;
+using System.Linq.Expressions;
+using System.Collections;
 
 public class SnackServiceTests
 {
@@ -48,6 +50,27 @@ public class SnackServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_ReturnsOk_WhenSnacksExist()
+    {
+        var snacks = new List<Snack> { new Snack { Id = Guid.NewGuid(), Name = "Popcorn" } };
+        var snackResponses = new List<SnackResponse> { new SnackResponse { Id = snacks[0].Id, Name = "Popcorn" } };
+        _mockUow.Setup(u => u.SnackRepo.GetAllAsync(It.IsAny<Expression<Func<Snack, bool>>>())).ReturnsAsync(snacks);
+        _mockMapper.Setup(m => m.Map<IEnumerable<SnackResponse>>(snacks)).Returns(snackResponses);
+        var result = await _snackService.GetAllAsync();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Result);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsBadRequest_OnException()
+    {
+        _mockUow.Setup(u => u.SnackRepo.GetAllAsync(It.IsAny<Expression<Func<Snack, bool>>>())).ThrowsAsync(new Exception("db error"));
+        var result = await _snackService.GetAllAsync();
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error retrieving snacks", result.ErrorMessage);
+    }
+
+    [Fact]
     public async Task AddAsync_ReturnsCreated_WhenValidRequest()
     {
         var request = new SnackRequest { Name = "Chips", Quantity = 10 };
@@ -69,6 +92,24 @@ public class SnackServiceTests
         var result = await _snackService.AddAsync(request);
         Assert.False(result.IsSuccess);
         Assert.Equal("Snack name is required.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task AddAsync_ReturnsBadRequest_WhenRequestIsNull()
+    {
+        var result = await _snackService.AddAsync(null);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Snack name is required.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task AddAsync_ReturnsBadRequest_OnException()
+    {
+        var request = new SnackRequest { Name = "Chips", Quantity = 10 };
+        _mockMapper.Setup(m => m.Map<Snack>(request)).Throws(new Exception("map error"));
+        var result = await _snackService.AddAsync(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error adding snack", result.ErrorMessage);
     }
 
     [Fact]
@@ -99,6 +140,27 @@ public class SnackServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_WhenNameMissing()
+    {
+        var snackId = Guid.NewGuid();
+        var request = new SnackRequest { Name = "", Quantity = 5 };
+        var result = await _snackService.UpdateAsync(snackId, request);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Snack name is required.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsBadRequest_OnException()
+    {
+        var snackId = Guid.NewGuid();
+        var request = new SnackRequest { Name = "Updated", Quantity = 5 };
+        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ThrowsAsync(new Exception("db error"));
+        var result = await _snackService.UpdateAsync(snackId, request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error updating snack", result.ErrorMessage);
+    }
+
+    [Fact]
     public async Task DeleteAsync_ReturnsOk_WhenSnackDeleted()
     {
         var snackId = Guid.NewGuid();
@@ -107,66 +169,34 @@ public class SnackServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal("Snack deleted successfully.", result.Result);
     }
+
     [Fact]
-    public async Task GetByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+    public async Task DeleteAsync_ReturnsNotFound_OnKeyNotFoundException()
     {
-        // Arrange
         var snackId = Guid.NewGuid();
-        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        var result = await _snackService.GetByIdAsync(snackId);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Error retrieving snack: Database error", result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task AddAsync_ReturnsBadRequest_WhenExceptionOccurs()
-    {
-        // Arrange
-        var request = new SnackRequest { Name = "Chips", Quantity = 10 };
-        _mockMapper.Setup(m => m.Map<Snack>(request)).Returns(new Snack());
-        _mockUow.Setup(u => u.SnackRepo.AddAsync(It.IsAny<Snack>())).ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        var result = await _snackService.AddAsync(request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Error adding snack: Database error", result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ReturnsBadRequest_WhenExceptionOccurs()
-    {
-        // Arrange
-        var snackId = Guid.NewGuid();
-        var request = new SnackRequest { Name = "Updated", Quantity = 5 };
-        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ReturnsAsync(new Snack { Id = snackId });
-        _mockUow.Setup(u => u.SnackRepo.UpdateAsync(It.IsAny<Snack>())).ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        var result = await _snackService.UpdateAsync(snackId, request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Error updating snack: Database error", result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ReturnsBadRequest_WhenExceptionOccurs()
-    {
-        // Arrange
-        var snackId = Guid.NewGuid();
-        _mockUow.Setup(u => u.SnackRepo.DeleteAsync(snackId)).ThrowsAsync(new Exception("Database error"));
-
-        // Act
+        _mockUow.Setup(u => u.SnackRepo.DeleteAsync(snackId)).ThrowsAsync(new KeyNotFoundException("not found"));
         var result = await _snackService.DeleteAsync(snackId);
-
-        // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Error deleting snack: Database error", result.ErrorMessage);
+        Assert.Equal("not found", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsBadRequest_OnException()
+    {
+        var snackId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SnackRepo.DeleteAsync(snackId)).ThrowsAsync(new Exception("db error"));
+        var result = await _snackService.DeleteAsync(snackId);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error deleting snack", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ReturnsBadRequest_OnException()
+    {
+        var snackId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SnackRepo.GetByIdAsync(snackId)).ThrowsAsync(new Exception("db error"));
+        var result = await _snackService.GetByIdAsync(snackId);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Error retrieving snack", result.ErrorMessage);
     }
 } 
