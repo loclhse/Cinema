@@ -53,7 +53,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpGet("GetMovieById{id}")]
+        [HttpGet("GetMovieById/{id}")]
         public async Task<IActionResult> GetMovieById(Guid id)
         {
             var response = await _movieService.GetMovieByIdAsync(id);
@@ -63,7 +63,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpPut("UpdateMovie{id}")]
+        [HttpPut("UpdateMovie/{id}")]
         public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] MovieRequest movieRequest)
         {
             var response = await _movieService.UpdateMovieAsync(id, movieRequest);
@@ -73,7 +73,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpDelete("DeleteMovie{id}")]
+        [HttpDelete("DeleteMovie/{id}")]
         public async Task<IActionResult> DeleteMovie(Guid id)
         {
             var response = await _movieService.DeleteMovieAsync(id);

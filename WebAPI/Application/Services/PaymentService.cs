@@ -161,7 +161,7 @@ namespace Application.Services
                                     var scoreLog = new ScoreLog
                                     {
                                         UserId = user.Id,
-                                        PointsChanged = points,
+                                        PointsChanged = points.ToString(),
                                         ActionType = "PaymentReward"
                                     };
                                     await _uow.ScoreLogRepo.AddAsync(scoreLog);
@@ -257,7 +257,7 @@ namespace Application.Services
                                     var scoreLog = new ScoreLog
                                     {
                                         UserId = user.Id,
-                                        PointsChanged = points,
+                                        PointsChanged = points.ToString(),
                                         ActionType = "PaymentReward"
                                     };
                                     await _uow.ScoreLogRepo.AddAsync(scoreLog);

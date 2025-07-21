@@ -1,4 +1,5 @@
 ﻿using Application;
+using Application.IRepos;
 using Application.Services;
 using Application.ViewModel;
 using Application.ViewModel.Request;
@@ -165,4 +166,179 @@ public class MovieServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
     }
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnNotFound_WhenMovieDoesNotExist()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid> { Guid.NewGuid() } };
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync((Movie)null); // Giả lập không tìm thấy movie
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenGenreIdsAreEmpty()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid>() };
+
+        // Giả lập movie tồn tại
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new Movie { Id = movieId });
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnOk_WhenMovieUpdatedSuccessfully()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid> { Guid.NewGuid() } };
+        var movie = new Movie { Id = movieId };
+
+        // Giả lập movie tồn tại
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie);
+
+        // Giả lập genre tồn tại
+        _mockUnitOfWork.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+            .ReturnsAsync(new Genre { Id = movieRequest.GenreIds[0] });
+
+        // Giả lập phương thức thêm genre
+        _mockUnitOfWork.Setup(u => u.MovieGenreRepo.AddAsync(It.IsAny<MovieGenre>())).Returns(Task.CompletedTask);
+        _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        Assert.Equal("Movie updated successfully.", result.Result);
+    }
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenInvalidGenreIdProvided()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid> { Guid.Empty } }; // GenreId không hợp lệ
+
+        // Giả lập movie tồn tại
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new Movie { Id = movieId });
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenGenreNotFound()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var genreId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid> { genreId } };
+        var movie = new Movie { Id = movieId };
+
+        // Giả lập movie tồn tại
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie);
+
+        // Giả lập không tìm thấy genre
+        _mockUnitOfWork.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+            .ReturnsAsync((Genre)null);
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenExceptionOccurs()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = new List<Guid> { Guid.NewGuid() } };
+        var movie = new Movie { Id = movieId };
+
+        // Giả lập movie tồn tại
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie);
+
+        // Giả lập gây ra ngoại lệ khi xóa genre
+        _mockUnitOfWork.Setup(u => u.MovieGenreRepo.RemoveByIdAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenGenreIdsAreNullOrEmpty()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = null }; 
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new Movie { Id = movieId }); 
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+    [Fact]
+    public async Task UpdateMovieAsync_ShouldReturnBadRequest_WhenGenreIdsAreNull()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movieRequest = new MovieRequest { GenreIds = null }; // GenreIds là null
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new Movie { Id = movieId }); // Giả lập movie tồn tại
+
+        // Act
+        var result = await _movieService.UpdateMovieAsync(movieId, movieRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
 }
+
