@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using static Application.IServices.IUserService;
@@ -396,6 +397,87 @@ namespace ZTest.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+        [Fact]
+        public async Task SearchCustomers_Should_Return_BadRequest_When_InvalidSearchKey()
+        {
+            // Arrange
+            var searchKey = (SearchKey)999; // Invalid search key
+
+            // Act
+            var result = await _service.SearchCustomers("value", searchKey);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchCustomers_Should_Return_NotFound_When_NoMatches()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ReturnsAsync(new List<DomainUser>());
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllCustomerAccountsAsync())
+                .ReturnsAsync(new List<AppUser>()); // No customers found
+
+            // Act
+            var result = await _service.SearchCustomers("nonexistent", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchEmployees_Should_Return_NotFound_When_NoMatches()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsAsync())
+                .ReturnsAsync(new List<AppUser>()); // No employees found
+
+            // Act
+            var result = await _service.SearchEmployees("nonexistent", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchEmployees_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsAsync())
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _service.SearchEmployees("123", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchCustomers_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _service.SearchCustomers("123", SearchKey.PhoneNumber);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
             Assert.Equal(null, result.ErrorMessage);
         }
     }
