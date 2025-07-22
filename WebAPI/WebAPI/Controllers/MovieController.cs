@@ -93,9 +93,15 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-
-
-
-
+        [HttpGet("FindGenresNameByMovieName")]
+        public async Task<IActionResult> FindGenresNameByMovieName(string movieName)
+        {
+            var response = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
     }
 }
