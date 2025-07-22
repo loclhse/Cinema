@@ -10,6 +10,7 @@ using Domain.Entities;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 using static Application.IServices.IUserService;
@@ -149,6 +150,144 @@ namespace ZTest.Services
             var responseList = Assert.IsAssignableFrom<List<CustomerResponse>>(result.Result);
             Assert.Single(responseList);
             Assert.Equal("John Doe", responseList.First().FullName);
+        }
+        [Fact]
+        public async Task SearchMembers_Should_ReturnResults_When_Match_Phone()
+        {
+            var members = new List<AppUser>
+        {
+            new AppUser { IdentityCard = "123", FullName = "John Doe" , Phone ="0838550801"}
+        };
+            var ids = new List<DomainUser>
+        {
+            new DomainUser { Id = Guid.NewGuid(), Email = "john@example.com" }
+        };
+            var mapped = new List<CustomerResponse> { new CustomerResponse { FullName = "John Doe" } };
+
+            _uow.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(It.IsAny<string>()))
+                           .ReturnsAsync(ids);
+            _uow.Setup(u => u.UserRepo.GetAllMemberAccountsAsync())
+                           .ReturnsAsync(members);
+            _mapper.Setup(m => m.Map<List<CustomerResponse>>(It.IsAny<IEnumerable<object>>()))
+                       .Returns(mapped);
+
+            var result = await _sut.SearchMembers("0838550801", SearchKey.PhoneNumber);
+
+            Assert.True(result.IsSuccess);
+            var responseList = Assert.IsAssignableFrom<List<CustomerResponse>>(result.Result);
+            Assert.Single(responseList);
+            Assert.Equal("John Doe", responseList.First().FullName);
+        }
+        [Fact]
+        public async Task SearchMembers_Should_ReturnResults_When_Match_Name()
+        {
+            var members = new List<AppUser>
+        {
+            new AppUser { IdentityCard = "123", FullName = "John Doe" , Phone ="0838550801"}
+        };
+            var ids = new List<DomainUser>
+        {
+            new DomainUser { Id = Guid.NewGuid(), Email = "john@example.com" }
+        };
+            var mapped = new List<CustomerResponse> { new CustomerResponse { FullName = "John Doe" } };
+
+            _uow.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(It.IsAny<string>()))
+                           .ReturnsAsync(ids);
+            _uow.Setup(u => u.UserRepo.GetAllMemberAccountsAsync())
+                           .ReturnsAsync(members);
+            _mapper.Setup(m => m.Map<List<CustomerResponse>>(It.IsAny<IEnumerable<object>>()))
+                       .Returns(mapped);
+
+            var result = await _sut.SearchMembers("John Doe", SearchKey.Name);
+
+            Assert.True(result.IsSuccess);
+            var responseList = Assert.IsAssignableFrom<List<CustomerResponse>>(result.Result);
+            Assert.Single(responseList);
+            Assert.Equal("John Doe", responseList.First().FullName);
+        }
+        [Fact]
+        public async Task GetAllMember_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _uow.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Member))
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _sut.GetAllMember();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllMember_Should_Return_NotFound_When_NoMembersExist()
+        {
+            // Arrange
+            _uow.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Member))
+                .ReturnsAsync(new List<DomainUser>()); // No users found
+
+            _uow.Setup(u => u.UserRepo.GetAllMemberAccountsAsync())
+                .ReturnsAsync(new List<AppUser>()); // No members found
+
+            // Act
+            var result = await _sut.GetAllMember();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchMembers_Should_Return_BadRequest_When_InvalidSearchKey()
+        {
+            // Arrange
+            var searchKey = (SearchKey)999; // Invalid search key
+
+            // Act
+            var result = await _sut.SearchMembers("value", searchKey);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchMembers_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _uow.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Member))
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _sut.SearchMembers("value", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateMemberAsync_Should_Return_NotFound_When_Member_Does_Not_Exist()
+        {
+            // Arrange
+            var memberId = Guid.NewGuid();
+            var updateRequest = new CustomerUpdateResquest();
+
+            _uow.Setup(u => u.UserRepo.GetMemberAccountAsync(memberId))
+                .ReturnsAsync((AppUser)null); // Simulate member not found
+
+            // Act
+            var result = await _sut.UpdateMemberAsync(memberId, updateRequest);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
         }
     }
 }

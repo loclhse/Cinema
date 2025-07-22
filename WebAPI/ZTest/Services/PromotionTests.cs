@@ -236,5 +236,85 @@ namespace ZTest.Services
             Assert.Null(result.ErrorMessage);
             Assert.Equal(promotion, result.Result);
         }
+        [Fact]
+        public async Task AddPromotion_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var request = new EditPromotionRequest();
+            _mockMapper.Setup(m => m.Map<Promotion>(request)).Throws(new Exception("Mapping error"));
+
+            // Act
+            var result = await _promotionService.AddPromotion(request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("Mapping error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeletePromotion_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var promotionId = Guid.NewGuid();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _promotionService.DeletePromotion(promotionId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("Database error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task EditPromotion_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var promotionId = Guid.NewGuid();
+            var request = new EditPromotionRequest();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).ReturnsAsync(new Promotion());
+            _mockMapper.Setup(m => m.Map(request, It.IsAny<Promotion>())).Throws(new Exception("Mapping error"));
+
+            // Act
+            var result = await _promotionService.EditPromotion(promotionId, request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("Mapping error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllPromotion_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _mockUow.Setup(u => u.PromotionRepo.GetAllPromotion()).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _promotionService.GetAllPromotion();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("Database error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetPromotionById_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var promotionId = Guid.NewGuid();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _promotionService.GetPromotionById(promotionId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("Database error", result.ErrorMessage);
+        }
     }
 }

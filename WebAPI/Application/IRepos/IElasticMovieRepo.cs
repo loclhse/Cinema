@@ -11,6 +11,6 @@ namespace Application.IRepos
     public interface IElasticMovieRepo
     {
         Task<bool> IndexMovieAsync(Movie movie);
-        Task<IEnumerable<MovieElasticSearchRequest>> elasticSearchMoviesAsync(string keyword, int limit = 5);
+        Task<IEnumerable<MovieElasticSearchRequest>> elasticSearchMoviesAsync(string keyword, int? limit = 5);
     }
 }

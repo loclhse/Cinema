@@ -6,6 +6,7 @@ using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;
@@ -459,6 +460,140 @@ namespace ZTest.Services
             Assert.True(result.IsSuccess);
             Assert.Equal("Redeem successful!", result.Result);
         }
+        [Fact]
+        public async Task GetPaidRedeemsByAccountAsync_Should_Return_Ok_When_Redeems_Exist()
+        {
+            // Arrange
+            var accountId = Guid.NewGuid();
+            var redeemId = Guid.NewGuid();
+            var redeemList = new List<Redeem>
+    {
+        new Redeem
+        {
+            Id = redeemId,
+            UserId = accountId,
+            IsDeleted = false,
+            status = ScoreStatus.paid
+        }
+    };
 
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ReturnsAsync(redeemList);
+
+            _mockRedeemRepo.Setup(r => r.GetItemNamesByRedeemId(redeemId))
+                .ReturnsAsync(new List<string> { "Item1" });
+
+            // Act
+            var result = await _service.GetPaidRedeemsByAccountAsync(accountId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            var data = Assert.IsType<List<RedeemResponse>>(result.Result);
+            data.Should().HaveCount(1);
+            data[0].ItemNames.Should().Contain("Item1");
+        }
+
+        [Fact]
+        public async Task GetPaidRedeemsByAccountAsync_Should_Return_NotFound_When_No_Redeems_Found()
+        {
+            // Arrange
+            var accountId = Guid.NewGuid();
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ReturnsAsync(new List<Redeem>()); // Simulate no redeems found
+
+            // Act
+            var result = await _service.GetPaidRedeemsByAccountAsync(accountId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("No redeems found for this account");
+        }
+
+        [Fact]
+        public async Task GetPaidRedeemsByAccountAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            var accountId = Guid.NewGuid();
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ThrowsAsync(new Exception("Database error")); // Simulate a database error
+
+            // Act
+            var result = await _service.GetPaidRedeemsByAccountAsync(accountId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Database error");
+        }
+        [Fact]
+        public async Task GetAllRedeemsAsync_Should_Return_Ok_When_Redeems_Exist()
+        {
+            // Arrange
+            var redeemId = Guid.NewGuid();
+            var redeemList = new List<Redeem>
+    {
+        new Redeem
+        {
+            Id = redeemId,
+            IsDeleted = false
+        }
+    };
+
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ReturnsAsync(redeemList);
+
+            _mockRedeemRepo.Setup(r => r.GetItemNamesByRedeemId(redeemId))
+                .ReturnsAsync(new List<string> { "Item1" });
+
+            // Act
+            var result = await _service.GetAllRedeemsAsync();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            var data = Assert.IsType<List<RedeemResponse>>(result.Result);
+            data.Should().HaveCount(1);
+            data[0].ItemNames.Should().Contain("Item1");
+        }
+
+        [Fact]
+        public async Task GetAllRedeemsAsync_Should_Return_NotFound_When_No_Redeems_Found()
+        {
+            // Arrange
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ReturnsAsync(new List<Redeem>()); // Simulate no redeems found
+
+            // Act
+            var result = await _service.GetAllRedeemsAsync();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("No redeems found");
+        }
+
+        [Fact]
+        public async Task GetAllRedeemsAsync_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _mockRedeemRepo.Setup(r =>
+                r.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), null, 0, 0))
+                .ThrowsAsync(new Exception("Database error")); // Simulate a database error
+
+            // Act
+            var result = await _service.GetAllRedeemsAsync();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Database error");
+        }
     }
 }
