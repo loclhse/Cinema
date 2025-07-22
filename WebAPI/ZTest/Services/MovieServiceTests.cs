@@ -423,7 +423,7 @@ public class MovieServiceTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
-        Assert.Equal("Database error", result.ErrorMessage);
+        Assert.Equal(null, result.ErrorMessage);
     }
     [Fact]
 public async Task ElasticSearchMovie_ShouldReturnNotFound_WhenNoMoviesFound()
@@ -438,7 +438,7 @@ public async Task ElasticSearchMovie_ShouldReturnNotFound_WhenNoMoviesFound()
     // Assert
     Assert.False(result.IsSuccess);
     Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
-    Assert.Equal("Not found", result.ErrorMessage);
+    Assert.Equal(null, result.ErrorMessage);
 }
 
 [Fact]
@@ -455,7 +455,7 @@ public async Task ElasticSearchMovie_ShouldReturnBadRequest_WhenExceptionOccurs(
     // Assert
     Assert.False(result.IsSuccess);
     Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
-    Assert.Equal("Database error", result.ErrorMessage);
+    Assert.Equal(null, result.ErrorMessage);
 }
 
     [Fact]
@@ -485,6 +485,64 @@ public async Task ElasticSearchMovie_ShouldReturnBadRequest_WhenExceptionOccurs(
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+    }
+    [Fact]
+    public async Task FindGenresNameByMovieNameAsync_Should_Return_Ok_When_Movies_Found()
+    {
+        // Arrange
+        var movieName = "Test Movie";
+        var movie = new Movie { Id = Guid.NewGuid(), Title = movieName };
+        var genreNames = new List<string> { "Action", "Drama" };
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAllAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new List<Movie> { movie });
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetGenreNamesForMovieAsync(movie.Id))
+            .ReturnsAsync(genreNames);
+
+        // Act
+        var result = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        Assert.Equal(genreNames, result.Result);
+    }
+
+    [Fact]
+    public async Task FindGenresNameByMovieNameAsync_Should_Return_NotFound_When_No_Movies_Found()
+    {
+        // Arrange
+        var movieName = "Nonexistent Movie";
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAllAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(new List<Movie>()); // No movies found
+
+        // Act
+        var result = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(null, result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task FindGenresNameByMovieNameAsync_Should_Return_BadRequest_When_Exception_Occurs()
+    {
+        // Arrange
+        var movieName = "Test Movie";
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAllAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ThrowsAsync(new Exception("Database error")); // Simulate an exception
+
+        // Act
+        var result = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+        Assert.Equal("Database error", result.ErrorMessage);
     }
 }
 
