@@ -13,9 +13,9 @@ namespace WebAPI.Controllers
     [Route("api/seats")]
     public class SeatController : ControllerBase
     {
-        private readonly ISeatService _seatService;
+        private readonly a _seatService;
 
-        public SeatController(ISeatService seatService)
+        public SeatController(a seatService)
         {
             _seatService = seatService;
         }
