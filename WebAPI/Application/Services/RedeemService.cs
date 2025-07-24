@@ -255,6 +255,7 @@ namespace Application.Services
                     await _unitOfWork.ScoreItemRepo.UpdateAsync(scoreItem);
                 }
                 userScore.Score -= order.TotalScore;
+
                 await _unitOfWork.UserRepo.UpdateAsync(userScore);
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Redeem successful!");
