@@ -98,7 +98,7 @@ namespace Infrastructure
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IMemberService, MemberService>();
-            services.AddScoped<ISeatService, SeatService>();
+            services.AddScoped<a, SeatService>();
             services.AddScoped<ICinemaRoomService, CinemaRoomService>();
             services.AddScoped<ISeatTypePriceService, SeatTypePriceService>();
             services.AddScoped<IMemberService, MemberService>();
