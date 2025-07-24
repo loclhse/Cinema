@@ -53,5 +53,8 @@ deploy-job:      # This job runs in the deploy stage.
     - larry  # Specify the runner tag
   environment: production
   script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
+    - - echo "Using token to push to GitLab..."
+    - git config --global user.email "ci@gitlab.com"
+    - git config --global user.name "CI Bot"
+    - git remote set-url origin https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git
+    - git push origin main
