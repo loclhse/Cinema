@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250717092132_init")]
+    [Migration("20250724012944_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -560,8 +560,8 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("PointsChanged")
-                        .HasColumnType("integer");
+                    b.Property<string>("PointsChanged")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("timestamp with time zone");

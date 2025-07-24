@@ -255,6 +255,13 @@ namespace Application.Services
                     await _unitOfWork.ScoreItemRepo.UpdateAsync(scoreItem);
                 }
                 userScore.Score -= order.TotalScore;
+                var ScoreLog = new ScoreLog
+                {
+                    UserId = userId,
+                    PointsChanged = $"- {order.TotalScore}",
+                    ActionType = "Redeemed items from shop",
+                };
+                await _unitOfWork.ScoreLogRepo.AddAsync(ScoreLog);
                 await _unitOfWork.UserRepo.UpdateAsync(userScore);
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Redeem successful!");
