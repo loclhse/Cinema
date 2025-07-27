@@ -34,5 +34,6 @@ namespace Application
         IRedeemRepo redeemRepo { get; }
         IScoreLogRepo ScoreLogRepo { get; }
         IScoreOrderRepo ScoreOrderRepo { get; }
+       
     }
 }

@@ -131,6 +131,17 @@ namespace ZTest.Services
         }
 
         [Fact]
+        public async Task DeletePromotion_ThrowsException_ReturnsBadRequest()
+        {
+            var promotionId = Guid.NewGuid();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).Throws(new Exception("delete error"));
+            var result = await _promotionService.DeletePromotion(promotionId);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("delete error", result.ErrorMessage);
+        }
+
+        [Fact]
         public async Task EditPromotion_PromotionNotFound_ReturnsNotFound()
         {
             // Arrange
@@ -170,6 +181,18 @@ namespace ZTest.Services
         }
 
         [Fact]
+        public async Task EditPromotion_ThrowsException_ReturnsBadRequest()
+        {
+            var promotionId = Guid.NewGuid();
+            var request = new EditPromotionRequest();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).Throws(new Exception("edit error"));
+            var result = await _promotionService.EditPromotion(promotionId, request);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("edit error", result.ErrorMessage);
+        }
+
+        [Fact]
         public async Task GetAllPromotion_NoPromotions_ReturnsNotFound()
         {
             // Arrange
@@ -200,6 +223,16 @@ namespace ZTest.Services
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
             Assert.Null(result.ErrorMessage);
             Assert.Equal(promotions, result.Result);
+        }
+
+        [Fact]
+        public async Task GetAllPromotion_ThrowsException_ReturnsBadRequest()
+        {
+            _mockUow.Setup(u => u.PromotionRepo.GetAllPromotion()).Throws(new Exception("getall error"));
+            var result = await _promotionService.GetAllPromotion();
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("getall error", result.ErrorMessage);
         }
 
         [Fact]
@@ -315,6 +348,17 @@ namespace ZTest.Services
             Assert.False(result.IsSuccess);
             Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
             Assert.Equal("Database error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetPromotionById_ThrowsException_ReturnsBadRequest()
+        {
+            var promotionId = Guid.NewGuid();
+            _mockUow.Setup(u => u.PromotionRepo.GetPromotionById(promotionId)).Throws(new Exception("getbyid error"));
+            var result = await _promotionService.GetPromotionById(promotionId);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal("getbyid error", result.ErrorMessage);
         }
     }
 }

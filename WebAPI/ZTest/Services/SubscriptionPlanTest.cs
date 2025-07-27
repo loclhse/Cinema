@@ -96,6 +96,67 @@ namespace ZTest.Services
         }
 
         [Fact]
+        public async Task ActiveSubscriptionPlanAsync_ShouldReturnNotFound_WhenAlreadyActiveOrDeleted()
+        {
+            var id = Guid.NewGuid();
+            var plan = new SubscriptionPlan { Id = id, Status = PlanStatus.Active, IsDeleted = false };
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync(plan);
+            var result = await _service.ActiveSubscriptionPlanAsync(id);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task ActiveSubscriptionPlanAsync_ShouldReturnBadRequest_OnException()
+        {
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).Throws(new Exception("fail"));
+            var result = await _service.ActiveSubscriptionPlanAsync(id);
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task CreateNewSubscriptionPlanAsync_ShouldReturnBadRequest_WhenInvalid()
+        {
+            var request = new SubscriptionPlanRequest();
+            _mockMapper.Setup(m => m.Map<SubscriptionPlan>(request)).Returns((SubscriptionPlan)null);
+            var result = await _service.CreateNewSubscriptionPlanAsync(request);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Invalid subscription plan data", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task CreateNewSubscriptionPlanAsync_ShouldReturnBadRequest_OnException()
+        {
+            var request = new SubscriptionPlanRequest();
+            _mockMapper.Setup(m => m.Map<SubscriptionPlan>(request)).Throws(new Exception("fail"));
+            var result = await _service.CreateNewSubscriptionPlanAsync(request);
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteSubscriptionPlanAsync_ShouldReturnNotFound_WhenNotFoundOrDeleted()
+        {
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync((SubscriptionPlan)null);
+            var result = await _service.DeleteSubscriptionPlanAsync(id);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteSubscriptionPlanAsync_ShouldReturnBadRequest_OnException()
+        {
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).Throws(new Exception("fail"));
+            var result = await _service.DeleteSubscriptionPlanAsync(id);
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
+        }
+
+        [Fact]
         public async Task UpdateInActiveSubscriptionPlanAsync_ShouldReturnOk_WhenValid()
         {
             var id = Guid.NewGuid();
@@ -108,6 +169,37 @@ namespace ZTest.Services
             var result = await _service.UpdateInActiveSubscriptionPlanAsync(id, request);
 
             Assert.True(result.IsSuccess);
+        }
+
+        [Fact]
+        public async Task UpdateInActiveSubscriptionPlanAsync_ShouldReturnNotFound_WhenNotFoundOrDeleted()
+        {
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync((SubscriptionPlan)null);
+            var result = await _service.UpdateInActiveSubscriptionPlanAsync(id, new SubscriptionPlanRequest());
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateInActiveSubscriptionPlanAsync_ShouldReturnBadRequest_WhenActive()
+        {
+            var id = Guid.NewGuid();
+            var plan = new SubscriptionPlan { Id = id, Status = PlanStatus.Active };
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).ReturnsAsync(plan);
+            var result = await _service.UpdateInActiveSubscriptionPlanAsync(id, new SubscriptionPlanRequest());
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateInActiveSubscriptionPlanAsync_ShouldReturnBadRequest_OnException()
+        {
+            var id = Guid.NewGuid();
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetByIdAsync(id)).Throws(new Exception("fail"));
+            var result = await _service.UpdateInActiveSubscriptionPlanAsync(id, new SubscriptionPlanRequest());
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
         }
 
         [Fact]
@@ -130,6 +222,42 @@ namespace ZTest.Services
             // Assert
             Assert.True(result.IsSuccess);
             Assert.IsType<ApiResp>(result);
+        }
+
+        [Fact]
+        public async Task UserGetAllSubscriptionPlansAsync_ShouldReturnNotFound_WhenEmpty()
+        {
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>())).ReturnsAsync(new List<SubscriptionPlan>());
+            var result = await _service.UserGetAllSubscriptionPlansAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task UserGetAllSubscriptionPlansAsync_ShouldReturnBadRequest_OnException()
+        {
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>())).Throws(new Exception("fail"));
+            var result = await _service.UserGetAllSubscriptionPlansAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ManagerGetAllSubscriptionPlansHistoryAsync_ShouldReturnNotFound_WhenEmpty()
+        {
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>())).ReturnsAsync(new List<SubscriptionPlan>());
+            var result = await _service.ManagerGetAllSubscriptionPlansHistoryAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, result.StatusCode);
+        }
+
+        [Fact]
+        public async Task ManagerGetAllSubscriptionPlansHistoryAsync_ShouldReturnBadRequest_OnException()
+        {
+            _mockUnitOfWork.Setup(u => u.SubscriptionPlanRepo.GetAllAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>())).Throws(new Exception("fail"));
+            var result = await _service.ManagerGetAllSubscriptionPlansHistoryAsync();
+            Assert.False(result.IsSuccess);
+            Assert.Equal("fail", result.ErrorMessage);
         }
         [Fact]
         public async Task CreateNewSubscriptionPlanAsync_ReturnsBadRequest_WhenExceptionOccurs()

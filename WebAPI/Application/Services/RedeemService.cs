@@ -62,7 +62,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -83,7 +83,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -109,7 +109,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> GetPaidRedeemsByAccountAsync(Guid accountId)
@@ -134,7 +134,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -160,7 +160,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -181,7 +181,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> updateRedeemAsync(Guid redeemId, List<RedeemRequest> requests)
@@ -220,7 +220,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> redeemItem(Guid id, Guid userId)
@@ -230,8 +230,12 @@ namespace Application.Services
             {
                
                 var order = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == id && !x.IsDeleted && x.status == ScoreStatus.pending);
-                var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == userId && !u.IsDeleted);
                 if (order == null)
+                {
+                    return apiResp.SetNotFound(null, "Redeem not found or already processed");
+                }
+                var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == userId && !u.IsDeleted);
+                if (userScore == null)
                 {
                     return apiResp.SetNotFound(message: "Redeem not found or already processed");
                 }
@@ -268,7 +272,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
     }
