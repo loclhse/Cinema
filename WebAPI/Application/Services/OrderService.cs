@@ -298,7 +298,13 @@ namespace Application.Services
                     }
                     user.Score += point;
                 }
-
+                var scoreLog = new ScoreLog
+                {
+                    UserId = userId,
+                    PointsChanged = $"+{point}",
+                    ActionType = "Payment Reward"
+                };
+                await _uow.ScoreLogRepo.AddAsync(scoreLog);
                 await _uow.SaveChangesAsync();
                 return apiResponse.SetOk(point);
             }

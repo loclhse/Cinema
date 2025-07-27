@@ -9,7 +9,7 @@
 
     namespace Application.Services
     {
-        public class SeatService : ISeatService
+        public class SeatService : a
         {
             private readonly IUnitOfWork _uow;
 

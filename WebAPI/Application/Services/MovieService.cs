@@ -78,7 +78,7 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
-                var movie = await _unitOfWork.MovieRepo.GetAsync(x=> x.Id == id);
+                var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id);
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
@@ -87,7 +87,7 @@ namespace Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return resp.SetOk("Movie deleted successfully.");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return resp.SetBadRequest(ex.Message);
             }
@@ -114,9 +114,9 @@ namespace Application.Services
                     var response = _mapper.Map<MovieResponse>(movie);
                     response.GenreNames = GenreNames;
                     movieRespList.Add(response);
-                    
+
                 }
-                
+
                 return resp.SetOk(movieRespList);
             }
             catch (Exception ex)
@@ -124,16 +124,17 @@ namespace Application.Services
                 return resp.SetBadRequest(ex.Message);
             }
         }
-        
+
         public async Task<ApiResp> GetMovieByIdAsync(Guid id)
         {
             ApiResp resp = new ApiResp();
-            try { 
+            try
+            {
                 var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
                 var Genres = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
-                
+
                 var res = _mapper.Map<MovieResponse>(movie);
-                res.GenreNames= Genres;
+                res.GenreNames = Genres;
                 if (movie == null)
                 {
                     return resp.SetNotFound("Movie not found.");
@@ -167,8 +168,8 @@ namespace Application.Services
                 {
                     await _unitOfWork.MovieGenreRepo.RemoveByIdAsync(mg.Id);
                 }
-                
-                 foreach (var genreId in movieRequest.GenreIds)
+
+                foreach (var genreId in movieRequest.GenreIds)
                 {
                     if (genreId == Guid.Empty)
                     {
@@ -182,7 +183,7 @@ namespace Application.Services
                     }
                     await _unitOfWork.MovieGenreRepo.AddAsync(new MovieGenre
                     {
-                        Genre = genre,          
+                        Genre = genre,
                         Movie = movie,
                     });
                 }
@@ -238,8 +239,8 @@ namespace Application.Services
                         .SetNotFound("No movies found");
                 }
                 var responses = _mapper.Map<List<MovieResponse>>(movies);
-                    return new ApiResp()
-                        .SetOk(result: responses);
+                return new ApiResp()
+                    .SetOk(result: responses);
             }
             catch (Exception ex)
             {
@@ -277,18 +278,38 @@ namespace Application.Services
                 var result = new List<MovieResponse>();
                 foreach (var movie in moviesDBList)
                 {
-                        var GenreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
-                        var response = _mapper.Map<MovieResponse>(movie);
-                        response.GenreNames = GenreNames;
-                        result.Add(response);
-                    }
+                    var GenreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
+                    var response = _mapper.Map<MovieResponse>(movie);
+                    response.GenreNames = GenreNames;
+                    result.Add(response);
+                }
                 return apiResp.SetOk(result);
 
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return apiResp.SetBadRequest(ex.Message);
             }
         }
+        public async Task<ApiResp> FindGenresNameByMovieNameAsync(string movieName)
+        {
+            ApiResp resp = new ApiResp();
+            try
+            {
+                var movies = await _unitOfWork.MovieRepo.GetAllAsync(x => x.Title.Contains(movieName) && !x.IsDeleted);
+                if (movies == null || !movies.Any())
+                {
+                    return resp.SetNotFound("No movies found with the specified name.");
+                }
+
+                var genreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movies.First().Id);
+
+                return resp.SetOk(genreNames);
+            }
+            catch (Exception ex)
+            {
+                return resp.SetBadRequest(ex.Message);
+            }
+        }
     }
-    
 }

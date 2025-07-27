@@ -98,7 +98,7 @@ namespace Infrastructure
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IMemberService, MemberService>();
-            services.AddScoped<ISeatService, SeatService>();
+            services.AddScoped<a, SeatService>();
             services.AddScoped<ICinemaRoomService, CinemaRoomService>();
             services.AddScoped<ISeatTypePriceService, SeatTypePriceService>();
             services.AddScoped<IMemberService, MemberService>();
@@ -120,6 +120,7 @@ namespace Infrastructure
             services.AddScoped<IVnPayService,VnPayService>();
             services.AddScoped<IScoreItemService, ScoreItemService>();
             services.AddScoped<IRedeemService, RedeemService>();
+            services.AddScoped<IDashboardService, DashboardService>();
 
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)
