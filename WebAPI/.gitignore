@@ -1,6 +1,0 @@
-# SonarQube
-.sonarqube/
-coverage/
-*.lcov
-*.coverage
-*.coveragexml 

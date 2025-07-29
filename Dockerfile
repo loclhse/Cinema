@@ -9,16 +9,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy all project files first
-COPY ["WebAPI/WebAPI.csproj", "WebAPI/"]
-COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
-COPY ["Application/Application.csproj", "Application/"]
-COPY ["Domain/Domain.csproj", "Domain/"]
+COPY ["WebAPI/WebAPI/WebAPI.csproj", "WebAPI/"]
+COPY ["WebAPI/Infrastructure/Infrastructure.csproj", "Infrastructure/"]
+COPY ["WebAPI/Application/Application.csproj", "Application/"]
+COPY ["WebAPI/Domain/Domain.csproj", "Domain/"]
 
 # Restore packages for all projects
 RUN dotnet restore "WebAPI/WebAPI.csproj"
 
 # Copy all source code
-COPY . .
+COPY ./WebAPI .
 
 # Build the main project
 WORKDIR "/src/WebAPI"

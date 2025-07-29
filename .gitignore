@@ -366,3 +366,10 @@ FodyWeavers.xsd
 
 coverage-report/
 
+# SonarQube
+.sonarqube/
+coverage/
+*.lcov
+*.coverage
+*.coveragexml
+

@@ -1,57 +1,138 @@
-# This file is a template, and might need editing before it works on your project.
-# This is a sample GitLab CI/CD configuration file that should run without any modifications.
-# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
-# it uses echo commands to simulate the pipeline execution.
-#
-# A pipeline is composed of independent jobs that run scripts, grouped into stages.
-# Stages run in sequential order, but jobs within stages run in parallel.
-#
-# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
-#
-# You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-#
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/development/cicd/templates/
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+# GitLab CI/CD pipeline for .NET Core Web API
+# Pipeline stages: build, test, docker, deploy
 
-stages:          # List of stages for jobs, and their order of execution
+variables:
+  DOTNET_VERSION: "8.0"
+  SOLUTION_PATH: "WebAPI/WebAPI.sln"
+  PROJECT_PATH: "WebAPI/WebAPI/WebAPI.csproj"
+  TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
+  DOCKER_IMAGE_NAME: "team03-webapi"
+  DOCKER_REGISTRY: "registry.gitlab.com"
+  TARGET_BRANCH: "CICD"  # Thay đổi branch này khi cần
+
+stages:
   - build
   - test
+  - docker
   - deploy
 
-build-job:       # This job runs in the build stage, which runs first.
+# Restore and build the .NET solution
+build-job:
   stage: build
   tags:
-    - larry  # Specify the runner tag
+    - larry
   script:
-    - echo "Compiling the code..."
-    - echo "Compile complete."
+    - echo "Starting .NET build process..."
+    - cd WebAPI
+    - dotnet --version
+    - dotnet restore WebAPI.sln
+    - dotnet build WebAPI.sln --configuration Release --no-restore
+    - echo "Build completed successfully!"
+  artifacts:
+    paths:
+      - WebAPI/WebAPI/bin/Release/
+      - WebAPI/Application/bin/Release/
+      - WebAPI/Domain/bin/Release/
+      - WebAPI/Infrastructure/bin/Release/    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-unit-test-job:   # This job runs in the test stage.
-  stage: test    # It only starts when the job in the build stage completes successfully.
+# Run unit tests
+unit-test-job:
+  stage: test
   tags:
-    - larry  # Specify the runner tag
+    - larry
+  dependencies:
+    - build-job
   script:
-    - echo "Running unit tests... This will take about 60 seconds."
-    - sleep 60
-    - echo "Code coverage is 90%"
+    - echo "Running unit tests..."
+    - cd WebAPI
+    - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
+    - echo "Unit tests completed!"
+  artifacts:
+    when: always
+    paths:
+      - WebAPI/TestResults/
+    reports:
+      junit:
+        - WebAPI/TestResults/*.trx    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-lint-test-job:   # This job also runs in the test stage.
-  stage: test    # It can run at the same time as unit-test-job (in parallel).
+# Code quality and linting
+lint-test-job:
+  stage: test
   tags:
-    - larry  # Specify the runner tag
+    - larry
+  dependencies:
+    - build-job
   script:
-    - echo "Linting code... This will take about 10 seconds."
-    - sleep 10
-    - echo "No lint issues found."
+    - echo "Running code analysis..."
+    - cd WebAPI
+    - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "Code formatting issues found"
+    - echo "Code analysis completed!"  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-deploy-job:      # This job runs in the deploy stage.
-  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+# Build and push Docker image
+docker-build-job:
+  stage: docker
   tags:
-    - larry  # Specify the runner tag
-  environment: production
+    - larry
+  dependencies:
+    - build-job
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
+    - echo "Building Docker image..."
+    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest    - echo "Docker image built and pushed successfully!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Deploy to staging
+deploy-staging:
+  stage: deploy
+  tags:
+    - larry
+  dependencies:
+    - docker-build-job
+  environment:
+    name: staging
+    url: http://staging.team03-api.local
+  script:
+    - echo "Deploying to staging environment..."
+    - docker-compose -f docker-compose.yml down || true
+    - docker-compose -f docker-compose.yml pull
+    - docker-compose -f docker-compose.yml up -d    - echo "Application deployed to staging!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Deploy to production
+deploy-production:
+  stage: deploy
+  tags:
+    - larry
+  dependencies:
+    - docker-build-job
+  environment:
+    name: production
+    url: http://team03-api.production.local
+  script:
+    - echo "Deploying to production environment..."
+    - docker-compose -f docker-compose.yml down || true
+    - docker-compose -f docker-compose.yml pull
+    - docker-compose -f docker-compose.yml up -d    - echo "Application deployed to production!"
+  when: manual
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
