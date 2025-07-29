@@ -18,7 +18,7 @@ variables:
   IMAGE_NAME: "${ACR_NAME}.azurecr.io/movietheater-api"
   
   # Git configuration
-  GIT_STRATEGY: none  # Set back to fetc to let GitLab CI handle clonin
+  GIT_STRATEGY: none  # Set back to fetc to let GitLab CI handle cloni
   GIT_USERNAME: "fsa_HongTL"
 
 prepare:
