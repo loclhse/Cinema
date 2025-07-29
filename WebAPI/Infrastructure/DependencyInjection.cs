@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -98,7 +99,7 @@ namespace Infrastructure
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IMemberService, MemberService>();
-            services.AddScoped<a, SeatService>();
+            services.AddScoped<ISeatService, SeatService>();
             services.AddScoped<ICinemaRoomService, CinemaRoomService>();
             services.AddScoped<ISeatTypePriceService, SeatTypePriceService>();
             services.AddScoped<IMemberService, MemberService>();
@@ -116,7 +117,7 @@ namespace Infrastructure
             services.AddScoped<IBackgroundService, BackgroundService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
-           
+            services.AddScoped<IScoreHistoryService, ScoreHistoryService>();
             services.AddScoped<IVnPayService,VnPayService>();
             services.AddScoped<IScoreItemService, ScoreItemService>();
             services.AddScoped<IRedeemService, RedeemService>();

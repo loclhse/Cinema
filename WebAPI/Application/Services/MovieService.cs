@@ -112,6 +112,8 @@ namespace Application.Services
                 {
                     var GenreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
                     var response = _mapper.Map<MovieResponse>(movie);
+                    response.ReleaseDate = movie.ReleaseDate;
+                    response.EndDate = movie.EndDate;
                     response.GenreNames = GenreNames;
                     movieRespList.Add(response);
 
@@ -134,6 +136,8 @@ namespace Application.Services
                 var Genres = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movie.Id);
 
                 var res = _mapper.Map<MovieResponse>(movie);
+                res.ReleaseDate = movie.ReleaseDate;
+                res.EndDate = movie.EndDate;
                 res.GenreNames = Genres;
                 if (movie == null)
                 {
@@ -305,6 +309,29 @@ namespace Application.Services
                 var genreNames = await _unitOfWork.MovieRepo.GetGenreNamesForMovieAsync(movies.First().Id);
 
                 return resp.SetOk(genreNames);
+            }
+            catch (Exception ex)
+            {
+                return resp.SetBadRequest(ex.Message);
+            }
+        }
+
+        public async Task<ApiResp> GetShowtimeByMovieId(Guid Id)
+        {
+            ApiResp resp = new ApiResp();
+            try
+            {
+               var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == Id && !x.IsDeleted);
+                if (movie == null)
+                {
+                    return resp.SetNotFound(message:"Movie not found!");
+                }
+                if (movie.Showtimes == null || !movie.Showtimes.Any())
+                {
+                    return resp.SetNotFound(message:"No showtimes found for this movie.");
+                }
+                var showtimeResponses = _mapper.Map<List<ShowtimeResponse>>(movie.Showtimes);
+                return resp.SetOk(showtimeResponses);
             }
             catch (Exception ex)
             {

@@ -18,5 +18,6 @@ namespace Application.IServices
         Task<ApiResp> SearchMoviesAsync(string searchTerm, string searchType, int? limit = 5);
         Task<ApiResp> ElasticSearchMovie(string keyWord);
         Task<ApiResp> FindGenresNameByMovieNameAsync(string movieName);
+        Task<ApiResp> GetShowtimeByMovieId(Guid Id);
     }
 }
