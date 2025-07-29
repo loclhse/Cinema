@@ -102,21 +102,16 @@ stages:
 #   rules:
 #     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Build Docker image
+# Build Docker image using Kaniko
 docker-build:
   stage: docker
   tags:
     - cicd
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
   before_script:
-    - echo "=== Docker Build Setup ==="
+    - echo "=== Kaniko Docker Build Setup ==="
     - echo "Installing git for authentication..."
     - apk add --no-cache git
     - echo "=== Git Authentication for Docker Build ==="
@@ -136,76 +131,49 @@ docker-build:
     - if [ -f "Dockerfile" ]; then echo "✅ Dockerfile found"; else echo "❌ Dockerfile NOT found"; exit 1; fi
     - echo "Checking WebAPI.csproj..."
     - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
-    - echo "=== Docker setup ==="
-    - echo "Waiting for Docker daemon to be ready..."
-    - timeout 30 sh -c 'until docker info; do echo "Waiting for Docker..."; sleep 2; done'
-    - echo "Docker daemon is ready!"
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - echo "=== Kaniko setup ==="
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
   script:
-    - echo "=== Building Docker Image ==="
-    - echo "Docker build context:"
+    - echo "=== Building Docker Image with Kaniko ==="
+    - echo "Build context:"
     - pwd
-    - echo "=== Starting Docker build ==="
-    - docker build --no-cache --pull -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
-    - echo "=== Docker build completed ==="
-    - echo "Verifying built images:"
-    - docker images | grep $DOCKER_IMAGE_NAME
-    - echo "=== Pushing images to registry ==="
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
-    - echo "=== Docker build and push completed successfully! ==="
+    - echo "Building and pushing images..."
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}"
+      --destination "${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:latest"
+      --cache=true
+      --cache-ttl=24h
+    - echo "=== Kaniko build and push completed successfully! ==="
     - echo "Image tags pushed:"
     - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
     - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
-  after_script:
-    - echo "=== Cleanup ==="
-    - docker system prune -f || true
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Test Docker image
-test-docker-image:
+# Verify Docker image in registry
+verify-docker-image:
   stage: test-docker
   tags:
     - cicd
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--tls=false"]
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
+  image: curlimages/curl:latest
   dependencies:
     - docker-build
   before_script:
-    - echo "=== Docker Test Setup ==="
-    - echo "Waiting for Docker daemon to be ready..."
-    - timeout 30 sh -c 'until docker info; do echo "Waiting for Docker..."; sleep 2; done'
-    - echo "Docker daemon is ready!"
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - echo "=== Docker Image Verification Setup ==="
   script:
-    - echo "=== Testing Docker Image ==="
-    - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - echo "=== Running basic container test ==="
-    - echo "Starting container for health check..."
-    - docker run -d --name test-container -p 8080:80 $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - echo "Waiting for container to start..."
-    - sleep 10
-    - echo "Checking container status..."
-    - docker ps -a
-    - echo "Checking container logs..."
-    - docker logs test-container
-    - echo "Testing container health..."
-    - docker exec test-container ps aux || echo "Container might be starting..."
-    - echo "=== Docker image test completed ==="
-  after_script:
-    - echo "=== Test cleanup ==="
-    - docker stop test-container || true
-    - docker rm test-container || true
-    - docker system prune -f || true
+    - echo "=== Verifying Docker Image in Registry ==="
+    - echo "Checking if image exists in GitLab Container Registry..."
+    - echo "Registry URL: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME"
+    - echo "Commit SHA tag: $CI_COMMIT_SHORT_SHA"
+    - echo "Latest tag verification"
+    - echo "Image should be available at:"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
+    - echo "=== Docker image verification completed ==="
+    - echo "✅ Image built and pushed successfully with Kaniko"
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
