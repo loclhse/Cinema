@@ -51,7 +51,8 @@ unit-test-job:
     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
     - echo "Unit tests completed!"
   artifacts:
-    when: always    paths:
+    when: always
+    paths:
       - WebAPI/TestResults/
     reports:
       junit:
