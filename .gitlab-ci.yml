@@ -174,7 +174,4 @@ notify_failure:
 # Rules để control khi nào pipeline chạy
 workflow:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "develop"
-    - if: $CI_COMMIT_BRANCH =~ /^feature\/.*$/
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+     - when: always
