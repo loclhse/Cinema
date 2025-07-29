@@ -15,7 +15,7 @@ namespace WebAPI.Controllers
 
         public MovieController(IMovieService movieService)
         {
-            
+
             _movieService = movieService ?? throw new ArgumentNullException(nameof(movieService));
         }
 
@@ -97,6 +97,16 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> FindGenresNameByMovieName(string movieName)
         {
             var response = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
+        [HttpGet("GetShowtimeByMovieId/{id}")]
+        public async Task<IActionResult> GetShowtimeByMovieId(Guid id)
+        {
+            var response = await _movieService.GetShowtimeByMovieId(id);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return NotFound();

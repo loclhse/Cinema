@@ -258,7 +258,7 @@ namespace Application.Services
                 var ScoreLog = new ScoreLog
                 {
                     UserId = userId,
-                    PointsChanged = $"- {order.TotalScore}",
+                    PointsChanged = $"-{order.TotalScore}",
                     ActionType = "Redeemed items from shop",
                 };
                 await _unitOfWork.ScoreLogRepo.AddAsync(ScoreLog);

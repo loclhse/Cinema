@@ -8,7 +8,7 @@ using Domain.Enums;
 
 namespace Application.IServices
 {
-    public interface a
+    public interface ISeatService
     {
         // --- Ghế theo phòng ---
         Task<List<Seat>> GetSeatsByRoomAsync(Guid roomId);
