@@ -44,7 +44,7 @@ deploy_dev:
   tags:
     - deploy
   script:
-    - echo "Deploying to deelopment server..."
+    - echo "Deploying to deelopment srver..."
 
 deploy_prod:
   stage: deploy_prod
