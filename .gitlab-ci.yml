@@ -2,6 +2,6 @@ test-runner:
   stage: prepare
   image: alpine:latest
   script:
-    - echo "Runner is working!"
+    - echo "Runner iskk working!"
     - whoami
     - pwd
