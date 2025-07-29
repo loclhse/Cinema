@@ -88,6 +88,7 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Email, m => m.MapFrom(s => s.Identity.Email))
                 .ForMember(d => d.Phone, m => m.MapFrom(s => s.Identity.Phone))
                 // Profile  
+                .ForMember(d => d.Score, m => m.MapFrom(s => s.Profile.Score))
                 .ForMember(d => d.IdentityCard, m => m.MapFrom(s => s.Profile.IdentityCard))
                 .ForMember(d => d.Dob, m => m.MapFrom(s => s.Profile.Dob))
                 .ForMember(d => d.FullName, m => m.MapFrom(s => s.Profile.FullName))
@@ -106,6 +107,7 @@ namespace Infrastructure.MapperConfigs
                 .ForMember(d => d.Email, m => m.MapFrom(s => s.Identity.Email))
                 .ForMember(d => d.Phone, m => m.MapFrom(s => s.Identity.Phone))
                 // Profile  
+                .ForMember(d => d.Score, m => m.MapFrom(s => s.Profile.Score))
                 .ForMember(d => d.IdentityCard, m => m.MapFrom(s => s.Profile.IdentityCard))
                 .ForMember(d => d.Dob, m => m.MapFrom(s => s.Profile.Dob))
                 .ForMember(d => d.FullName, m => m.MapFrom(s => s.Profile.FullName))
