@@ -82,7 +82,6 @@ unit-tests:
     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
     - echo "=== Tests completed! ==="
   artifacts:
-    when: always
     paths:
       - WebAPI/TestResults/
     reports:
