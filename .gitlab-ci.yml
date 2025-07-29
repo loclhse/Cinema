@@ -9,7 +9,8 @@ variables:
   DOCKER_IMAGE_NAME: "team03-webapi"
   DOCKER_REGISTRY: "registry.gitlab.com"
   TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
-    # Git Access Configuration
+  
+  # Git Access Configuration
   GIT_STRATEGY: none  # Tắt GitLab auto-clone để clone manual
   GIT_DEPTH: 20
   GIT_USERNAME: "access"  # Thay thành username GitLab của bạn
@@ -25,7 +26,8 @@ stages:
 build-job:
   stage: build
   tags:
-    - deploy  before_script:
+    - deploy
+  before_script:
     - echo "Configuring Git authentication..."
     - |
       if [ -n "$GIT_ACCESS_TOKEN" ] && [ -n "$GIT_USERNAME" ]; then
