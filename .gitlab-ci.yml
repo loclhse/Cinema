@@ -47,6 +47,18 @@ build-dotnet:
   stage: build
   tags:
     - cicd
+  before_script:
+    script:
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
+    - echo "Configuring Git credentials..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Testing Git authentication..."
+    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+    - echo "Prepare stage completed successfully"
   script:
     - echo "=== Starting .NET Build ==="
     - echo "Using .NET version:"
