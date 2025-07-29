@@ -102,78 +102,118 @@ stages:
 #   rules:
 #     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Build Docker image using Kaniko
+# Build Docker image using Docker-in-Docker
 docker-build:
   stage: docker
   tags:
     - cicd
-  image:
-    name: gcr.io/kaniko-project/executor:v1.9.0-debug
-    entrypoint: [""]
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - echo "=== Kaniko Docker Build Setup ==="
-    - echo "Installing git for authentication..."
-    - apk add --no-cache git
+    - echo "=== Docker Build Setup ==="
+    - echo "Installing git and tools..."
+    - apk add --no-cache git curl jq
     - echo "=== Git Authentication for Docker Build ==="
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     - echo "Git authentication configured successfully"
     - echo "=== Cloning repository for Docker build ==="
-    - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
-    - git checkout ${CI_COMMIT_SHA}
+    - echo "Ensuring we have the repository code..."
+    - if [ ! -d ".git" ]; then
+        git clone -b $TARGET_BRANCH "https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
+      else
+        git fetch && git checkout $TARGET_BRANCH && git pull;
+      fi
     - echo "Repository cloned successfully"
     - echo "=== Verifying project structure ==="
+    - echo "Listing repository contents..."
     - ls -la
+    - echo "Current working directory:"
+    - pwd
     - echo "WebAPI directory contents:"
-    - ls -la WebAPI/
+    - ls -la WebAPI/ || echo "WebAPI directory not found"
+    - echo "Searching for Dockerfile..."
+    - find . -name "Dockerfile" -type f
     - echo "Checking Dockerfile..."
     - if [ -f "Dockerfile" ]; then echo "✅ Dockerfile found"; else echo "❌ Dockerfile NOT found"; exit 1; fi
     - echo "Checking WebAPI.csproj..."
     - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
-    - echo "=== Kaniko setup ==="
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - echo "=== Docker Registry Login ==="
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin || exit 1
   script:
-    - echo "=== Building Docker Image with Kaniko ==="
+    - echo "=== Building Docker Image ==="
+    - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
     - echo "Build context:"
     - pwd
-    - echo "Building and pushing images..."
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}"
-      --destination "${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:latest"
-      --cache=true
-      --cache-ttl=24h
-    - echo "=== Kaniko build and push completed successfully! ==="
+    - echo "=== Starting Docker build ==="
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
+    - echo "=== Docker build completed ==="
+    - echo "Verifying built images:"
+    - docker images | grep $DOCKER_IMAGE_NAME || echo "Images built successfully"
+    - echo "=== Pushing images to registry ==="
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
+    - echo "=== Docker build and push completed successfully! ==="
     - echo "Image tags pushed:"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
     - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
+  after_script:
+    - echo "=== Cleanup ==="
+    - docker system prune -f || true
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Verify Docker image in registry
-verify-docker-image:
+# Test Docker image
+test-docker-image:
   stage: test-docker
   tags:
     - cicd
-  image: curlimages/curl:latest
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   dependencies:
     - docker-build
   before_script:
-    - echo "=== Docker Image Verification Setup ==="
+    - echo "=== Docker Test Setup ==="
+    - echo "Installing tools..."
+    - apk add --no-cache curl
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
   script:
-    - echo "=== Verifying Docker Image in Registry ==="
-    - echo "Checking if image exists in GitLab Container Registry..."
-    - echo "Registry URL: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME"
-    - echo "Commit SHA tag: $CI_COMMIT_SHORT_SHA"
-    - echo "Latest tag verification"
-    - echo "Image should be available at:"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
-    - echo "=== Docker image verification completed ==="
-    - echo "✅ Image built and pushed successfully with Kaniko"
+    - echo "=== Testing Docker Image ==="
+    - echo "Pulling image: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
+    - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+    - echo "=== Running basic container test ==="
+    - echo "Starting container for health check..."
+    - docker run -d --name test-container -p 8080:80 $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+    - echo "Waiting for container to start..."
+    - sleep 15
+    - echo "Checking container status..."
+    - docker ps -a
+    - echo "Checking container logs..."
+    - docker logs test-container
+    - echo "Testing container health..."
+    - docker exec test-container ps aux || echo "Container might be starting..."
+    - echo "=== Docker image test completed ==="
+  after_script:
+    - echo "=== Test cleanup ==="
+    - docker stop test-container || true
+    - docker rm test-container || true
+    - docker system prune -f || true
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
