@@ -202,4 +202,4 @@ deploy:
         echo "Warning: Could not retrieve application URL"
       fi
   tags:
-    - azure
+    - deploy
