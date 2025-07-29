@@ -24,7 +24,7 @@ stages:
 test-connectivity:
   stage: connectivity
   tags:
-    - deploy
+    - cicd
   image: alpine:latest
   before_script:
     - echo "=== Fixing Git Authentication ==="
@@ -46,7 +46,7 @@ test-connectivity:
 build-dotnet:
   stage: build
   tags:
-    - deploy
+    - cicd
   script:
     - echo "=== Starting .NET Build ==="
     - echo "Using .NET version:"
@@ -72,7 +72,7 @@ build-dotnet:
 unit-tests:
   stage: test
   tags:
-    - deploy
+    - cicd
   dependencies:
     - build-dotnet
   script:
@@ -96,7 +96,7 @@ unit-tests:
 code-quality:
   stage: test
   tags:
-    - deploy
+    - cicd
   dependencies:
     - build-dotnet
   script:
@@ -113,7 +113,7 @@ code-quality:
 docker-build:
   stage: docker
   tags:
-    - docker
+    - cicd
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
@@ -144,7 +144,7 @@ docker-build:
 deploy-staging:
   stage: deploy
   tags:
-    - deploy
+    - cicd
   dependencies:
     - docker-build
   environment:
@@ -168,7 +168,7 @@ deploy-staging:
 deploy-production:
   stage: deploy
   tags:
-    - deploy
+    - cicd
   dependencies:
     - docker-build
   environment:
