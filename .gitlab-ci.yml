@@ -29,7 +29,7 @@ unit-tests:
     - echo "=== Debug Git Authentication ==="
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
     - echo "Git authentication configured successfully"
     - echo "=== Cloning repository manually after authentication ==="
     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
