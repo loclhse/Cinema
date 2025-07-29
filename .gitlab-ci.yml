@@ -142,8 +142,6 @@ docker-build:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
     - echo "=== Building Docker Image ==="
-    - echo "Building image with tag: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
-    - echo "Building image with tag: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
     - echo "Docker build context:"
     - pwd
     - echo "=== Starting Docker build ==="
@@ -186,7 +184,6 @@ test-docker-image:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
     - echo "=== Testing Docker Image ==="
-    - echo "Pulling image: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
     - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - echo "=== Running basic container test ==="
     - echo "Starting container for health check..."
