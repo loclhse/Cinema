@@ -187,7 +187,7 @@ namespace Application.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return new ApiResp().SetBadRequest(message: $"Error adding snack to combo: {ex.Message}");
+                return new ApiResp().SetBadRequest(null, $"Error adding snack to combo: {ex.Message}");
             }
         }
 
@@ -207,7 +207,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -241,8 +241,8 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                return new ApiResp().SetBadRequest(message: $"Error deleting snack from combo: {ex.Message}");
+                if (transaction != null) await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(null, $"Error deleting snack from combo: {ex.Message}");
             }
         }
 
@@ -322,8 +322,8 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                return new ApiResp().SetBadRequest(message: $"Error updating snack quantity: {ex.Message}");
+                if (transaction != null) await transaction.RollbackAsync();
+                return new ApiResp().SetBadRequest(null, $"Error updating snack quantity: {ex.Message}");
             }
         }
 
@@ -373,7 +373,7 @@ namespace Application.Services
                 }
                 catch (Exception ex)
                 {
-                    return resp.SetBadRequest(ex.Message);
+                    return resp.SetBadRequest(null, ex.Message);
                 }
             }
 
