@@ -23,6 +23,8 @@ stages:
 # Test runner connectivity
 test-connectivity:
   stage: connectivity
+  tags:
+    - deploy
   image: alpine:latest
   script:
     - echo "=== Runner Connectivity Test ==="
