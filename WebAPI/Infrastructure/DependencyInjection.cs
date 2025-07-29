@@ -121,6 +121,7 @@ namespace Infrastructure
             services.AddScoped<IVnPayService,VnPayService>();
             services.AddScoped<IScoreItemService, ScoreItemService>();
             services.AddScoped<IRedeemService, RedeemService>();
+            services.AddScoped<IDashboardService, DashboardService>();
 
             #endregion
             //6.Đăng ký AutoMapper(scan toàn bộ assembly của Infrastructure để tìm Profile)

@@ -38,7 +38,7 @@ namespace Application.Services
             }
             catch(Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
 
         }
@@ -51,7 +51,7 @@ namespace Application.Services
                 var subscriptionPlan = _mapper.Map<SubscriptionPlan>(subscriptionPlanRequest);
                 if (subscriptionPlan == null)
                 {
-                    return apiResp.SetBadRequest("Invalid subscription plan data");
+                    return apiResp.SetBadRequest(null, "Invalid subscription plan data");
                 }
                 await _unitOfWork.SubscriptionPlanRepo.AddAsync(subscriptionPlan);
                 await _unitOfWork.SaveChangesAsync();
@@ -59,7 +59,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -80,7 +80,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -99,7 +99,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -118,7 +118,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -142,7 +142,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -161,7 +161,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
         public async Task<ApiResp> ManagerGetAllSubscriptionPlansHistoryAsync()
@@ -179,7 +179,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return apiResp.SetBadRequest(ex.Message);
+                return apiResp.SetBadRequest(null, ex.Message);
             }
         }
     }

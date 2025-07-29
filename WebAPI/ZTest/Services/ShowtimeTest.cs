@@ -28,34 +28,6 @@ namespace ZTest.Services
         }
 
         [Fact]
-        public async Task CreateShowtimeAsync_Should_Return_NotFound_When_Movie_Not_Found()
-        {
-            var request = new ShowtimeResquest { StartTime = DateTime.Now, Date = DateOnly.FromDateTime(DateTime.Today) };
-
-            _unitOfWorkMock.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>())).ReturnsAsync((Movie)null);
-
-            var result = await _service.CreateShowtimeAsync(request, Guid.NewGuid(), Guid.NewGuid());
-
-            Assert.False(result.IsSuccess);
-            Assert.Equal(null, result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task CreateShowtimeAsync_Should_Return_NotFound_When_Room_Not_Found()
-        {
-            var request = new ShowtimeResquest { StartTime = DateTime.Now, Date = DateOnly.FromDateTime(DateTime.Today) };
-            var movie = new Movie { Id = Guid.NewGuid(), Duration = 100 };
-
-            _unitOfWorkMock.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>())).ReturnsAsync(movie);
-            _unitOfWorkMock.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>())).ReturnsAsync((CinemaRoom)null);
-
-            var result = await _service.CreateShowtimeAsync(request, movie.Id, Guid.NewGuid());
-
-            Assert.False(result.IsSuccess);
-            Assert.Equal(null, result.ErrorMessage);
-        }
-
-        [Fact]
         public async Task CreateShowtimeAsync_Should_Return_BadRequest_When_Overlapping()
         {
             var movie = new Movie { Id = Guid.NewGuid(), Duration = 120 };

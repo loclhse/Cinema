@@ -30,12 +30,12 @@ namespace Application.Services
                 var genre = _mapper.Map<Genre>(genreRequest);
                 if (genre == null)
                 {
-                    return resp.SetBadRequest("Enter Data please!!!");
+                    return resp.SetBadRequest(null, "Enter Data please!!!");
                 }
                 var checkGere = await _uow.GenreRepo.GetAsync(x => x.Name == genre.Name && !x.IsDeleted);
                 if (checkGere != null)
                 {
-                    return resp.SetBadRequest("Genre already exists!!!");
+                    return resp.SetBadRequest(null, "Genre already exists!!!");
                 }
                 await _uow.GenreRepo.AddAsync(genre);
                 await _uow.SaveChangesAsync();
@@ -44,7 +44,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -56,7 +56,7 @@ namespace Application.Services
                 var genre = await _uow.GenreRepo.GetAsync(x => x.Id == id);
                 if (genre == null)
                 {
-                    return resp.SetNotFound("Genre not found!!!");
+                    return resp.SetNotFound(null, "Genre not found!!!");
                 }
                 genre.IsDeleted = true;
                 await _uow.SaveChangesAsync();
@@ -65,7 +65,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -78,13 +78,13 @@ namespace Application.Services
                 var genreDtos = _mapper.Map<List<GenreResponse>>(genres);
                 if (!genreDtos.Any())
                 {
-                    return resp.SetNotFound("No genres found.");
+                    return resp.SetNotFound(null, "No genres found.");
                 }
                 return resp.SetOk(genreDtos);
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -96,14 +96,14 @@ namespace Application.Services
                 var genre = await _uow.GenreRepo.GetAsync(x => x.Id == id && x.IsDeleted != true);
                 if (genre == null)
                 {
-                    return resp.SetNotFound("Genre does not exist!!");
+                    return resp.SetNotFound(null, "Genre does not exist!!");
                 }
                 var genreDto = _mapper.Map<GenreResponse>(genre);
                 return resp.SetOk(genreDto);
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
@@ -115,12 +115,12 @@ namespace Application.Services
                 var genre = await _uow.GenreRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
                 if (genre == null)
                 {
-                    return resp.SetNotFound(message: "Genre does not exist!!");
+                    return resp.SetNotFound(null, "Genre does not exist!!");
                 }
                 var checkGere = await _uow.GenreRepo.GetAsync(x => x.Name == genreRequest.Name && x.IsDeleted != true && genre.Name != x.Name);
                 if (checkGere != null)
                 {
-                    return resp.SetBadRequest("Genre already exists!!!");
+                    return resp.SetBadRequest(null, "Genre already exists!!!");
                 }
                 _mapper.Map(genreRequest, genre);
                 await _uow.SaveChangesAsync();
@@ -129,7 +129,7 @@ namespace Application.Services
             }
             catch (Exception ex)
             {
-                return resp.SetBadRequest(ex.Message);
+                return resp.SetBadRequest(null, ex.Message);
             }
         }
 
