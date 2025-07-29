@@ -5,7 +5,7 @@ stages:
   - test
   - deploy
 
-# Định nghĩa các biến môi trường global
+# Định nghĩa các biến môi trường glbal
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
