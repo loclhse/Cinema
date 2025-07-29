@@ -25,8 +25,6 @@ stages:
 # Restore and build the .NET solution
 build-job:
   stage: build
-  tags:
-    - deploy
   before_script:
     - echo "Configuring Git authentication..."
     - |
@@ -69,8 +67,6 @@ build-job:
 # Run unit tests
 unit-test-job:
   stage: test
-  tags:
-    - deploy
   dependencies:
     - build-job
   script:
@@ -92,8 +88,6 @@ unit-test-job:
 # Code quality and linting
 lint-test-job:
   stage: test
-  tags:
-    - deploy
   dependencies:
     - build-job
   script:
