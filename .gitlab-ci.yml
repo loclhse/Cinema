@@ -24,8 +24,7 @@ unit-tests:
   tags:
     - cicd
   before_script:
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git/".insteadOf "https://git.fa.edu.vn/"
   script:
     - echo "=== Running Unit Tests ==="
     - echo "Current directory:"
