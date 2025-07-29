@@ -47,9 +47,9 @@ namespace ZTest.Services
             var result = await _sut.CreateGenreAsync(genreRequest);
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, result.StatusCode); // Check if the StatusCode is OK (200)
-            Assert.True(result.IsSuccess); // Check if the operation was successful
-            Assert.Null(result.ErrorMessage); // Check if there's no error message
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.True(result.IsSuccess);
+            Assert.Null(result.ErrorMessage);
             _uow.Verify(u => u.GenreRepo.AddAsync(genre), Times.Once);
             _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
@@ -96,10 +96,10 @@ namespace ZTest.Services
             var result = await _sut.DeleteGenreAsync(genre.Id);
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, result.StatusCode); // Check if the StatusCode is OK (200)
-            Assert.True(result.IsSuccess); // Check if the operation was successful
-            Assert.Null(result.ErrorMessage); // Check if there's no error message
-            Assert.True(genre.IsDeleted); // Ensure the genre is marked as deleted
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.True(result.IsSuccess);
+            Assert.Null(result.ErrorMessage);
+            Assert.True(genre.IsDeleted);
             _uow.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
@@ -136,10 +136,10 @@ namespace ZTest.Services
             var result = await _sut.GetAllGenresAsync();
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, result.StatusCode); // Check if the StatusCode is OK (200)
-            Assert.True(result.IsSuccess); // Check if the operation was successful
-            Assert.Null(result.ErrorMessage); // Check if there's no error message
-            Assert.Equal(response, result.Result); // Check if the returned result matches the expected response
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.True(result.IsSuccess);
+            Assert.Null(result.ErrorMessage);
+            Assert.Equal(response, result.Result);
         }
 
         [Fact]
@@ -161,17 +161,15 @@ namespace ZTest.Services
             Assert.Equal("fail", result.ErrorMessage);
         }
 
-        /* ---------- Tests for UpdateGenreAsync ---------- */
-
+        /* Test UpdateGenreAsync */
         [Fact]
         public async Task UpdateGenreAsync_ExistingGenreUniqueName_ShouldUpdateSuccessfully()
         {
             // Arrange
             var genreId = Guid.NewGuid();
             var existingGenre = new Genre { Id = genreId, Name = "Action", IsDeleted = false };
-            var updateRequest = new GenreRequest { Name = "Adventure" };   // tên mới, không trùng
+            var updateRequest = new GenreRequest { Name = "Adventure" };
 
-            // Lần gọi 1: tìm đúng Genre theo Id   |  Lần gọi 2: kiểm tra tên trùng (null → không trùng)
             _uow.SetupSequence(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
                 .ReturnsAsync(existingGenre)
                 .ReturnsAsync((Genre)null);
@@ -197,7 +195,6 @@ namespace ZTest.Services
             var genreId = Guid.NewGuid();
             var updateRequest = new GenreRequest { Name = "Comedy" };
 
-            // Không tìm thấy Genre theo Id
             _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
                 .ReturnsAsync((Genre)null);
 
@@ -218,7 +215,7 @@ namespace ZTest.Services
             var genreId = Guid.NewGuid();
             var existingGenre = new Genre { Id = genreId, Name = "Action", IsDeleted = false };
             var updateRequest = new GenreRequest { Name = "Adventure" };
-            _uow.SetupSequence(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>() ))
+            _uow.SetupSequence(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
                 .ReturnsAsync(existingGenre)
                 .ReturnsAsync(new Genre { Name = "Adventure" });
             var resp = await _sut.UpdateGenreAsync(genreId, updateRequest);
@@ -236,24 +233,61 @@ namespace ZTest.Services
             Assert.Equal("fail", resp.ErrorMessage);
         }
 
+        /* Test GetGenresAsync */
         [Fact]
-        public async Task GetGenresAsync_ShouldReturnNotFound_WhenNotFound()
+        public async Task GetGenresAsync_Should_Return_NotFound_When_Genre_Does_Not_Exist()
         {
-            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).ReturnsAsync((Genre)null);
-            var result = await _sut.GetGenresAsync(Guid.NewGuid());
+            // Arrange
+            var genreId = Guid.NewGuid();
+
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ReturnsAsync((Genre)null);
+
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("Genre does not exist!!", result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
         }
 
         [Fact]
-        public async Task GetGenresAsync_ShouldReturnBadRequest_OnException()
+        public async Task GetGenresAsync_Should_Return_BadRequest_When_Exception_Occurs()
         {
-            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>())).Throws(new Exception("fail"));
-            var result = await _sut.GetGenresAsync(Guid.NewGuid());
+            // Arrange
+            var genreId = Guid.NewGuid();
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
+            Assert.Equal("Database error", result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
         }
 
+        [Fact]
+        public async Task GetGenresAsync_Should_Return_Ok_When_Genre_Exists()
+        {
+            // Arrange
+            var genreId = Guid.NewGuid();
+            var genre = new Genre { Id = genreId, Name = "Action" };
+            var genreResponse = new GenreResponse { Id = genreId, Name = "Action" };
 
+            _uow.Setup(u => u.GenreRepo.GetAsync(It.IsAny<Expression<Func<Genre, bool>>>()))
+                .ReturnsAsync(genre);
+            _mapper.Setup(m => m.Map<GenreResponse>(genre)).Returns(genreResponse);
+
+            // Act
+            var result = await _sut.GetGenresAsync(genreId);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.Result);
+            Assert.Equal(genreResponse, result.Result);
+        }
     }
 }

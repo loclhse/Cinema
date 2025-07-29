@@ -117,7 +117,7 @@ namespace Application.Services
                 {
                     return resp.SetNotFound(null, "Genre does not exist!!");
                 }
-                var checkGere = await _uow.GenreRepo.GetAsync(x => x.Name == genreRequest.Name && x.IsDeleted != true);
+                var checkGere = await _uow.GenreRepo.GetAsync(x => x.Name == genreRequest.Name && x.IsDeleted != true && genre.Name != x.Name);
                 if (checkGere != null)
                 {
                     return resp.SetBadRequest(null, "Genre already exists!!!");

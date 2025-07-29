@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using static Application.IServices.IUserService;
@@ -194,6 +195,290 @@ namespace ZTest.Services
             var result = await _service.SearchIsDeleteEmployees("123", SearchKey.IdentityCard);
 
             Assert.False(result.IsSuccess);
+        }
+        [Fact]
+        public async Task GetAllEmployeesAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetAllEmployeesAsync();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetEmployeeByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetEmployeeByIdAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteEmployeeAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetEmployeeAccountAsync(id))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.DeleteEmployeeAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateEmployeeAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var req = new EmployeeUpdateResquest();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetEmployeeAccountAsync(id))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.UpdateEmployeeAsync(id, req);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllCustomersAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetAllCustomersAsync();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetCustomerByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetCustomerAccountAsync(id))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetCustomerByIdAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteCustomerAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetCustomerAccountAsync(id))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.DeleteCustomerAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateCustomerAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var req = new CustomerUpdateResquest();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetCustomerAccountAsync(id))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.UpdateCustomerAsync(id, req);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchCustomers_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.SearchCustomers("123", SearchKey.PhoneNumber);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchEmployees_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsAsync())
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.SearchEmployees("123", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetDeletedAccountsAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsDeletedAsync())
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetDeletedAccountsAsync();
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task RestoreAccountAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Employee))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.RestoreAccountAsync(id);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchIsDeleteEmployees_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsDeletedAsync())
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.SearchIsDeleteEmployees("123", SearchKey.IdentityCard);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+        [Fact]
+        public async Task SearchCustomers_Should_Return_BadRequest_When_InvalidSearchKey()
+        {
+            // Arrange
+            var searchKey = (SearchKey)999; // Invalid search key
+
+            // Act
+            var result = await _service.SearchCustomers("value", searchKey);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchCustomers_Should_Return_NotFound_When_NoMatches()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ReturnsAsync(new List<DomainUser>());
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllCustomerAccountsAsync())
+                .ReturnsAsync(new List<AppUser>()); // No customers found
+
+            // Act
+            var result = await _service.SearchCustomers("nonexistent", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchEmployees_Should_Return_NotFound_When_NoMatches()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsAsync())
+                .ReturnsAsync(new List<AppUser>()); // No employees found
+
+            // Act
+            var result = await _service.SearchEmployees("nonexistent", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchEmployees_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetAllEmployeeAccountsAsync())
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _service.SearchEmployees("123", SearchKey.Name);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task SearchCustomers_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _unitOfWorkMock.Setup(u => u.UserRepo.GetIdentityUsersByRoleAsync(RoleNames.Customer))
+                .ThrowsAsync(new Exception("Database error")); // Simulate exception
+
+            // Act
+            var result = await _service.SearchCustomers("123", SearchKey.PhoneNumber);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
         }
     }
 }

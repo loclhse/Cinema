@@ -41,11 +41,11 @@ namespace Application.Services
                         var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
                         if (scoreItem == null)
                         {
-                            return apiResp.SetNotFound();
+                            return apiResp.SetNotFound(message: "Score item not found");
                         }
                         if (item.Quantity > scoreItem.Quantity)
                         {
-                            return apiResp.SetBadRequest("The items are not enought for you to exchange!!!");
+                            return apiResp.SetBadRequest(message: "The items are not enought for you to exchange!!!");
                         }
                         redeem.ScoreOrders.Add(new ScoreOrder
                         {
@@ -75,7 +75,7 @@ namespace Application.Services
                 var ItemNames = await _unitOfWork.redeemRepo.GetItemNamesByRedeemId(redeemId);
                 if (redeem == null)
                 {
-                    return apiResp.SetNotFound(null, "Redeem not found");
+                    return apiResp.SetNotFound(message: "Redeem not found");
                 }
                 var redeemResponse = _mapper.Map<RedeemResponse>(redeem);
                 redeemResponse.ItemNames = ItemNames;
@@ -96,7 +96,7 @@ namespace Application.Services
                 var rs = new List<RedeemResponse>();
                 if (redeems == null || !redeems.Any())
                 {
-                    return apiResp.SetNotFound(null, "No redeems found for this account");
+                    return apiResp.SetNotFound(message: "No redeems found for this account");
                 }
                 foreach (var redeem in redeems)
                 {
@@ -121,7 +121,7 @@ namespace Application.Services
                 var rs = new List<RedeemResponse>();
                 if (redeems == null || !redeems.Any())
                 {
-                    return apiResp.SetNotFound(null, "No redeems found for this account");
+                    return apiResp.SetNotFound(message: "No redeems found for this account");
                 }
                 foreach (var redeem in redeems)
                 {
@@ -147,7 +147,7 @@ namespace Application.Services
                 var rs = new List<RedeemResponse>();
                 if (redeems == null || !redeems.Any())
                 {
-                    return apiResp.SetNotFound(null, "No redeems found");
+                    return apiResp.SetNotFound(message: "No redeems found");
                 }
                 foreach (var redeem in redeems)
                 {
@@ -172,7 +172,7 @@ namespace Application.Services
                 var redeem = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == id && !x.IsDeleted);
                 if (redeem == null)
                 {
-                    return apiResp.SetNotFound(null, "Redeem not found");
+                    return apiResp.SetNotFound(message: "Redeem not found");
                 }
                 redeem.status = ScoreStatus.cancelled;
                 await _unitOfWork.SaveChangesAsync();
@@ -192,7 +192,7 @@ namespace Application.Services
                 var redeem = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == redeemId && !x.IsDeleted);
                 if (redeem == null)
                 {
-                    return apiResp.SetNotFound(null, "Redeem not found");
+                    return apiResp.SetNotFound(message: "Redeem not found");
                 }
                 redeem.ScoreOrders.Clear();
                 redeem.TotalScore = 0;
@@ -201,11 +201,11 @@ namespace Application.Services
                         var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
                         if (scoreItem == null)
                         {
-                            return apiResp.SetNotFound(null, "Score item not found");
+                            return apiResp.SetNotFound(message: "Score item not found");
                         }
                         if (item.Quantity > scoreItem.Quantity)
                         {
-                            return apiResp.SetBadRequest(null, "The items are not enough for you to exchange!!!");
+                            return apiResp.SetBadRequest(message: "The items are not enough for you to exchange!!!");
                         }
                         await _unitOfWork.ScoreOrderRepo.AddAsync(new ScoreOrder
                         {
@@ -237,11 +237,11 @@ namespace Application.Services
                 var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == userId && !u.IsDeleted);
                 if (userScore == null)
                 {
-                    return apiResp.SetNotFound(null, "User not found");
+                    return apiResp.SetNotFound(message: "Redeem not found or already processed");
                 }
                 if (userScore.Score < order.TotalScore)
                 {
-                    return apiResp.SetBadRequest(null, "Your score is not enough!");
+                    return apiResp.SetBadRequest(message: "Your score is not enough!");
                 }
                 order.status = ScoreStatus.paid;
                foreach(var item in order.ScoreOrders)
@@ -249,16 +249,23 @@ namespace Application.Services
                     var scoreItem = await _unitOfWork.ScoreItemRepo.GetByIdAsync(item.ScoreItemId);
                     if (scoreItem == null)
                     {
-                        return apiResp.SetNotFound(null, "Score item not found");
+                        return apiResp.SetNotFound(message: "Score item not found");
                     }
                     scoreItem.Quantity -= item.Quantity;
                     if (scoreItem.Quantity < 0)
                     {
-                        return apiResp.SetBadRequest("The items are not enough for you to exchange!!!");
+                        return apiResp.SetBadRequest(message: "The items are not enough for you to exchange!!!");
                     }
                     await _unitOfWork.ScoreItemRepo.UpdateAsync(scoreItem);
                 }
                 userScore.Score -= order.TotalScore;
+                var ScoreLog = new ScoreLog
+                {
+                    UserId = userId,
+                    PointsChanged = $"-{order.TotalScore}",
+                    ActionType = "Redeemed items from shop",
+                };
+                await _unitOfWork.ScoreLogRepo.AddAsync(ScoreLog);
                 await _unitOfWork.UserRepo.UpdateAsync(userScore);
                 await _unitOfWork.SaveChangesAsync();
                 return apiResp.SetOk("Redeem successful!");

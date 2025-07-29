@@ -1,19 +1,20 @@
-﻿using Xunit;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Application.Services;
+﻿using Application;
+using Application.Common;
+using Application.IRepos;
 using Application.IServices;
+using Application.Services;
 using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
-using Application.IRepos;
-using Application.Common;
-using Application;
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Storage;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace UnitTests.Services
 {
@@ -135,5 +136,131 @@ namespace UnitTests.Services
             // Assert
             Assert.Empty(result);
         }
+        [Fact]
+        public async Task HoldSeatAsync_ShouldHoldSeatsSuccessfully()
+        {
+            // Arrange
+            var showtimeId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var connectionId = "conn1";
+            var seatIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var now = DateTime.UtcNow;
+
+            var seats = seatIds.Select(id => new SeatSchedule
+            {
+                Id = id,
+                ShowtimeId = showtimeId,
+                Status = SeatBookingStatus.Available
+            }).ToList();
+
+            _mockSeatScheduleRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(seats);
+
+            _mockUow.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(Mock.Of<IDbContextTransaction>());
+
+            _mockUow.Setup(u => u.SaveChangesAsync())
+                .ReturnsAsync(1);
+
+            _mockMapper.Setup(m => m.Map<List<SeatScheduleResponse>>(It.IsAny<List<SeatSchedule>>()))
+                .Returns(seats.Select(s => new SeatScheduleResponse { Id = s.Id }).ToList());
+
+            // Act
+            var result = await _service.HoldSeatAsync(showtimeId, seatIds, userId, connectionId);
+
+            // Assert
+            Assert.NotEmpty(result);
+            Assert.All(result, r => Assert.Contains(r.Id, seatIds));
+        }
+        [Fact]
+        public async Task ConfirmSeatAsync_ShouldUpdateSeatsToBooked()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var seatIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+
+            var seats = seatIds.Select(id => new SeatSchedule
+            {
+                Id = id,
+                Status = SeatBookingStatus.Hold,
+                HoldByUserId = userId
+            }).ToList();
+
+            _mockSeatScheduleRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(seats);
+
+            _mockUow.Setup(u => u.SaveChangesAsync())
+                .ReturnsAsync(1);
+
+            // Act
+            var result = await _service.ConfirmSeatAsync(seatIds, userId);
+
+            // Assert
+            Assert.True(result.Succeeded);
+            _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        }
+        [Fact]
+        public async Task CancelHoldAsync_ShouldReleaseHeldSeats()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var seatIds = new List<Guid> { Guid.NewGuid() };
+
+            var seats = seatIds.Select(id => new SeatSchedule
+            {
+                Id = id,
+                Status = SeatBookingStatus.Hold,
+                HoldByUserId = userId
+            }).ToList();
+
+            _mockSeatScheduleRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(seats);
+
+            _mockUow.Setup(u => u.SaveChangesAsync())
+                .ReturnsAsync(1);
+
+            // Act
+            var result = await _service.CancelHoldAsync(seatIds, userId);
+
+            // Assert
+            Assert.True(result.Succeeded);
+            Assert.All(seats, s => Assert.Equal(SeatBookingStatus.Available, s.Status));
+        }
+        [Fact]
+        public async Task GetShowTimeBySeatScheduleAsync_ReturnsNull_WhenSeatScheduleNotFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _mockUow.Setup(u => u.SeatScheduleRepo.GetAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync((SeatSchedule)null);
+
+            // Act
+            var result = await _service.GetShowTimeBySeatScheduleAsync(id);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetShowTimeBySeatScheduleAsync_ReturnsMappedResponse_WhenSeatScheduleFound()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var seatSchedule = new SeatSchedule { Id = id, /* other properties */ };
+            var mappedResponse = new SeatScheduleResponse { Id = id, /* other properties */ };
+
+            _mockUow.Setup(u => u.SeatScheduleRepo.GetAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(seatSchedule);
+            _mockMapper.Setup(m => m.Map<SeatScheduleResponse>(seatSchedule)).Returns(mappedResponse);
+
+            // Act
+            var result = await _service.GetShowTimeBySeatScheduleAsync(id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(mappedResponse.Id, result.Id);
+            // Add more assertions for other properties if needed
+        }
+
     }
 }

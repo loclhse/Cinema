@@ -1,13 +1,6 @@
 ﻿// OrderServiceTests.cs – revised to compile with actual repo interfaces & FluentAssertions
 // Achieves >80% coverage against Application.Services.OrderService
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Application;
 using Application.IRepos;
 using Application.Services;
@@ -17,9 +10,17 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentAssertions;
+using MailKit.Search;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ZTest.Services
@@ -318,6 +319,305 @@ namespace ZTest.Services
             var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, Guid.NewGuid(), Guid.NewGuid());
             resp.IsSuccess.Should().BeFalse();
             resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+        [Fact]
+        public async Task CreateTicketOrder_Should_Return_BadRequest_WhenPromotionNotFound()
+        {
+            // Arrange
+            var request = new OrderRequest { PromotionId = Guid.NewGuid() };
+            _uow.Setup(u => u.PromotionRepo.GetPromotionById(It.IsAny<Guid>()))
+                .ReturnsAsync((Promotion)null); // Giả lập không tìm thấy khuyến mãi
+
+            // Act
+            var result = await _sut.CreateTicketOrder(request);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+        }
+        [Fact]
+        public async Task CreateTicketOrder_Should_Return_BadRequest_WhenSeatNotFound()
+        {
+            // Arrange
+            var request = new OrderRequest { SeatScheduleId = new List<Guid> { Guid.NewGuid() } };
+            _uow.Setup(u => u.SeatScheduleRepo.GetAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync((SeatSchedule)null); // Không tìm thấy ghế
+
+            // Act
+            var result = await _sut.CreateTicketOrder(request);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+        }
+        [Fact]
+        public async Task HoldSeatAsync_Should_Return_Empty_WhenNoSeatsFound()
+        {
+            // Arrange
+            var seatIds = new List<Guid> { Guid.NewGuid() };
+            _uow.Setup(u => u.SeatScheduleRepo.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(new List<SeatSchedule>()); // Không tìm thấy ghế
+
+            // Act
+            var result = await _sut.HoldSeatAsync(seatIds, Guid.NewGuid(), null);
+
+            // Assert
+            result.Should().BeEmpty(); // Kết quả phải rỗng
+        }
+        [Fact]
+        public async Task CancelTicketOrder_Should_Return_NotFound_WhenOrderNotFound()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync((Order)null); // Không tìm thấy đơn hàng
+
+            // Act
+            var result = await _sut.CancelTicketOrderById(new List<Guid>(), orderId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+        }
+        [Fact]
+        public async Task SuccessOrder_Should_Return_NotFound_WhenOrderNotFound()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync((Order)null); // Không tìm thấy đơn hàng
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, Guid.NewGuid());
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Not found Order");
+        }
+        [Fact]
+        public async Task SuccessOrder_Should_Return_NotFound_WhenUserNotFound()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var order = new Order { Id = orderId, Status = OrderEnum.Pending };
+
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync(order); // Giả lập tìm thấy đơn hàng
+            _uow.Setup(u => u.UserRepo.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((AppUser)null); // Không tìm thấy người dùng
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Not found User");
+        }
+
+
+        [Fact]
+        public async Task ViewTicketOrderByUserId_Should_Return_EmptyList_WhenNoOrdersFoundForUser()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            _uow.Setup(u => u.OrderRepo.GetAllAsync(It.IsAny<Expression<Func<Order, bool>>>(), It.IsAny<Func<IQueryable<Order>, IIncludableQueryable<Order, object>>>()))
+                .ReturnsAsync(new List<Order>()); // Giả lập không có đơn hàng nào cho user
+
+            // Act
+            var result = await _sut.ViewTicketOrderByUserId(userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            result.Result.Should().BeOfType<List<OrderResponse>>(); // Kết quả phải là danh sách rỗng
+        }
+        [Fact]
+        public async Task ViewTicketOrderByUserId_Should_Return_BadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            _uow.Setup(u => u.OrderRepo.GetAllAsync(It.IsAny<Expression<Func<Order, bool>>>(), It.IsAny<Func<IQueryable<Order>, IIncludableQueryable<Order, object>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Gây ra ngoại lệ
+
+            // Act
+            var result = await _sut.ViewTicketOrderByUserId(userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Database error");
+        }
+        [Fact]
+        public async Task ViewTicketOrder_Should_Return_Orders_When_Orders_Exist()
+        {
+            // Arrange
+            var orders = new List<Order>
+    {
+        new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            PaymentMethod = PaymentMethod.Cash,
+            OrderTime = DateTime.UtcNow,
+            TotalAmount = 100,
+            Status = OrderEnum.Pending,
+            SeatSchedules = new List<SeatSchedule>
+            {
+                new SeatSchedule { Id = Guid.NewGuid() }
+            },
+            SnackOrders = new List<SnackOrder>
+            {
+                new SnackOrder { Id = Guid.NewGuid(), SnackId = Guid.NewGuid(), Quantity = 2 }
+            }
+        }
+    };
+
+            _uow.Setup(u => u.OrderRepo.GetAllOrderAsync(It.IsAny<Expression<Func<Order, object>>>(), It.IsAny<Expression<Func<Order, object>>>()))
+                .ReturnsAsync(orders);
+
+            // Act
+            var result = await _sut.ViewTicketOrder();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            result.Result.Should().NotBeNull();
+            result.Result.Should().BeOfType<List<OrderResponse>>();
+            var orderResponses = result.Result as List<OrderResponse>;
+            orderResponses.Should().HaveCount(1);
+            orderResponses[0].Id.Should().Be(orders[0].Id);
+            orderResponses[0].UserId.Should().Be(orders[0].UserId);
+        }
+
+        [Fact]
+        public async Task ViewTicketOrder_Should_Return_BadRequest_When_Exception_Occurs()
+        {
+            // Arrange
+            _uow.Setup(u => u.OrderRepo.GetAllOrderAsync(It.IsAny<Expression<Func<Order, object>>>(), It.IsAny<Expression<Func<Order, object>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Simulate a database error
+
+            // Act
+            var result = await _sut.ViewTicketOrder();
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Database error");
+        }
+        [Fact]
+        public async Task SuccessOrder_Should_Return_NotFound_When_Order_Not_Found()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync((Order)null); // Simulate order not found
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Not found Order");
+        }
+
+        [Fact]
+        public async Task SuccessOrder_Should_Return_NotFound_When_SeatScheduleIds_Empty()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var order = new Order { Id = orderId, TotalAmount = 100, Status = OrderEnum.Pending };
+
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync(order); // Simulate finding the order
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Not found");
+        }
+
+        [Fact]
+        public async Task SuccessOrder_Should_Update_Seat_Schedules_When_Successful()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var seatScheduleId = Guid.NewGuid();
+            var order = new Order { Id = orderId, TotalAmount = 100, Status = OrderEnum.Pending };
+
+            var seatSchedule = new SeatSchedule { Id = seatScheduleId, Status = SeatBookingStatus.Available };
+
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync(order); // Simulate finding the order
+            _uow.Setup(u => u.SeatScheduleRepo.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(new List<SeatSchedule> { seatSchedule }); // Simulate finding seat schedules
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid> { seatScheduleId }, orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            seatSchedule.Status.Should().Be(SeatBookingStatus.Booked); // Verify that the seat status is updated
+            _uow.Verify(u => u.SeatScheduleRepo.UpdateAsync(It.IsAny<SeatSchedule>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SuccessOrder_Should_Return_NotFound_When_User_Not_Found()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var order = new Order { Id = orderId, TotalAmount = 100, Status = OrderEnum.Pending };
+
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync(order); // Simulate finding the order
+            _uow.Setup(u => u.SeatScheduleRepo.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(new List<SeatSchedule> { new SeatSchedule { Id = Guid.NewGuid(), Status = SeatBookingStatus.Available } }); // Simulate finding seat schedules
+            _uow.Setup(u => u.UserRepo.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((AppUser)null); // Simulate user not found
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            result.IsSuccess.Should().BeFalse();
+            result.Result.Should().Be("Not found User");
+        }
+
+        [Fact]
+        public async Task SuccessOrder_Should_Add_Points_To_User_When_TotalAmount_Greater_Than_Zero()
+        {
+            // Arrange
+            var orderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var order = new Order { Id = orderId, TotalAmount = 100, Status = OrderEnum.Pending };
+            var user = new AppUser { Id = userId, Score = 0 };
+
+            _uow.Setup(u => u.OrderRepo.GetAsync(It.IsAny<Expression<Func<Order, bool>>>()))
+                .ReturnsAsync(order); // Simulate finding the order
+            _uow.Setup(u => u.SeatScheduleRepo.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>()))
+                .ReturnsAsync(new List<SeatSchedule> { new SeatSchedule { Id = Guid.NewGuid(), Status = SeatBookingStatus.Available } }); // Simulate finding seat schedules
+            _uow.Setup(u => u.UserRepo.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(user); // Simulate finding the user
+
+            // Act
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+
+            // Assert
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+            result.IsSuccess.Should().BeTrue();
+            user.Score.Should().Be(100); // Verify that points were added to the user's score
         }
     }
 }
