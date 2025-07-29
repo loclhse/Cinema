@@ -4,7 +4,7 @@ stages:
   - deploy
 
 variables:
-  TARGET_BRANCH: "CI/CD"
+  TARGET_BRANCH: "CICD"
   # Docker configuration
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
