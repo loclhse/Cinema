@@ -1,7 +1,180 @@
-test-runner:
-  stage: prepare
+# GitLab CI/CD Pipeline Configuration
+# Định nghĩa các stage của pipeline
+stages:
+  - build
+  - test
+  - deploy
+
+# Định nghĩa các biến môi trường global
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  NODE_VERSION: "18"
+  BRANCH_NAME: "CICD"
+
+# Cache để tăng tốc build
+cache:
+  paths:
+    - node_modules/
+    - .npm/
+    - target/
+    - .m2/repository/
+
+# Stage 1: Build
+build_job:
+  stage: build
+  image: node:18-alpine
+  before_script:
+    - echo "Starting build process..."
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "Building application..."
+    - npm run build
+    - echo "Build completed successfully"
+  artifacts:
+    paths:
+      - dist/
+      - build/
+    expire_in: 1 hour
+  only:
+    - branches
+  except:
+    - tags
+
+# Stage 2: Test
+test_unit:
+  stage: test
+  image: node:18-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "Running unit tests..."
+    - npm run test:unit
+    - echo "Unit tests completed"
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 1 day
+  only:
+    - branches
+
+test_lint:
+  stage: test
+  image: node:18-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - echo "Running code linting..."
+    - npm run lint
+    - echo "Linting completed"
+  allow_failure: true
+  only:
+    - branches
+
+# Stage 3: Deploy to CICD branch
+deploy_to_cicd:
+  stage: deploy
+  image: alpine/git:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to CICD environment..."
+    - git config --global user.email "ci@company.com"
+    - git config --global user.name "GitLab CI"
+    - git remote add deploy $DEPLOY_REPOSITORY || true
+    - git checkout -B $BRANCH_NAME
+    - git add .
+    - git commit -m "Deploy from CI/CD pipeline - $(date)" || echo "No changes to commit"
+    - git push deploy $BRANCH_NAME --force
+    - echo "Deployment to CICD branch completed"
+  environment:
+    name: cicd
+    url: https://cicd.yourapp.com
+  when: manual
+  only:
+    - main
+    - develop
+
+# Deploy với Docker (tùy chọn)
+deploy_docker:
+  stage: deploy
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:cicd
+    - echo "Pushing Docker image..."
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:cicd
+    - echo "Deploying to CICD environment..."
+    - |
+      ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER << 'EOF'
+        docker pull $CI_REGISTRY_IMAGE:cicd
+        docker stop cicd-app || true
+        docker rm cicd-app || true
+        docker run -d --name cicd-app -p 80:3000 $CI_REGISTRY_IMAGE:cicd
+      EOF
+    - echo "Docker deployment completed"
+  environment:
+    name: cicd-docker
+    url: https://cicd-docker.yourapp.com
+  when: manual
+  only:
+    - main
+
+# Job để cleanup artifacts cũ
+cleanup:
+  stage: .post
   image: alpine:latest
   script:
-    - echo "Runner iskk working!"
-    - whoami
-    - pwd
+    - echo "Cleaning up temporary files..."
+    - rm -rf temp/
+    - echo "Cleanup completed"
+  when: always
+
+# Job để thông báo kết quả
+notify_success:
+  stage: .post
+  image: alpine:latest
+  script:
+    - echo "Pipeline completed successfully!"
+    - echo "Deployment to CICD branch: $BRANCH_NAME"
+    - echo "Commit: $CI_COMMIT_SHA"
+    - echo "Branch: $CI_COMMIT_REF_NAME"
+    # Có thể thêm webhook để gửi thông báo Slack/Teams
+  when: on_success
+  only:
+    - main
+    - develop
+
+notify_failure:
+  stage: .post
+  image: alpine:latest
+  script:
+    - echo "Pipeline failed!"
+    - echo "Please check the logs for details"
+    # Có thể thêm webhook để gửi thông báo lỗi
+  when: on_failure
+
+# Rules để control khi nào pipeline chạy
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH =~ /^feature\/.*$/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
