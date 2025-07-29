@@ -9,7 +9,7 @@ variables:
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
   GIT_USERNAME: "fsa_HongTL"
-  GIT_STRATEGY: clone
+  GIT_STRATEGY: none
 
 # Default configuration for all jobs
 default:
@@ -31,6 +31,11 @@ unit-tests:
     - echo "Configuring Git authentication..."
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git/".insteadOf "https://git.fa.edu.vn/"
     - echo "Git authentication configured successfully"
+    - echo "Git strategy: ${GIT_STRATEGY}"
+    - echo "=== Cloning repository manually after authentication ==="
+    - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
+    - git checkout ${CI_COMMIT_SHA}
+    - echo "Repository cloned successfully"
   script:
     - echo "=== Running Unit Tests ==="
     - echo "Current directory:"
@@ -73,6 +78,11 @@ code-quality:
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
     - echo "Git authentication configured successfully"
+    - echo "Git strategy: ${GIT_STRATEGY}"
+    - echo "=== Cloning repository manually after authentication ==="
+    - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
+    - git checkout ${CI_COMMIT_SHA}
+    - echo "Repository cloned successfully"
   script:
     - echo "=== Code Quality Analysis ==="
     - echo "Current directory:"
@@ -108,6 +118,17 @@ docker-build:
     DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
   before_script:
     - echo "=== Docker Build Setup ==="
+    - echo "Installing git for authentication..."
+    - apk add --no-cache git
+    - echo "=== Git Authentication for Docker Build ==="
+    - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
+    - echo "Configuring Git authentication..."
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - echo "Git authentication configured successfully"
+    - echo "=== Cloning repository for Docker build ==="
+    - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
+    - git checkout ${CI_COMMIT_SHA}
+    - echo "Repository cloned successfully"
     - docker info
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
