@@ -13,7 +13,7 @@ variables:
   # Git Access Configuration
   GIT_STRATEGY: none  # Tắt GitLab auto-clone để clone manual
   GIT_DEPTH: 20
-  GIT_USERNAME: "access"  # Thay thành username GitLab của bạn
+  GIT_USERNAME: "fsa_HongTL"  # Thay thành username GitLab của bạn
   
   # These should be set in GitLab CI/CD Variables (Settings > CI/CD > Variables)
   # GIT_ACCESS_TOKEN: $GIT_ACCESS_TOKEN  # Set this in GitLab Variables
