@@ -66,7 +66,6 @@ code-quality:
     - cicd
   before_script:
     - echo "=== Debug Git Authentication ==="
-    - echo "GIT_USERNAME: ${GIT_USERNAME}"
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
