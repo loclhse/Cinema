@@ -8,14 +8,10 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
-  GIT_USERNAME: "fsa_HongTL"  # Replace with your Git username
 
 # Default configuration for all jobs
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
-  before_script:
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
 
 stages:
   - test
@@ -27,6 +23,9 @@ unit-tests:
   stage: test
   tags:
     - cicd
+  before_script:
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
   script:
     - echo "=== Running Unit Tests ==="
     - echo "Current directory:"
@@ -43,6 +42,7 @@ unit-tests:
     - echo "Building solution..."
     - dotnet build WebAPI.sln --configuration Release
     - echo "Running tests with coverage..."
+    - mkdir -p TestResults
     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
     - echo "=== Tests completed! ==="
   artifacts:
@@ -61,6 +61,9 @@ code-quality:
   stage: test
   tags:
     - cicd
+  before_script:
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
   script:
     - echo "=== Code Quality Analysis ==="
     - echo "Current directory:"
