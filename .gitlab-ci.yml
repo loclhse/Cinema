@@ -8,7 +8,6 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
-  GIT_USERNAME: "fsa_HongTL"
 
 # Default configuration for all jobs
 default:
