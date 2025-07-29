@@ -13,6 +13,8 @@ variables:
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
 
+GIT_STRATEGY: none
+
 stages:
   - connectivity
   - build
