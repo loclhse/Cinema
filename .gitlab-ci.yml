@@ -9,9 +9,8 @@ variables:
   DOCKER_IMAGE_NAME: "team03-webapi"
   DOCKER_REGISTRY: "registry.gitlab.com"
   TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
-  
-  # Git Access Configuration
-  GIT_STRATEGY: fetch  # Tắt GitLab auto-clone để clone manual
+    # Git Access Configuration
+  GIT_STRATEGY: fetch  # Để GitLab tự clone
   GIT_DEPTH: 20
   
   # These should be set in GitLab CI/CD Variables (Settings > CI/CD > Variables)
@@ -24,29 +23,8 @@ stages:
 # Restore and build the .NET solution
 build-job:
   tags:
-    - deploy
+    - docker
   stage: build
-  before_script:
-    - echo "Configuring Git authentication..."
-    - |
-      if [ -n "$GIT_ACCESS_TOKEN" ] && [ -n "$GIT_USERNAME" ]; then
-        echo "Setting up Git credentials with access token"
-        git config --global credential.helper store
-        echo "https://$GIT_USERNAME:$GIT_ACCESS_TOKEN@gitlab.com" > ~/.git-credentials
-        git config --global user.name "$GIT_USERNAME"
-        git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-          # Clone repository manually if needed
-        echo "Ensuring we have the repository code..."
-        if [ ! -d ".git" ]; then
-          echo "Cloning repository..."
-          git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
-        else
-          echo "Repository exists, updating..."
-          git fetch && git checkout $TARGET_BRANCH && git pull
-        fi
-      else
-        echo "Warning: GIT_ACCESS_TOKEN or GIT_USERNAME not set"
-      fi
   script:
     - echo "Starting .NET build process..."
     - ls -la
@@ -68,6 +46,8 @@ build-job:
 # Run unit tests
 unit-test-job:
   stage: test
+  tags:
+    - docker
   dependencies:
     - build-job
   script:
@@ -89,6 +69,8 @@ unit-test-job:
 # Code quality and linting
 lint-test-job:
   stage: test
+  tags:
+    - docker
   dependencies:
     - build-job
   script:
