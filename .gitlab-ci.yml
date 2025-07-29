@@ -1,9 +1,194 @@
-test-runner:
-  stage: prepare
+# GitLab CI/CD Pipeline for .NET 8.0 WebAPI Project
+
+# Định nghĩa các stage trong pipeline
+stages:
+  - build
+  - test
+  - docker-build
+  - deploy
+
+# Biến toàn cục
+variables:
+  DOTNET_VERSION: "8.0"
+  SOLUTION_PATH: "WebAPI/WebAPI.sln"
+  PROJECT_PATH: "WebAPI/WebAPI"
+  TEST_PROJECT_PATH: "WebAPI/ZTest"
+  DOCKER_IMAGE_NAME: "$CI_REGISTRY_IMAGE"
+  DOCKER_IMAGE_TAG: "$CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA"
+
+# Template cho .NET jobs
+.dotnet-template: &dotnet-template
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  before_script:
+    - cd WebAPI
+    - dotnet --version
+    - dotnet restore $SOLUTION_PATH
+
+# Stage 1: Build
+build:
+  <<: *dotnet-template
+  stage: build
+  script:
+    - echo "Building the application..."
+    - dotnet build $SOLUTION_PATH --configuration Release --no-restore
+    - echo "Build completed successfully"
+  artifacts:
+    paths:
+      - WebAPI/*/bin/
+      - WebAPI/*/obj/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 2: Test
+test:
+  <<: *dotnet-template
+  stage: test
+  script:
+    - echo "Running unit tests..."
+    - dotnet test $SOLUTION_PATH --configuration Release --no-build --logger trx --results-directory ./TestResults/
+    - echo "Tests completed"
+  artifacts:
+    when: always
+    paths:
+      - WebAPI/TestResults/
+    reports:
+      junit:
+        - WebAPI/TestResults/*.trx
+    expire_in: 1 week
+  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?%)/'
+  dependencies:
+    - build
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 3: Code Quality (SonarQube - Optional)
+code_quality:
+  <<: *dotnet-template
+  stage: test
+  script:
+    - echo "Running code quality analysis..."
+    # Uncomment and configure if you have SonarQube
+    # - dotnet tool install --global dotnet-sonarscanner
+    # - dotnet sonarscanner begin /k:"your-project-key" /d:sonar.host.url="$SONAR_HOST_URL" /d:sonar.login="$SONAR_TOKEN"
+    # - dotnet build $SOLUTION_PATH --configuration Release
+    # - dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+    - echo "Code quality analysis completed"
+  dependencies:
+    - build
+  allow_failure: true
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Stage 4: Docker Build
+docker_build:
+  stage: docker-build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    - cd WebAPI
+    - docker build -f WebAPI/Dockerfile -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
+    - docker build -f WebAPI/Dockerfile -t $DOCKER_IMAGE_NAME:latest .
+    - echo "Pushing Docker image to registry..."
+    - docker push $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+    - docker push $DOCKER_IMAGE_NAME:latest
+    - echo "Docker image pushed successfully"
+  dependencies:
+    - test
+  only:
+    - main
+    - develop
+
+# Stage 5: Deploy to Development
+deploy_dev:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEV_SERVER_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to development environment..."
+    - |
+      ssh $DEV_SERVER_USER@$DEV_SERVER_HOST "
+        cd $DEV_DEPLOY_PATH &&
+        docker-compose down &&
+        docker-compose pull &&
+        docker-compose up -d &&
+        docker system prune -f
+      "
+    - echo "Deployment to development completed"
+  environment:
+    name: development
+    url: $DEV_URL
+  dependencies:
+    - docker_build
+  only:
+    - develop
+  when: manual
+
+# Stage 6: Deploy to Production
+deploy_prod:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $PROD_SERVER_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to production environment..."
+    - |
+      ssh $PROD_SERVER_USER@$PROD_SERVER_HOST "
+        cd $PROD_DEPLOY_PATH &&
+        docker-compose down &&
+        docker-compose pull &&
+        docker-compose up -d &&
+        docker system prune -f
+      "
+    - echo "Deployment to production completed"
+  environment:
+    name: production
+    url: $PROD_URL
+  dependencies:
+    - docker_build
+  only:
+    - main
+  when: manual
+
+# Job cleanup sau khi pipeline hoàn thành
+cleanup:
+  stage: deploy
   image: alpine:latest
   script:
-    - echo "Runner kk is working!"
-    - whoami
-    - pwd
-  tags:
-    - deploy
+    - echo "Cleaning up temporary files..."
+    - echo "Cleanup completed"
+  when: always
+  allow_failure: true
+
+# Cache để tăng tốc build
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - WebAPI/.nuget/
+    - WebAPI/*/obj/
