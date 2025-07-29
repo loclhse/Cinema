@@ -1,54 +1,205 @@
-# This file is a template, and might need editing before it works on your project.
-# This is a sample GitLab CI/CD configuration file that should run without any modifications.
-# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
-# it uses echo commands to simulate the pipeline execution.
-#
-# A pipeline is composed of independent jobs that run scripts, grouped into stages.
-# Stages run in sequential order, but jobs within stages run in parallel.
-#
-# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
-#
-# You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-#
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/development/cicd/templates/
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
-
-stages:          # List of stages for jobs, and their order of execution
+stages:
+  - prepare
   - build
-  - test
   - deploy
+
+variables:
+  TARGET_BRANCH: "CI/CD"
+  # Docker configuration
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
   
+  # Azure configuration
+  RESOURCE_GROUP: "MovieTheater"
+  ACR_NAME: "movietheaterfsamainregistry"
+  CONTAINER_APP_NAME: "movietheater-api"
+  CONTAINER_APP_ENV: "movietheater-env"
+  IMAGE_NAME: "${ACR_NAME}.azurecr.io/movietheater-api"
+  
+  # Git configuration
+  GIT_STRATEGY: none  # Set back to fetch to let GitLab CI handle cloning
+  GIT_USERNAME: "fsa_HongTL"
 
-build-job:       # This job runs in the build stage, which runs first.
+prepare:
+  stage: prepare
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  script:
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
+    - echo "Configuring Git credentials..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GITLAB_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Testing Git authentication..."
+    - git ls-remote "https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+    - echo "Prepare stage completed successfully"
+  tags:
+    - docker
+
+build:
   stage: build
-  script:
-    - echo "Compiling the code..."
-    - echo "Compile complete."
-
-unit-test-job:   # This job runs in the test stage.
-  stage: test    # It only starts when the job in the build stage completes successfully.
-  script:
-    - echo "Running unit tests... This will take about 60 seconds."
-    - sleep 60
-    - echo "Code coverage is 90%"
-
-lint-test-job:   # This job also runs in the test stage.
-  stage: test    # It can run at the same time as unit-test-job (in parallel).
-  script:
-    - echo "Linting code... This will take about 10 seconds."
-    - sleep 10
-    - echo "No issues found."
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     
-
-deploy-job:      # This job runs in the deploy stage.
-  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
-  environment: production
+    # Clone the repository manually if needed
+    - echo "Ensuring we have the repository code..."
+    - if [ ! -d ".git" ]; then
+        git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
+      else
+        git fetch && git checkout $TARGET_BRANCH && git pull;
+      fi
+    
+    # Login to Azure Container Registry
+    - echo "Logging into Azure Container Registry..."
+    - echo "$ACR_PASSWORD" | docker login $ACR_NAME.azurecr.io --username $ACR_USERNAME --password-stdin || exit 1
   script:
-    - echo "Using token to push to GitLab..."
-    - git config --global user.email "ci@gitlab.com"
-    - git config --global user.name "CI Bot"
-    - git remote set-url origin https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git
-    - git push origin main
+    - echo "Listing repository contents..."
+    - ls -la
+    - echo "Current working directory:"
+    - pwd
+    - echo "Searching for Dockerfile..."
+    - find . -name "Dockerfile" -type f
+    # Then continue with the Docker build
+    - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  tags:
+    - docker
+
+# Deploy stage: Deploy to Azure Container Apps
+deploy:
+  stage: deploy
+  image: mcr.microsoft.com/azure-cli:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  dependencies:
+    - build
+  before_script:
+    - echo "Configuring Azure authentication..."
+    # Service Principal authentication
+    - |
+      if [[ -n "$AZURE_CLIENT_ID" && -n "$AZURE_CLIENT_SECRET" && -n "$AZURE_TENANT_ID" ]]; then
+        echo "Authenticating with Service Principal..."
+        az login --service-principal --username "$AZURE_CLIENT_ID" --password "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+        az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+        az account show
+      else
+        echo "Error: Azure Service Principal credentials required. Please set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID variables."
+        exit 1
+      fi
+    - echo "Verifying Azure resources..."
+  script:
+    # Kiểm tra resource group
+    - |
+      if ! az group show --name $RESOURCE_GROUP &>/dev/null; then
+        echo "Error: Resource group $RESOURCE_GROUP does not exist"
+        exit 1
+      fi
+    # Kiểm tra Container App environment
+    - |
+      if ! az containerapp env show --name $CONTAINER_APP_ENV --resource-group $RESOURCE_GROUP &>/dev/null; then
+        echo "Warning: Container App environment $CONTAINER_APP_ENV not found"
+      fi
+    
+    # Thiết lập thông tin đăng nhập ACR trong Container App
+    - echo "Configuring ACR credentials for Container App..."
+    - |
+      az containerapp registry set \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --server "$ACR_NAME.azurecr.io" \
+        --username "$ACR_USERNAME" \
+        --password "$ACR_PASSWORD"
+    
+    # Cập nhật Container App với image mới
+    - echo "Deploying to Azure Container Apps with image $IMAGE_NAME:$CI_COMMIT_SHA..."
+    - |
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --image "$IMAGE_NAME:$CI_COMMIT_SHA" \
+        --set-env-vars "ASPNETCORE_ENVIRONMENT=Development" "BuildVersion=$CI_COMMIT_SHA" "ASPNETCORE_URLS=http://+:8080"
+    
+    # Cấu hình compute resources và ingress
+    - echo "Configuring compute resources and ingress..."
+    - |
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --cpu 0.5 --memory 1.0Gi \
+        --min-replicas 0 --max-replicas 5
+      
+      # Configure ingress separately using the ingress command
+      az containerapp ingress update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --type external \
+        --target-port 8080 \
+        --transport auto
+    
+    # Cấu hình revision suffix
+    - echo "Configuring revision suffix..."
+    - |
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --revision-suffix "$CI_COMMIT_SHORT_SHA"
+    
+    # # Cấu hình health probe
+    # - echo "Configuring health probes..."
+    # - |
+    #   az containerapp update \
+    #     --name $CONTAINER_APP_NAME \
+    #     --resource-group $RESOURCE_GROUP \
+    #     --container-name movietheater-api \
+    #     --liveness-probe-type http \
+    #     --liveness-http-probe-path /health \
+    #     --liveness-http-probe-port 80 \
+    #     --liveness-probe-interval 30 \
+    #     --liveness-probe-timeout 3 \
+    #     --liveness-probe-threshold 3 \
+    #     --liveness-probe-success-threshold 1
+    
+    # Cấu hình auto-scaling
+    - echo "Configuring auto-scaling rules..."
+    - |
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --scale-rule-name http-scale \
+        --scale-rule-http-concurrency 50
+    
+    # Hiển thị URL của ứng dụng
+    - |
+      APP_URL=$(az containerapp show \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --query "properties.configuration.ingress.fqdn" \
+        --output tsv)
+      if [[ -n "$APP_URL" ]]; then
+        echo "Application successfully deployed at: https://$APP_URL"
+      else
+        echo "Warning: Could not retrieve application URL"
+      fi
+  tags:
+    - azure
