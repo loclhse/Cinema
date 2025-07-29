@@ -8,6 +8,7 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
+  GIT_USERNAME: "fsa_HongTL"
 
 # Default configuration for all jobs
 default:
@@ -24,8 +25,8 @@ unit-tests:
   tags:
     - cicd
   before_script:
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
   script:
     - echo "=== Running Unit Tests ==="
     - echo "Current directory:"
@@ -62,8 +63,8 @@ code-quality:
   tags:
     - cicd
   before_script:
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
   script:
     - echo "=== Code Quality Analysis ==="
     - echo "Current directory:"
