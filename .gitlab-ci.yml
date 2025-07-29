@@ -9,14 +9,13 @@ variables:
   DOCKER_IMAGE_NAME: "team03-webapi"
   DOCKER_REGISTRY: "registry.gitlab.com"
   TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
-  
-  # Git Access Configuration
-  GIT_STRATEGY: fetch
+    # Git Access Configuration
+  GIT_STRATEGY: none  # Tắt GitLab auto-clone để clone manual
   GIT_DEPTH: 20
+  GIT_USERNAME: "access"  # Thay thành username GitLab của bạn
   
   # These should be set in GitLab CI/CD Variables (Settings > CI/CD > Variables)
   # GIT_ACCESS_TOKEN: $GIT_ACCESS_TOKEN  # Set this in GitLab Variables
-  # GIT_USERNAME: $GIT_USERNAME          # Set this in GitLab Variables
 
 stages:
   - build
@@ -26,8 +25,7 @@ stages:
 build-job:
   stage: build
   tags:
-    - deploy
-  before_script:
+    - deploy  before_script:
     - echo "Configuring Git authentication..."
     - |
       if [ -n "$GIT_ACCESS_TOKEN" ] && [ -n "$GIT_USERNAME" ]; then
@@ -35,12 +33,22 @@ build-job:
         git config --global credential.helper store
         echo "https://$GIT_USERNAME:$GIT_ACCESS_TOKEN@gitlab.com" > ~/.git-credentials
         git config --global user.name "$GIT_USERNAME"
-        git config --global user.email "$GIT_USERNAME@example.com"
+        git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+          # Clone repository manually if needed
+        echo "Ensuring we have the repository code..."
+        if [ ! -d ".git" ]; then
+          echo "Cloning repository..."
+          git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
+        else
+          echo "Repository exists, updating..."
+          git fetch && git checkout $TARGET_BRANCH && git pull
+        fi
       else
         echo "Warning: GIT_ACCESS_TOKEN or GIT_USERNAME not set"
       fi
   script:
     - echo "Starting .NET build process..."
+    - ls -la
     - cd WebAPI
     - dotnet --version
     - dotnet restore WebAPI.sln
@@ -51,7 +59,8 @@ build-job:
       - WebAPI/WebAPI/bin/Release/
       - WebAPI/Application/bin/Release/
       - WebAPI/Domain/bin/Release/
-      - WebAPI/Infrastructure/bin/Release/    expire_in: 1 hour
+      - WebAPI/Infrastructure/bin/Release/
+    expire_in: 1 hour
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
