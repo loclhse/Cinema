@@ -28,10 +28,6 @@ test-connectivity:
   tags:
     - cicd
   image: alpine:latest
-  before_script:
-    - echo "=== Fixing Git Authentication ==="
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
   script:
     script:
     - apk add --no-cache git curl jq
