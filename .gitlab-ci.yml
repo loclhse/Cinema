@@ -107,34 +107,50 @@ docker-build:
   stage: docker
   tags:
     - cicd
-  image: docker:20.10.16
+  image: docker:24.0.5
   services:
-    - name: docker:20.10.16-dind
+    - name: docker:24.0.5-dind
       alias: docker
-      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
+      command: ["--host=tcp://0.0.0.0:2376", "--tls=false", "--insecure-registry=0.0.0.0/0"]
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DRIVER: overlay2
+    DOCKER_BUILDKIT: 1
   before_script:
     - echo "=== Docker Build Setup ==="
     - echo "Installing git and tools..."
-    - apk add --no-cache git curl jq
+    - apk add --no-cache git curl jq netcat-openbsd
+    - echo "=== Docker Service Diagnostics ==="
+    - echo "Checking network connectivity..."
+    - ping -c 3 docker || echo "Cannot ping docker service"
+    - echo "Checking if Docker port is open..."
+    - nc -zv docker 2376 || echo "Docker port 2376 not accessible"
+    - echo "Docker host: $DOCKER_HOST"
     - echo "=== Waiting for Docker daemon ==="
     - echo "Waiting for Docker daemon to be ready..."
-    - for i in $(seq 1 30); do
-        if docker info >/dev/null 2>&1; then
-          echo "Docker daemon is ready!";
+    - DOCKER_READY=false
+    - for i in $(seq 1 60); do
+        echo "Attempt $i/60: Testing Docker connection..."
+        if timeout 10 docker version >/dev/null 2>&1; then
+          echo "✅ Docker daemon is ready!";
+          DOCKER_READY=true;
           break;
         else
-          echo "Waiting for Docker daemon... attempt $i/30";
-          sleep 2;
-        fi;
-        if [ $i -eq 30 ]; then
-          echo "Docker daemon failed to start after 60 seconds";
-          exit 1;
+          echo "⏳ Waiting for Docker daemon... attempt $i/60";
+          sleep 3;
         fi;
       done
+    - if [ "$DOCKER_READY" = "false" ]; then
+        echo "❌ Docker daemon failed to start after 180 seconds";
+        echo "=== Docker Diagnostics ===";
+        docker version || echo "Docker version failed";
+        docker info || echo "Docker info failed";
+        exit 1;
+      fi
+    - echo "=== Docker Info ==="
+    - docker version
+    - docker info
     - echo "=== Git Authentication for Docker Build ==="
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
@@ -195,36 +211,48 @@ test-docker-image:
   stage: test-docker
   tags:
     - cicd
-  image: docker:20.10.16
+  image: docker:24.0.5
   services:
-    - name: docker:20.10.16-dind
+    - name: docker:24.0.5-dind
       alias: docker
-      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
+      command: ["--host=tcp://0.0.0.0:2376", "--tls=false", "--insecure-registry=0.0.0.0/0"]
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DRIVER: overlay2
+    DOCKER_BUILDKIT: 1
   dependencies:
     - docker-build
   before_script:
     - echo "=== Docker Test Setup ==="
     - echo "Installing tools..."
-    - apk add --no-cache curl
+    - apk add --no-cache curl netcat-openbsd
+    - echo "=== Docker Service Diagnostics ==="
+    - echo "Checking network connectivity..."
+    - ping -c 3 docker || echo "Cannot ping docker service"
+    - echo "Checking if Docker port is open..."
+    - nc -zv docker 2376 || echo "Docker port 2376 not accessible"
     - echo "=== Waiting for Docker daemon ==="
     - echo "Waiting for Docker daemon to be ready..."
-    - for i in $(seq 1 30); do
-        if docker info >/dev/null 2>&1; then
-          echo "Docker daemon is ready!";
+    - DOCKER_READY=false
+    - for i in $(seq 1 60); do
+        echo "Attempt $i/60: Testing Docker connection..."
+        if timeout 10 docker version >/dev/null 2>&1; then
+          echo "✅ Docker daemon is ready!";
+          DOCKER_READY=true;
           break;
         else
-          echo "Waiting for Docker daemon... attempt $i/30";
-          sleep 2;
-        fi;
-        if [ $i -eq 30 ]; then
-          echo "Docker daemon failed to start after 60 seconds";
-          exit 1;
+          echo "⏳ Waiting for Docker daemon... attempt $i/60";
+          sleep 3;
         fi;
       done
+    - if [ "$DOCKER_READY" = "false" ]; then
+        echo "❌ Docker daemon failed to start after 180 seconds";
+        echo "=== Docker Diagnostics ===";
+        docker version || echo "Docker version failed";
+        docker info || echo "Docker info failed";
+        exit 1;
+      fi
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
   script:
