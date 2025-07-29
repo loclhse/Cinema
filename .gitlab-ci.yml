@@ -143,7 +143,7 @@ deploy-staging:
     name: staging
     url: http://staging.team03-api.local
   script:
-    - echo "=== Deploying to Staging ==="
+    - echo "= Deploying to Staging =="
     - echo "Stopping existing containers..."
     - docker-compose -f docker-compose.yml down || true
     - echo "Pulling latest images..."
