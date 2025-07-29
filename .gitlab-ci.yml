@@ -111,10 +111,8 @@ docker-build:
   services:
     - docker:24.0.5-dind
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
   before_script:
     - echo "=== Docker Build Setup ==="
     - echo "Installing git for authentication..."
@@ -137,7 +135,7 @@ docker-build:
     - echo "Checking WebAPI.csproj..."
     - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
     - echo "=== Docker setup ==="
-    - docker info
+    - until docker info; do sleep 1; done
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
@@ -171,15 +169,13 @@ test-docker-image:
   services:
     - docker:24.0.5-dind
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
   dependencies:
     - docker-build
   before_script:
     - echo "=== Docker Test Setup ==="
-    - docker info
+    - until docker info; do sleep 1; done
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
