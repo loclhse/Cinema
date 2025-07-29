@@ -8,12 +8,11 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
+  GIT_STRATEGY: none
 
 # Default configuration for all jobs
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
-
-GIT_STRATEGY: none
 
 stages:
   - connectivity
