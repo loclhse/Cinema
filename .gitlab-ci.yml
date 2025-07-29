@@ -195,7 +195,6 @@ test-docker-image:
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
   script:
     - echo "=== Testing Docker Image ==="
-    - echo "Pulling image: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
     - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
     - echo "=== Running basic container test ==="
     - echo "Starting container for health check..."
