@@ -29,11 +29,11 @@ test-connectivity:
     - cicd
   image: alpine:latest
   script:
-    script:
     - apk add --no-cache git curl jq
     # Configure Git authentication with personal token
     - echo "Configuring Git credentials..."
     - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - git config --global user.name "$GIT_USERNAME"
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     - echo "Testing Git authentication..."
