@@ -24,6 +24,8 @@ stages:
 
 # Restore and build the .NET solution
 build-job:
+  tags:
+    - deploy
   stage: build
   before_script:
     - echo "Configuring Git authentication..."
