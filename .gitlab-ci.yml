@@ -11,7 +11,7 @@ variables:
   TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
   
   # Git Access Configuration
-  GIT_STRATEGY: none  # Tắt GitLab auto-clone để clone manual
+  GIT_STRATEGY: fetch  # Tắt GitLab auto-clone để clone manual
   GIT_DEPTH: 20
   GIT_USERNAME: "fsa_HongTL"  # Thay thành username GitLab của bạn
   
