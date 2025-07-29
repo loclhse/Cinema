@@ -321,7 +321,7 @@ namespace Application.Services
             ApiResp resp = new ApiResp();
             try
             {
-               var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == Id && !x.IsDeleted);
+                var movie = await _unitOfWork.MovieRepo.GetAsync(x => x.Id == Id && !x.IsDeleted, include: q => q.Include(m => m.Showtimes));
                 if (movie == null)
                 {
                     return resp.SetNotFound(message:"Movie not found!");
