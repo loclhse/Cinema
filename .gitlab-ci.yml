@@ -1,8 +1,17 @@
-test-simple:
+# Test job với cú pháp chính xác
+hello-world:
   image: alpine:latest
   script:
-    - echo "Hello from runner!"
-    - date
+    - echo "Runner is working!"
+    - echo "Current time is $(date)"
+    - whoami
     - pwd
   tags:
     - deploy
+
+# Test job không cần tag
+simple-test:
+  image: alpine:latest
+  script:
+    - echo "This is a simple test"
+    - ls -la
