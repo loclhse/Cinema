@@ -26,8 +26,14 @@ test-connectivity:
   tags:
     - deploy
   image: alpine:latest
+  before_script:
+    - echo "=== Fixing Git Authentication ==="
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
   script:
     - echo "=== Runner Connectivity Test ==="
+    - echo "Git config check:"
+    - git config --list | grep url || echo "No URL configs"
     - echo "Available files:"
     - ls -la
     - echo "System info:"
