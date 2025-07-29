@@ -8,7 +8,6 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
-  GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"  # Replace with your Git username
 
 # Default configuration for all jobs
@@ -28,16 +27,12 @@ test-connectivity:
     - cicd
   image: alpine:latest
   script:
-    - apk add --no-cache git curl jq
-    # Configure Git authentication with personal token
-    - echo "Configuring Git credentials..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Testing Git authentication..."
-    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
-    - echo "Prepare stage completed successfully"
+    - echo "=== Runner Connectivity Test ==="
+    - echo "System info:"
+    - uname -a
+    - echo "Available files:"
+    - ls -la
+    - echo "=== Connectivity test passed! ==="
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
@@ -48,7 +43,15 @@ unit-tests:
     - cicd
   script:
     - echo "=== Running Unit Tests ==="
+    - echo "Current directory:"
+    - pwd
+    - echo "Available files and directories:"
+    - ls -la
+    - echo "Checking if WebAPI directory exists:"
+    - if [ -d "WebAPI" ]; then echo "WebAPI directory found"; else echo "WebAPI directory NOT found"; fi
     - cd WebAPI
+    - echo "WebAPI directory contents:"
+    - ls -la
     - echo "Restoring packages..."
     - dotnet restore WebAPI.sln
     - echo "Building solution..."
@@ -57,6 +60,7 @@ unit-tests:
     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
     - echo "=== Tests completed! ==="
   artifacts:
+    when: always
     paths:
       - WebAPI/TestResults/
     reports:
@@ -73,7 +77,13 @@ code-quality:
     - cicd
   script:
     - echo "=== Code Quality Analysis ==="
+    - echo "Current directory:"
+    - pwd
+    - echo "Available files:"
+    - ls -la
     - cd WebAPI
+    - echo "WebAPI directory contents:"
+    - ls -la
     - echo "Restoring packages..."
     - dotnet restore WebAPI.sln
     - echo "Building solution..."
