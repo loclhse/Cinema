@@ -13,29 +13,14 @@ variables:
 # Default configuration for all jobs
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
+  before_script:
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
+    - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
 
 stages:
-  - connectivity
   - test
   - docker
   - deploy
-
-# Test runner connectivity
-test-connectivity:
-  stage: connectivity
-  tags:
-    - cicd
-  script:
-    - echo "=== Runner Connectivity Test ==="
-    - echo "System info:"
-    - uname -a
-    - echo "Available files:"
-    - ls -la
-    - echo "Git version:"
-    - git --version
-    - echo "=== Connectivity test passed! ==="
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
 # Run unit tests
 unit-tests:
