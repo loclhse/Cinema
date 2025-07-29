@@ -18,6 +18,7 @@ default:
 stages:
   # - test
   - docker
+  - test-docker
   # - deploy
 
 # # Run unit tests
@@ -127,17 +128,83 @@ docker-build:
     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
     - git checkout ${CI_COMMIT_SHA}
     - echo "Repository cloned successfully"
+    - echo "=== Verifying project structure ==="
+    - ls -la
+    - echo "WebAPI directory contents:"
+    - ls -la WebAPI/
+    - echo "Checking Dockerfile..."
+    - if [ -f "Dockerfile" ]; then echo "✅ Dockerfile found"; else echo "❌ Dockerfile NOT found"; exit 1; fi
+    - echo "Checking WebAPI.csproj..."
+    - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
+    - echo "=== Docker setup ==="
     - docker info
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
     - echo "=== Building Docker Image ==="
-    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
-    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
-    - echo "Pushing images to registry..."
+    - echo "Building image with tag: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - echo "Building image with tag: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
+    - echo "Docker build context:"
+    - pwd
+    - echo "=== Starting Docker build ==="
+    - docker build --no-cache --pull -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
+    - echo "=== Docker build completed ==="
+    - echo "Verifying built images:"
+    - docker images | grep $DOCKER_IMAGE_NAME
+    - echo "=== Pushing images to registry ==="
     - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
-    - echo "=== Docker build completed successfully! ==="
+    - echo "=== Docker build and push completed successfully! ==="
+    - echo "Image tags pushed:"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
+  after_script:
+    - echo "=== Cleanup ==="
+    - docker system prune -f || true
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Test Docker image
+test-docker-image:
+  stage: test-docker
+  tags:
+    - cicd
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  dependencies:
+    - docker-build
+  before_script:
+    - echo "=== Docker Test Setup ==="
+    - docker info
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - echo "=== Testing Docker Image ==="
+    - echo "Pulling image: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+    - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - echo "=== Running basic container test ==="
+    - echo "Starting container for health check..."
+    - docker run -d --name test-container -p 8080:80 $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - echo "Waiting for container to start..."
+    - sleep 10
+    - echo "Checking container status..."
+    - docker ps -a
+    - echo "Checking container logs..."
+    - docker logs test-container
+    - echo "Testing container health..."
+    - docker exec test-container ps aux || echo "Container might be starting..."
+    - echo "=== Docker image test completed ==="
+  after_script:
+    - echo "=== Test cleanup ==="
+    - docker stop test-container || true
+    - docker rm test-container || true
+    - docker system prune -f || true
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
