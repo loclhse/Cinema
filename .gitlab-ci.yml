@@ -25,13 +25,14 @@ test-connectivity:
   stage: connectivity
   tags:
     - cicd
-  image: alpine:latest
   script:
     - echo "=== Runner Connectivity Test ==="
     - echo "System info:"
     - uname -a
     - echo "Available files:"
     - ls -la
+    - echo "Git version:"
+    - git --version
     - echo "=== Connectivity test passed! ==="
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
