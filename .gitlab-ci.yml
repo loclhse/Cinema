@@ -38,7 +38,7 @@ prepare:
     - git ls-remote "https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
     - echo "Prepare stage completed successfully"
   tags:
-    - docker
+    - deploy
 
 build:
   stage: build
