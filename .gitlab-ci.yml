@@ -17,7 +17,6 @@ default:
 
 stages:
   - connectivity
-  - build
   - test
   - docker
   - deploy
@@ -42,53 +41,18 @@ test-connectivity:
   rules:
     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Build .NET application
-build-dotnet:
-  stage: build
-  tags:
-    - cicd
-  before_script:
-    - apk add --no-cache git curl jq
-    # Configure Git authentication with personal token
-    - echo "Configuring Git credentials..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Testing Git authentication..."
-    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
-    - echo "Prepare stage completed successfully"
-  script:
-    - echo "=== Starting .NET Build ==="
-    - echo "Using .NET version:"
-    - dotnet --version
-    - echo "Navigating to WebAPI directory..."
-    - cd WebAPI
-    - echo "Restoring packages..."
-    - dotnet restore WebAPI.sln
-    - echo "Building solution..."
-    - dotnet build WebAPI.sln --configuration Release --no-restore
-    - echo "=== Build completed successfully! ==="
-  artifacts:
-    paths:
-      - WebAPI/WebAPI/bin/Release/
-      - WebAPI/Application/bin/Release/
-      - WebAPI/Domain/bin/Release/
-      - WebAPI/Infrastructure/bin/Release/
-    expire_in: 1 hour
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
 # Run unit tests
 unit-tests:
   stage: test
   tags:
     - cicd
-  dependencies:
-    - build-dotnet
   script:
     - echo "=== Running Unit Tests ==="
     - cd WebAPI
+    - echo "Restoring packages..."
+    - dotnet restore WebAPI.sln
+    - echo "Building solution..."
+    - dotnet build WebAPI.sln --configuration Release
     - echo "Running tests with coverage..."
     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
     - echo "=== Tests completed! ==="
@@ -107,11 +71,13 @@ code-quality:
   stage: test
   tags:
     - cicd
-  dependencies:
-    - build-dotnet
   script:
     - echo "=== Code Quality Analysis ==="
     - cd WebAPI
+    - echo "Restoring packages..."
+    - dotnet restore WebAPI.sln
+    - echo "Building solution..."
+    - dotnet build WebAPI.sln --configuration Release
     - echo "Checking code format..."
     - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "⚠️ Code formatting issues found"
     - echo "=== Code quality check completed! ==="
@@ -132,8 +98,6 @@ docker-build:
     DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_VERIFY: 1
     DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-  dependencies:
-    - build-dotnet
   before_script:
     - echo "=== Docker Build Setup ==="
     - docker info
