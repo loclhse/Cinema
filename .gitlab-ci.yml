@@ -2,7 +2,7 @@ test-runner:
   stage: prepare
   image: alpine:latest
   script:
-    - echo "Runner is working!"
+    - echo "Runner kk is working!"
     - whoami
     - pwd
   tags:
