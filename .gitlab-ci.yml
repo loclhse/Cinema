@@ -109,10 +109,12 @@ docker-build:
     - cicd
   image: docker:24.0.5
   services:
-    - docker:24.0.5-dind
+    - name: docker:24.0.5-dind
+      command: ["--tls=false"]
   variables:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   before_script:
     - echo "=== Docker Build Setup ==="
     - echo "Installing git for authentication..."
@@ -135,7 +137,9 @@ docker-build:
     - echo "Checking WebAPI.csproj..."
     - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
     - echo "=== Docker setup ==="
-    - until docker info; do sleep 1; done
+    - echo "Waiting for Docker daemon to be ready..."
+    - timeout 30 sh -c 'until docker info; do echo "Waiting for Docker..."; sleep 2; done'
+    - echo "Docker daemon is ready!"
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
@@ -167,15 +171,19 @@ test-docker-image:
     - cicd
   image: docker:24.0.5
   services:
-    - docker:24.0.5-dind
+    - name: docker:24.0.5-dind
+      command: ["--tls=false"]
   variables:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   dependencies:
     - docker-build
   before_script:
     - echo "=== Docker Test Setup ==="
-    - until docker info; do sleep 1; done
+    - echo "Waiting for Docker daemon to be ready..."
+    - timeout 30 sh -c 'until docker info; do echo "Waiting for Docker..."; sleep 2; done'
+    - echo "Docker daemon is ready!"
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
