@@ -111,13 +111,30 @@ docker-build:
   services:
     - name: docker:20.10.16-dind
       alias: docker
+      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   before_script:
     - echo "=== Docker Build Setup ==="
     - echo "Installing git and tools..."
     - apk add --no-cache git curl jq
+    - echo "=== Waiting for Docker daemon ==="
+    - echo "Waiting for Docker daemon to be ready..."
+    - for i in $(seq 1 30); do
+        if docker info >/dev/null 2>&1; then
+          echo "Docker daemon is ready!";
+          break;
+        else
+          echo "Waiting for Docker daemon... attempt $i/30";
+          sleep 2;
+        fi;
+        if [ $i -eq 30 ]; then
+          echo "Docker daemon failed to start after 60 seconds";
+          exit 1;
+        fi;
+      done
     - echo "=== Git Authentication for Docker Build ==="
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
@@ -182,15 +199,32 @@ test-docker-image:
   services:
     - name: docker:20.10.16-dind
       alias: docker
+      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   dependencies:
     - docker-build
   before_script:
     - echo "=== Docker Test Setup ==="
     - echo "Installing tools..."
     - apk add --no-cache curl
+    - echo "=== Waiting for Docker daemon ==="
+    - echo "Waiting for Docker daemon to be ready..."
+    - for i in $(seq 1 30); do
+        if docker info >/dev/null 2>&1; then
+          echo "Docker daemon is ready!";
+          break;
+        else
+          echo "Waiting for Docker daemon... attempt $i/30";
+          sleep 2;
+        fi;
+        if [ $i -eq 30 ]; then
+          echo "Docker daemon failed to start after 60 seconds";
+          exit 1;
+        fi;
+      done
     - echo "Logging into GitLab Container Registry..."
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
   script:
