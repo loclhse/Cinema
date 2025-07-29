@@ -9,7 +9,7 @@ hello-world:
   tags:
     - deploy
 
-# Test job không cần tag
+# Test job không cần ta
 simple-test:
   image: alpine:latest
   script:
