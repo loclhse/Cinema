@@ -8,7 +8,7 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
-  GIT_STRATEGY: none
+  GIT_STRATEGY: fetch
   GIT_USERNAME: "fsa_HongTL"  # Replace with your Git username
 
 # Default configuration for all jobs
