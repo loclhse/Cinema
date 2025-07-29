@@ -17,7 +17,7 @@ default:
 
 stages:
   # - test
-  - docker
+  - build
   - test-docker
   # - deploy
 
@@ -102,109 +102,51 @@ stages:
 #   rules:
 #     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# Build Docker image using Docker-in-Docker
-docker-build:
-  stage: docker
-  tags:
-    - cicd
-  image: docker:24.0.5
+build:
+  stage: build
+  image: docker:20.10.16
   services:
-    - name: docker:24.0.5-dind
+    - name: docker:20.10.16-dind
       alias: docker
-      command: ["--host=tcp://0.0.0.0:2376", "--tls=false", "--insecure-registry=0.0.0.0/0"]
   variables:
-    DOCKER_HOST: tcp://docker:2376
+    DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-    DOCKER_BUILDKIT: 1
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - echo "=== Docker Build Setup ==="
-    - echo "Installing git and tools..."
-    - apk add --no-cache git curl jq netcat-openbsd
-    - echo "=== Docker Service Diagnostics ==="
-    - echo "Checking network connectivity..."
-    - ping -c 3 docker || echo "Cannot ping docker service"
-    - echo "Checking if Docker port is open..."
-    - nc -zv docker 2376 || echo "Docker port 2376 not accessible"
-    - echo "Docker host: $DOCKER_HOST"
-    - echo "=== Waiting for Docker daemon ==="
-    - echo "Waiting for Docker daemon to be ready..."
-    - DOCKER_READY=false
-    - for i in $(seq 1 60); do
-        echo "Attempt $i/60: Testing Docker connection..."
-        if timeout 10 docker version >/dev/null 2>&1; then
-          echo "✅ Docker daemon is ready!";
-          DOCKER_READY=true;
-          break;
-        else
-          echo "⏳ Waiting for Docker daemon... attempt $i/60";
-          sleep 3;
-        fi;
-      done
-    - if [ "$DOCKER_READY" = "false" ]; then
-        echo "❌ Docker daemon failed to start after 180 seconds";
-        echo "=== Docker Diagnostics ===";
-        docker version || echo "Docker version failed";
-        docker info || echo "Docker info failed";
-        exit 1;
-      fi
-    - echo "=== Docker Info ==="
-    - docker version
-    - docker info
-    - echo "=== Git Authentication for Docker Build ==="
-    - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - git config --global user.name "$GIT_USERNAME"
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Git authentication configured successfully"
-    - echo "=== Cloning repository for Docker build ==="
+    
+    # Clone the repository manually if needed
     - echo "Ensuring we have the repository code..."
     - if [ ! -d ".git" ]; then
-        git clone -b $TARGET_BRANCH "https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
+        git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
       else
         git fetch && git checkout $TARGET_BRANCH && git pull;
       fi
-    - echo "Repository cloned successfully"
-    - echo "=== Verifying project structure ==="
+    
+    # Login to Azure Container Registry
+    - echo "Logging into Azure Container Registry..."
+    - echo "$ACR_PASSWORD" | docker login $ACR_NAME.azurecr.io --username $ACR_USERNAME --password-stdin || exit 1
+  script:
     - echo "Listing repository contents..."
     - ls -la
     - echo "Current working directory:"
     - pwd
-    - echo "WebAPI directory contents:"
-    - ls -la WebAPI/ || echo "WebAPI directory not found"
     - echo "Searching for Dockerfile..."
     - find . -name "Dockerfile" -type f
-    - echo "Checking Dockerfile..."
-    - if [ -f "Dockerfile" ]; then echo "✅ Dockerfile found"; else echo "❌ Dockerfile NOT found"; exit 1; fi
-    - echo "Checking WebAPI.csproj..."
-    - if [ -f "WebAPI/WebAPI/WebAPI.csproj" ]; then echo "✅ WebAPI.csproj found"; else echo "❌ WebAPI.csproj NOT found"; exit 1; fi
-    - echo "=== Docker Registry Login ==="
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin || exit 1
-  script:
-    - echo "=== Building Docker Image ==="
+    # Then continue with the Docker build
     - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
-    - echo "Build context:"
-    - pwd
-    - echo "=== Starting Docker build ==="
-    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
-    - echo "=== Docker build completed ==="
-    - echo "Verifying built images:"
-    - docker images | grep $DOCKER_IMAGE_NAME || echo "Images built successfully"
-    - echo "=== Pushing images to registry ==="
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
-    - echo "=== Docker build and push completed successfully! ==="
-    - echo "Image tags pushed:"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
-  after_script:
-    - echo "=== Cleanup ==="
-    - docker system prune -f || true
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+  tags:
+    - docker
 
 # Test Docker image
 test-docker-image:
@@ -222,7 +164,7 @@ test-docker-image:
     DOCKER_DRIVER: overlay2
     DOCKER_BUILDKIT: 1
   dependencies:
-    - docker-build
+    - build
   before_script:
     - echo "=== Docker Test Setup ==="
     - echo "Installing tools..."
