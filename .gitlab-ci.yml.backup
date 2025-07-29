@@ -1,0 +1,144 @@
+# GitLab CI/CD pipeline for .NET Core Web API
+# Pipeline stages: build, test, docker, deploy
+
+variables:
+  DOTNET_VERSION: "8.0"
+  SOLUTION_PATH: "WebAPI/WebAPI.sln"
+  PROJECT_PATH: "WebAPI/WebAPI/WebAPI.csproj"
+  TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
+  DOCKER_IMAGE_NAME: "team03-webapi"
+  DOCKER_REGISTRY: "registry.gitlab.com"
+  TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
+
+stages:
+  - build
+  - test
+  - docker
+  - deploy
+
+# Restore and build the .NET solution
+build-job:
+  stage: build
+  tags:
+    - deploy
+  script:
+    - echo "Starting .NET build process..."
+    - cd WebAPI
+    - dotnet --version
+    - dotnet restore WebAPI.sln
+    - dotnet build WebAPI.sln --configuration Release --no-restore
+    - echo "Build completed successfully!"
+  artifacts:
+    paths:
+      - WebAPI/WebAPI/bin/Release/
+      - WebAPI/Application/bin/Release/
+      - WebAPI/Domain/bin/Release/
+      - WebAPI/Infrastructure/bin/Release/
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Run unit tests
+unit-test-job:
+  stage: test
+  tags:
+    - deploy
+  dependencies:
+    - build-job
+  script:
+    - echo "Running unit tests..."
+    - cd WebAPI
+    - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
+    - echo "Unit tests completed!"
+  artifacts:
+    when: always
+    paths:
+      - WebAPI/TestResults/
+    reports:
+      junit:
+        - WebAPI/TestResults/*.trx
+    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Code quality and linting
+lint-test-job:
+  stage: test
+  tags:
+    - deploy
+  dependencies:
+    - build-job
+  script:
+    - echo "Running code analysis..."
+    - cd WebAPI
+    - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "Code formatting issues found"
+    - echo "Code analysis completed!"
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Build and push Docker image
+docker-build-job:
+  stage: docker
+  tags:
+    - deploy
+  dependencies:
+    - build-job
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
+    - echo "Docker image built and pushed successfully!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Deploy to staging
+deploy-staging:
+  stage: deploy
+  tags:
+    - deploy
+  dependencies:
+    - docker-build-job
+  environment:
+    name: staging
+    url: http://staging.team03-api.local
+  script:
+    - echo "Deploying to staging environment..."
+    - docker-compose -f docker-compose.yml down || true
+    - docker-compose -f docker-compose.yml pull
+    - docker-compose -f docker-compose.yml up -d
+    - echo "Application deployed to staging!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+
+# Deploy to production
+deploy-production:
+  stage: deploy
+  tags:
+    - deploy
+  dependencies:
+    - docker-build-job
+  environment:
+    name: production
+    url: http://team03-api.production.local
+  script:
+    - echo "Deploying to production environment..."
+    - docker-compose -f docker-compose.yml down || true
+    - docker-compose -f docker-compose.yml pull
+    - docker-compose -f docker-compose.yml up -d
+    - echo "Application deployed to production!"
+  when: manual
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
