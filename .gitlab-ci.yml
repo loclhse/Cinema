@@ -8,7 +8,7 @@ variables:
   TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
   DOCKER_IMAGE_NAME: "team03-webapi"
   DOCKER_REGISTRY: "registry.gitlab.com"
-  TARGET_BRANCH: "CICD"  # Thay đổi branch này khi cần
+  TARGET_BRANCH: "CICD_2"  # Thay đổi branch này khi cần
 
 stages:
   - build
