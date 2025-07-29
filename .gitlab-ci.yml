@@ -25,6 +25,9 @@ test-connectivity:
   stage: connectivity
   image: alpine:latest
   script:
+    - echo "=== Runner Connectivity Test ==="
+    - echo "Current branch: $CI_COMMIT_REF_NAME"
+    - echo "Current directory: $(pwd)"
     - echo "Available files:"
     - ls -la
     - echo "System info:"
@@ -122,7 +125,6 @@ docker-build:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
     - echo "=== Building Docker Image ==="
-    - echo "Building image: $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
     - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
     - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
     - echo "Pushing images to registry..."
@@ -143,7 +145,7 @@ deploy-staging:
     name: staging
     url: http://staging.team03-api.local
   script:
-    - echo "= Deploying to Staging =="
+    - echo "=== Deploying to Staging ==="
     - echo "Stopping existing containers..."
     - docker-compose -f docker-compose.yml down || true
     - echo "Pulling latest images..."
