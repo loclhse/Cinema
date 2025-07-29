@@ -9,6 +9,7 @@ variables:
   DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
   GIT_USERNAME: "fsa_HongTL"
+  GIT_STRATEGY: clone
 
 # Default configuration for all jobs
 default:
@@ -29,6 +30,8 @@ unit-tests:
     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
     - echo "Configuring Git authentication..."
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git/".insteadOf "https://git.fa.edu.vn/"
+    - echo "Git authentication configured successfully"
+    - echo "Git strategy: ${GIT_STRATEGY}"
   script:
     - echo "=== Running Unit Tests ==="
     - echo "Current directory:"
@@ -70,6 +73,8 @@ code-quality:
     - echo "Configuring Git authentication..."
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
+    - echo "Git authentication configured successfully"
+    - echo "Git strategy: ${GIT_STRATEGY}"
   script:
     - echo "=== Code Quality Analysis ==="
     - echo "Current directory:"
