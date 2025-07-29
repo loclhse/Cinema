@@ -31,7 +31,6 @@ unit-tests:
     - echo "Configuring Git authentication..."
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git/".insteadOf "https://git.fa.edu.vn/"
     - echo "Git authentication configured successfully"
-    - echo "Git strategy: ${GIT_STRATEGY}"
     - echo "=== Cloning repository manually after authentication ==="
     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
     - git checkout ${CI_COMMIT_SHA}
@@ -78,7 +77,6 @@ code-quality:
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
     - echo "Git authentication configured successfully"
-    - echo "Git strategy: ${GIT_STRATEGY}"
     - echo "=== Cloning repository manually after authentication ==="
     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
     - git checkout ${CI_COMMIT_SHA}
