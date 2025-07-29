@@ -84,7 +84,7 @@ build:
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
   tags:
-    - docker
+    - deploy
 
 # Deploy stage: Deploy to Azure Container Apps
 deploy:
