@@ -264,7 +264,7 @@ namespace Application.Services
                 return apiResp.SetBadRequest(null, ex.Message);
             }
         }
-        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId)
+        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId, Guid? movieId)
         {
             ApiResp apiResponse = new ApiResp();
             try
@@ -301,6 +301,7 @@ namespace Application.Services
                 var scoreLog = new ScoreLog
                 {
                     UserId = userId,
+                    MovieId = movieId,
                     PointsChanged = $"+{point}",
                     ActionType = "Payment Reward"
                 };

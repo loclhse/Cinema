@@ -285,7 +285,7 @@ namespace ZTest.Services
         public async Task SuccessOrder_Should_ReturnNotFound_WhenOrderNotFound()
         {
             _orderRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>())).ReturnsAsync((Order)null);
-            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, Guid.NewGuid(), Guid.NewGuid());
+            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
             resp.IsSuccess.Should().BeFalse();
             resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
@@ -295,7 +295,7 @@ namespace ZTest.Services
         {
             var order = new Order { Id = Guid.NewGuid(), Status = OrderEnum.Pending, IsDeleted = false };
             _orderRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>())).ReturnsAsync(order);
-            var resp = await _sut.SuccessOrder(new List<Guid>(), order.Id, Guid.NewGuid());
+            var resp = await _sut.SuccessOrder(new List<Guid>(), order.Id, Guid.NewGuid(), Guid.NewGuid());
             resp.IsSuccess.Should().BeFalse();
             resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
@@ -307,7 +307,7 @@ namespace ZTest.Services
             _orderRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>())).ReturnsAsync(order);
             _seatRepo.Setup(r => r.GetAllAsync(It.IsAny<Expression<Func<SeatSchedule, bool>>>())).ReturnsAsync(new List<SeatSchedule> { new SeatSchedule { Id = Guid.NewGuid() } });
             _uow.Setup(u => u.UserRepo.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((AppUser)null);
-            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, order.Id, Guid.NewGuid());
+            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, order.Id, Guid.NewGuid(), Guid.NewGuid());
             resp.IsSuccess.Should().BeFalse();
             resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
@@ -316,7 +316,7 @@ namespace ZTest.Services
         public async Task SuccessOrder_Should_ReturnBadRequest_OnException()
         {
             _orderRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Order, bool>>>())).ThrowsAsync(new Exception("db error"));
-            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, Guid.NewGuid(), Guid.NewGuid());
+            var resp = await _sut.SuccessOrder(new List<Guid> { Guid.NewGuid() }, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
             resp.IsSuccess.Should().BeFalse();
             resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }
@@ -388,7 +388,7 @@ namespace ZTest.Services
                 .ReturnsAsync((Order)null); // Không tìm thấy đơn hàng
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, Guid.NewGuid());
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, Guid.NewGuid(), Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -409,7 +409,7 @@ namespace ZTest.Services
                 .ReturnsAsync((AppUser)null); // Không tìm thấy người dùng
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -517,7 +517,7 @@ namespace ZTest.Services
                 .ReturnsAsync((Order)null); // Simulate order not found
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -537,7 +537,7 @@ namespace ZTest.Services
                 .ReturnsAsync(order); // Simulate finding the order
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -562,7 +562,7 @@ namespace ZTest.Services
                 .ReturnsAsync(new List<SeatSchedule> { seatSchedule }); // Simulate finding seat schedules
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid> { seatScheduleId }, orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid> { seatScheduleId }, orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -587,7 +587,7 @@ namespace ZTest.Services
                 .ReturnsAsync((AppUser)null); // Simulate user not found
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -612,7 +612,7 @@ namespace ZTest.Services
                 .ReturnsAsync(user); // Simulate finding the user
 
             // Act
-            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId);
+            var result = await _sut.SuccessOrder(new List<Guid>(), orderId, userId, Guid.NewGuid());
 
             // Assert
             result.StatusCode.Should().Be(HttpStatusCode.OK);
