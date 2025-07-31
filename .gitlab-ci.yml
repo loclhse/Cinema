@@ -42,15 +42,15 @@ prepare:
 
 build:
   stage: build
-  image: docker:latest
-  when: always
+  image: docker:24.0.5
   services:
-    - name: docker:dind
+    - name: docker:24.0.5-dind
       alias: docker
+      command: ["--tls=false"]
   variables:
-    # Use the same TLS configuration as global
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
@@ -70,9 +70,9 @@ build:
         git fetch && git checkout $TARGET_BRANCH && git pull;
       fi
     
-    # Wait for Docker daemon to be ready
+    # Wait for Docker daemon to be ready with more robust checking
     - echo "Waiting for Docker daemon..."
-    - until docker info; do sleep 1; done
+    - for i in $(seq 1 30); do docker info && break || sleep 2; done
     
     # Login to GitLab Container Registry using CI_JOB_TOKEN
     - echo "Logging into GitLab Container Registry..."
@@ -89,8 +89,8 @@ build:
     - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
     - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
     
-    # Push to GitLab Package Registry
-    - echo "Pushing to GitLab Package Registry..."
+    # Push to GitLab Container Registry
+    - echo "Pushing to GitLab Container Registry..."
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
     
