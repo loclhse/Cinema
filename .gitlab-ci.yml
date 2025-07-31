@@ -1,106 +1,130 @@
-# GitLab CI/CD Pipeline for .NET Core Web API
-# Compatible with runner #411 (tags: deploy, docker)
+stages:
+  - prepare
+  - test
+  - build
 
 variables:
-  DOTNET_VERSION: "8.0"
-  SOLUTION_PATH: "WebAPI/WebAPI.sln"
-  PROJECT_PATH: "WebAPI/WebAPI/WebAPI.csproj"
-  TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
-  DOCKER_IMAGE_NAME: "team03-webapi"
   TARGET_BRANCH: "CICD_2"
-  GIT_USERNAME: "fsa_HongTL"
+  # Docker configuration
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+  
+  # Docker image configuration
+  DOCKER_IMAGE_NAME: "team03-webapi"
+  
+  # Git configuration
   GIT_STRATEGY: none
+  GIT_USERNAME: "fsa_HongTL"
 
 # Default configuration for all jobs
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
 
-stages:
-  # - test
-  - build
-  - test-docker
-  # - deploy
+prepare:
+  stage: prepare
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  script:
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
+    - echo "Configuring Git credentials..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Testing Git authentication..."
+    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+    - echo "Prepare stage completed successfully"
+  tags:
+    - docker
 
-# # Run unit tests
-# unit-tests:
-#   stage: test
-#   tags:
-#     - cicd
-#   before_script:
-#     - echo "=== Debug Git Authentication ==="
-#     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
-#     - echo "Configuring Git authentication..."
-#     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-#     - echo "Git authentication configured successfully"
-#     - echo "=== Cloning repository manually after authentication ==="
-#     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
-#     - git checkout ${CI_COMMIT_SHA}
-#     - echo "Repository cloned successfully"
-#   script:
-#     - echo "=== Running Unit Tests ==="
-#     - echo "Current directory:"
-#     - pwd
-#     - echo "Available files and directories:"
-#     - ls -la
-#     - echo "Checking if WebAPI directory exists:"
-#     - if [ -d "WebAPI" ]; then echo "WebAPI directory found"; else echo "WebAPI directory NOT found"; fi
-#     - cd WebAPI
-#     - echo "WebAPI directory contents:"
-#     - ls -la
-#     - echo "Restoring packages..."
-#     - dotnet restore WebAPI.sln
-#     - echo "Building solution..."
-#     - dotnet build WebAPI.sln --configuration Release
-#     - echo "Running tests with coverage..."
-#     - mkdir -p TestResults
-#     - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
-#     - echo "=== Tests completed! ==="
-#   artifacts:
-#     when: always
-#     paths:
-#       - WebAPI/TestResults/
-#     reports:
-#       junit:
-#         - WebAPI/TestResults/*.trx
-#     expire_in: 1 week
-#   rules:
-#     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+# Run unit tests
+unit-tests:
+  stage: test
+  tags:
+    - cicd
+  before_script:
+    - echo "=== Debug Git Authentication ==="
+    - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Git authentication configured successfully"
+    - echo "=== Cloning repository manually after authentication ==="
+    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" .
+    - git checkout ${CI_COMMIT_SHA}
+    - echo "Repository cloned successfully"
+  script:
+    - echo "=== Running Unit Tests ==="
+    - echo "Current directory:"
+    - pwd
+    - echo "Available files and directories:"
+    - ls -la
+    - echo "Checking if WebAPI directory exists:"
+    - if [ -d "WebAPI" ]; then echo "WebAPI directory found"; else echo "WebAPI directory NOT found"; fi
+    - cd WebAPI
+    - echo "WebAPI directory contents:"
+    - ls -la
+    - echo "Restoring packages..."
+    - dotnet restore WebAPI.sln
+    - echo "Building solution..."
+    - dotnet build WebAPI.sln --configuration Release
+    - echo "Running tests with coverage..."
+    - mkdir -p TestResults
+    - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
+    - echo "=== Tests completed! ==="
+  artifacts:
+    when: always
+    paths:
+      - WebAPI/TestResults/
+    reports:
+      junit:
+        - WebAPI/TestResults/*.trx
+    expire_in: 1 week
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
-# # Code quality check
-# code-quality:
-#   stage: test
-#   tags:
-#     - cicd
-#   before_script:
-#     - echo "=== Debug Git Authentication ==="
-#     - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
-#     - echo "Configuring Git authentication..."
-#     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "https://git.fa.edu.vn/"
-#     - git config --global url."https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/".insteadOf "http://git.fa.edu.vn/"
-#     - echo "Git authentication configured successfully"
-#     - echo "=== Cloning repository manually after authentication ==="
-#     - git clone https://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git .
-#     - git checkout ${CI_COMMIT_SHA}
-#     - echo "Repository cloned successfully"
-#   script:
-#     - echo "=== Code Quality Analysis ==="
-#     - echo "Current directory:"
-#     - pwd
-#     - echo "Available files:"
-#     - ls -la
-#     - cd WebAPI
-#     - echo "WebAPI directory contents:"
-#     - ls -la
-#     - echo "Restoring packages..."
-#     - dotnet restore WebAPI.sln
-#     - echo "Building solution..."
-#     - dotnet build WebAPI.sln --configuration Release
-#     - echo "Checking code format..."
-#     - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "⚠️ Code formatting issues found"
-#     - echo "=== Code quality check completed! ==="
-#   allow_failure: true
-#   rules:
-#     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+# Code quality check
+code-quality:
+  stage: test
+  tags:
+    - cicd
+  before_script:
+    - echo "=== Debug Git Authentication ==="
+    - 'if [ -z "${GIT_ACCESS_TOKEN}" ]; then echo "ERROR: GIT_ACCESS_TOKEN is empty!"; exit 1; else echo "GIT_ACCESS_TOKEN is set"; fi'
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Git authentication configured successfully"
+    - echo "=== Cloning repository manually after authentication ==="
+    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" .
+    - git checkout ${CI_COMMIT_SHA}
+    - echo "Repository cloned successfully"
+  script:
+    - echo "=== Code Quality Analysis ==="
+    - echo "Current directory:"
+    - pwd
+    - echo "Available files:"
+    - ls -la
+    - cd WebAPI
+    - echo "WebAPI directory contents:"
+    - ls -la
+    - echo "Restoring packages..."
+    - dotnet restore WebAPI.sln
+    - echo "Building solution..."
+    - dotnet build WebAPI.sln --configuration Release
+    - echo "Checking code format..."
+    - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "⚠️ Code formatting issues found"
+    - echo "=== Code quality check completed! ==="
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
 
 build:
   stage: build
@@ -118,7 +142,7 @@ build:
     # Configure Git authentication with personal token
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - git config --global user.name "$GIT_USERNAME"
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     
@@ -130,9 +154,9 @@ build:
         git fetch && git checkout $TARGET_BRANCH && git pull;
       fi
     
-    # Login to Azure Container Registry
-    - echo "Logging into Azure Container Registry..."
-    - echo "$ACR_PASSWORD" | docker login $ACR_NAME.azurecr.io --username $ACR_USERNAME --password-stdin || exit 1
+    # Login to GitLab Container Registry
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin || exit 1
   script:
     - echo "Listing repository contents..."
     - ls -la
@@ -142,129 +166,12 @@ build:
     - find . -name "Dockerfile" -type f
     # Then continue with the Docker build
     - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
-    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
+    - echo "=== Docker build and push completed successfully! ==="
+    - echo "Image tags pushed:"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
+    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
   tags:
     - docker
-
-# Test Docker image
-test-docker-image:
-  stage: test-docker
-  tags:
-    - cicd
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      alias: docker
-      command: ["--host=tcp://0.0.0.0:2376", "--tls=false", "--insecure-registry=0.0.0.0/0"]
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-    DOCKER_BUILDKIT: 1
-  dependencies:
-    - build
-  before_script:
-    - echo "=== Docker Test Setup ==="
-    - echo "Installing tools..."
-    - apk add --no-cache curl netcat-openbsd
-    - echo "=== Docker Service Diagnostics ==="
-    - echo "Checking network connectivity..."
-    - ping -c 3 docker || echo "Cannot ping docker service"
-    - echo "Checking if Docker port is open..."
-    - nc -zv docker 2376 || echo "Docker port 2376 not accessible"
-    - echo "=== Waiting for Docker daemon ==="
-    - echo "Waiting for Docker daemon to be ready..."
-    - DOCKER_READY=false
-    - for i in $(seq 1 60); do
-        echo "Attempt $i/60: Testing Docker connection..."
-        if timeout 10 docker version >/dev/null 2>&1; then
-          echo "✅ Docker daemon is ready!";
-          DOCKER_READY=true;
-          break;
-        else
-          echo "⏳ Waiting for Docker daemon... attempt $i/60";
-          sleep 3;
-        fi;
-      done
-    - if [ "$DOCKER_READY" = "false" ]; then
-        echo "❌ Docker daemon failed to start after 180 seconds";
-        echo "=== Docker Diagnostics ===";
-        docker version || echo "Docker version failed";
-        docker info || echo "Docker info failed";
-        exit 1;
-      fi
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY --username $CI_REGISTRY_USER --password-stdin
-  script:
-    - echo "=== Testing Docker Image ==="
-    - docker pull $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
-    - echo "=== Running basic container test ==="
-    - echo "Starting container for health check..."
-    - docker run -d --name test-container -p 8080:80 $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
-    - echo "Waiting for container to start..."
-    - sleep 15
-    - echo "Checking container status..."
-    - docker ps -a
-    - echo "Checking container logs..."
-    - docker logs test-container
-    - echo "Testing container health..."
-    - docker exec test-container ps aux || echo "Container might be starting..."
-    - echo "=== Docker image test completed ==="
-  after_script:
-    - echo "=== Test cleanup ==="
-    - docker stop test-container || true
-    - docker rm test-container || true
-    - docker system prune -f || true
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# # Deploy to staging
-# deploy-staging:
-#   stage: deploy
-#   tags:
-#     - cicd
-#   dependencies:
-#     - docker-build
-#   environment:
-#     name: staging
-#     url: http://staging.team03-api.local
-#   script:
-#     - echo "=== Deploying to Staging ==="
-#     - echo "Stopping existing containers..."
-#     - docker-compose -f docker-compose.yml down || true
-#     - echo "Pulling latest images..."
-#     - docker-compose -f docker-compose.yml pull
-#     - echo "Starting new containers..."
-#     - docker-compose -f docker-compose.yml up -d
-#     - echo "Waiting for application to start..."
-#     - sleep 30
-#     - echo "=== Deployment to staging completed! ==="
-#   rules:
-#     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# # Deploy to production (manual)
-# deploy-production:
-#   stage: deploy
-#   tags:
-#     - cicd
-#   dependencies:
-#     - docker-build
-#   environment:
-#     name: production
-#     url: http://team03-api.production.local
-#   script:
-#     - echo "=== Deploying to Production ==="
-#     - echo "Stopping existing containers..."
-#     - docker-compose -f docker-compose.yml down || true
-#     - echo "Pulling latest images..."
-#     - docker-compose -f docker-compose.yml pull
-#     - echo "Starting new containers..."
-#     - docker-compose -f docker-compose.yml up -d
-#     - echo "Waiting for application to start..."
-#     - sleep 30
-#     - echo "=== Deployment to production completed! ==="
-#   when: manual
-#   rules:
-#     - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
