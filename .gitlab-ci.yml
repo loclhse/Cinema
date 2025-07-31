@@ -5,11 +5,10 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration với TLS
+  # Docker configuration
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_VERIFY: 1
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
   
   # Package Registry configuration
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
@@ -43,9 +42,9 @@ prepare:
 
 build:
   stage: build
-  image: docker:24.0.5
+  image: docker:latest
   services:
-    - name: docker:24.0.5-dind
+    - name: docker:dind
       alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2376
@@ -72,7 +71,6 @@ build:
       fi
     
     # Wait for Docker daemon to be ready
-    - echo "Waiting for Docker daemon to be ready..."
     - until docker info; do sleep 1; done
     
     # Login to GitLab Container Registry using CI_JOB_TOKEN
@@ -99,8 +97,8 @@ build:
     - |
       if [ ! -z "$CI_COMMIT_TAG" ]; then
         echo "Tagging and pushing version $CI_COMMIT_TAG..."
-        docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
-        docker push $IMAGE_NAME:$CI_COMMIT_TAG
+        - docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
+        - docker push $IMAGE_NAME:$CI_COMMIT_TAG
       fi
   tags:
     - cicd
