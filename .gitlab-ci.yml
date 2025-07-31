@@ -1,21 +1,18 @@
-variables:
-  PIPELINE_NAME: "Default pipeline name"
+stages:
+  - prepare
+  - build
 
-workflow:
-  name: '$PIPELINE_NAME'
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      variables:
-        PIPELINE_NAME: "Merge request pipeline"
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $PIPELINE_SCHEDULE_TYPE == "hourly_deploy"'
-      variables:
-        PIPELINE_NAME: "Hourly deployment pipeline"
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      variables:
-        PIPELINE_NAME: "Other scheduled pipeline"
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-      variables:
-        PIPELINE_NAME: "Default branch pipeline"
-    - if: '$CI_COMMIT_BRANCH =~ /^\d{1,2}\.\d{1,2}-stable$/'
-      variables:
-        PIPELINE_NAME: "Stable branch pipeline"
+prepare:
+  stage: prepare
+  script:        
+    - echo "Configuring Git credentials..."
+    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - echo "Prepare stage completed successfully"
+
+build:
+  state: build
+  script:
+    - echo "Try build"
+    - sleep 10
+    - echo "build done"   
+
