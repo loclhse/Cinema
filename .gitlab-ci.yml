@@ -5,7 +5,7 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration
+  # Docker configuration - disable TLS globally
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
@@ -48,10 +48,9 @@ build:
     - name: docker:dind
       alias: docker
   variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    # Use the same TLS configuration as global
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
@@ -72,6 +71,7 @@ build:
       fi
     
     # Wait for Docker daemon to be ready
+    - echo "Waiting for Docker daemon..."
     - until docker info; do sleep 1; done
     
     # Login to GitLab Container Registry using CI_JOB_TOKEN
@@ -98,10 +98,10 @@ build:
     - |
       if [ ! -z "$CI_COMMIT_TAG" ]; then
         echo "Tagging and pushing version $CI_COMMIT_TAG..."
-        - docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
-        - docker push $IMAGE_NAME:$CI_COMMIT_TAG
+        docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
+        docker push $IMAGE_NAME:$CI_COMMIT_TAG
       fi
   tags:
     - cicd
   after_script:
-    - docker logout $CI_REGISTRY
+    - docker logout $CI_REGISTRY || true
