@@ -38,7 +38,7 @@ prepare:
     - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
     - echo "Prepare stage completed successfully"
   tags:
-    - docker
+    - cicd
 
 # Run unit tests
 unit-tests:
@@ -174,4 +174,4 @@ build:
     - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
     - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
   tags:
-    - docker
+    - cicd
