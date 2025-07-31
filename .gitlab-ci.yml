@@ -11,7 +11,7 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   
   # Docker image configuration
-  DOCKER_IMAGE_NAME: "team03-webapi"
+  IMAGE_NAME: "team03-webapi"
   
   # Git configuration
   GIT_STRATEGY: none
@@ -80,12 +80,8 @@ build:
     - find . -name "Dockerfile" -type f
     # Then continue with the Docker build
     - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
-    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest
-    - echo "=== Docker build and push completed successfully! ==="
-    - echo "Image tags pushed:"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHA"
-    - echo "  - $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest"
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
   tags:
     - cicd
