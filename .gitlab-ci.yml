@@ -43,6 +43,7 @@ prepare:
 build:
   stage: build
   image: docker:latest
+  when: always
   services:
     - name: docker:dind
       alias: docker
