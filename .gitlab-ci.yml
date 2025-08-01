@@ -1,21 +1,30 @@
-
-stages:
-  - prepare
-  - build
-prepare:
-  stage: prepare
-  tags:
-    - larry
-  script:        
-    - echo "Configuring Git credentials..."
-    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - echo "Prepare stage completed successfully"
 build:
   stage: build
-  tags:
-    - larry
-  script:
-    - echo "Try build"
-    - sleep 10
-    - echo "build done"   
-
+  image: docker:24.0.5
+  services:
+    - name: docker:24.0.5-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+        git fetch && git checkout $TARGET_BRANCH && git pull;
+      fi
+    
+    # Wait for Docker daemon to be ready with more robust checking
+    - echo "Waiting for Docker daemon..."
+    - for i in $(seq 1 30); do docker info && break || sleep 2; done
+    
+    # Login to GitLab Container Registry using CI_JOB_TOKEN
+    - echo "Logging into GitLab Container Registry..."
+    - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    
+    # Push to GitLab Container Registry
+    - echo "Pushing to GitLab Container Registry..."
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
