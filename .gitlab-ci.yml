@@ -39,7 +39,6 @@ prepare:
     - echo "Prepare stage completed successfully"
   tags:
     - cicd
-
 build:
   stage: build
   image: docker:24.0.5
