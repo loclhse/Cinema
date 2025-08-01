@@ -1,107 +1,15 @@
 stages:
   - prepare
-  - test
   - build
-
-variables:
-  TARGET_BRANCH: "CICD_2"
-  # Docker configuration - disable TLS globally
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
-  
-  # Package Registry configuration
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
-  
-  # Git configuration
-  GIT_STRATEGY: none
-  GIT_USERNAME: "fsa_HongTL"
-
-# Default configuration for all jobs
-default:
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-
 prepare:
   stage: prepare
-  image: alpine:latest
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  script:
-    - apk add --no-cache git curl jq
-    # Configure Git authentication with personal token
+  script:        
     - echo "Configuring Git credentials..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Testing Git authentication..."
-    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - echo "Prepare stage completed successfully"
-  tags:
-    - cicd
-
 build:
   stage: build
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      alias: docker
-      command: ["--tls=false"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  before_script:
-    - apk add --no-cache git curl jq
-    # Configure Git authentication with personal token
-    - echo "Configuring Git authentication..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    
-    # Clone the repository manually if needed
-    - echo "Ensuring we have the repository code..."
-    - if [ ! -d ".git" ]; then
-        git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
-      else
-        git fetch && git checkout $TARGET_BRANCH && git pull;
-      fi
-    
-    # Wait for Docker daemon to be ready with more robust checking
-    - echo "Waiting for Docker daemon..."
-    - for i in $(seq 1 30); do docker info && break || sleep 2; done
-    
-    # Login to GitLab Container Registry using CI_JOB_TOKEN
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin || exit 1
   script:
-    - echo "Listing repository contents..."
-    - ls -la
-    - echo "Current working directory:"
-    - pwd
-    - echo "Searching for Dockerfile..."
-    - find . -name "Dockerfile" -type f
-    
-    # Build Docker image with proper registry path
-    - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
-    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
-    
-    # Push to GitLab Container Registry
-    - echo "Pushing to GitLab Container Registry..."
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
-    
-    # Optional: Tag and push with version if CI_COMMIT_TAG exists
-    - |
-      if [ ! -z "$CI_COMMIT_TAG" ]; then
-        echo "Tagging and pushing version $CI_COMMIT_TAG..."
-        docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
-        docker push $IMAGE_NAME:$CI_COMMIT_TAG
-      fi
-  tags:
-    - cicd
-  after_script:
-    - docker logout $CI_REGISTRY || true
+    - echo "Try build"
+    - sleep 10
+    - echo "build done"   
