@@ -11,10 +11,65 @@ prepare:
     - larry
 build:
   stage: build
+  image: docker:latest
+  when: always
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    # Use the same TLS configuration as global
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+    - apk add --no-cache git curl jq
+    # Configure Git authentication with personal token
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    
+    # Clone the repository manually if needed
+    - echo "Ensuring we have the repository code..."
+    - if [ ! -d ".git" ]; then
+        git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
+      else
+        git fetch && git checkout $TARGET_BRANCH && git pull;
+      fi
+    
+    # Wait for Docker daemon to be ready
+    - echo "Waiting for Docker daemon..."
+    - until docker info; do sleep 1; done
+    
+    # Login to GitLab Container Registry using CI_JOB_TOKEN
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin || exit 1
   script:
-    - echo "Try build"
-    - sleep 10
-    - echo "build done"   
+    - echo "Listing repository contents..."
+    - ls -la
+    - echo "Current working directory:"
+    - pwd
+    - echo "Searching for Dockerfile..."
+    - find . -name "Dockerfile" -type f
+    
+    # Build Docker image with proper registry path
+    - echo "Building Docker image with commit hash $CI_COMMIT_SHA..."
+    - DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    
+    # Push to GitLab Package Registry
+    - echo "Pushing to GitLab Package Registry..."
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+    
+    # Optional: Tag and push with version if CI_COMMIT_TAG exists
+    - |
+      if [ ! -z "$CI_COMMIT_TAG" ]; then
+        echo "Tagging and pushing version $CI_COMMIT_TAG..."
+        docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CI_COMMIT_TAG
+        docker push $IMAGE_NAME:$CI_COMMIT_TAG
+      fi
   tags:
-    - larry
+    - cicd
     
