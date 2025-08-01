@@ -39,6 +39,7 @@ prepare:
     - echo "Prepare stage completed successfully"
   tags:
     - cicd
+    
 build:
   stage: build
   image: docker:24.0.5
@@ -62,7 +63,7 @@ build:
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     
     # Clone the repository manually if needed
-    - echo "Ensuring we have the repository code..."
+    - echo "Ensuring we have the repository code.."
     - if [ ! -d ".git" ]; then
         git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1;
       else
