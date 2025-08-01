@@ -8,7 +8,7 @@ prepare:
     - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - echo "Prepare stage completed successfully"
   tags:
-    - vps
+    - larry
 build:
   stage: build
   script:
@@ -16,5 +16,4 @@ build:
     - sleep 10
     - echo "build done"   
   tags:
-    - vps
-
+    - larry
