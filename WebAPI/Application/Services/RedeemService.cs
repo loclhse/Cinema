@@ -58,7 +58,7 @@ namespace Application.Services
                 
                 await _unitOfWork.redeemRepo.AddAsync(redeem);
                 await _unitOfWork.SaveChangesAsync();
-                return apiResp.SetOk("Redeem create successfully!");
+                return apiResp.SetOk($"Redeem create successfully with id: {redeem.Id}");
             }
             catch (Exception ex)
             {
