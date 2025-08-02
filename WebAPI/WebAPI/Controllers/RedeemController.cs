@@ -86,9 +86,9 @@ namespace WebAPI.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpPut("ReedemItem/{reedemId}")]
-        public async Task<IActionResult> RedeemItem(Guid reedemId, Guid userId)
+        public async Task<IActionResult> RedeemItem(Guid reedemId)
         {
-            var result = await _redeemService.redeemItem(reedemId, userId);
+            var result = await _redeemService.redeemItem(reedemId);
             if (result.StatusCode == HttpStatusCode.NotFound)
             {
                 return NotFound();

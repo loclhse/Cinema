@@ -16,7 +16,7 @@ namespace Application.IServices
         Task<ApiResp> GetPendingRedeemsByAccountAsync(Guid accountId);
         Task<ApiResp> GetPaidRedeemsByAccountAsync(Guid accountId);
         Task<ApiResp> CancelRedeemAsync(Guid id);
-        Task<ApiResp> redeemItem(Guid id, Guid userId);
+        Task<ApiResp> redeemItem(Guid id);
         Task<ApiResp> updateRedeemAsync(Guid redeemId, List<RedeemRequest> requests);
     }
 }
