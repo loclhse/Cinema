@@ -1,6 +1,6 @@
 workflow:
   rules:
-    - if: '$CI_COMMIT_BRANCH'
+    - when: always
 
 stages:
   - prepare
