@@ -6,21 +6,28 @@ stages:
   - prepare
   - build
 
+variables:
+  GIT_CRED_PATH: "/root/.git-credentials"
+
+default:
+  image: alpine:latest  # Hoặc bạn có thể dùng `debian:latest` nếu cần nhiều tool hơn
+  tags:
+    - vps
+
+before_script:
+  - apk add --no-cache git curl
+
 prepare:
   stage: prepare
   script:        
     - echo "Configuring Git credentials..."
-    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - echo "https://${GIT_USERNAME}:${PERSONAL_TOKEN}@git.fa.edu.vn" > $GIT_CRED_PATH
+    - git config --global credential.helper "store --file=$GIT_CRED_PATH"
     - echo "Prepare stage completed successfully"
-  tags:
-    - vps
 
 build:
   stage: build
   script:
     - echo "Try build"
     - sleep 10
-    - echo "build done"
-  tags:
-    - vps
-
+    - echo "Build done"
