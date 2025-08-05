@@ -83,7 +83,10 @@ build:
     - cd project_source
     - tar -czf ../project.tar.gz .
     - cd ..
-    - scp project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/
+    - echo "Testing SSH connection..."
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'"
+    - echo "Copying project file to server..."
+    - scp project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed" && exit 1)
     
     - echo "Building Docker image on server..."
     - |
@@ -94,19 +97,19 @@ build:
         tar -xzf /tmp/project.tar.gz
         
         echo 'Login to GitLab Container Registry...'
-        echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
         
         echo 'Building Docker image on server...'
-        docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$CI_COMMIT_SHA .
+        docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
         
         echo 'Pushing to GitLab Container Registry...'
-        docker push $IMAGE_NAME:latest
-        docker push $IMAGE_NAME:$CI_COMMIT_SHA
+        docker push '$IMAGE_NAME:latest'
+        docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
         
         echo 'Cleaning up build files...'
         cd /tmp
         rm -rf team03_build project.tar.gz
-      "
+      " || (echo "SSH command failed" && exit 1)
   tags:
     - cicd
 
@@ -138,6 +141,8 @@ deploy:
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts
   script:
     - echo "Deploying application on server..."
+    - echo "Testing SSH connection for deploy..."
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful for deploy'"
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Stopping and removing old container...'
@@ -145,7 +150,7 @@ deploy:
         docker rm team03-webapi || true
         
         echo 'Starting new container with latest image...'
-        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped $IMAGE_NAME:latest
+        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
         
         echo 'Checking deployment status...'
         docker ps | grep team03-webapi
@@ -153,6 +158,6 @@ deploy:
         echo 'Testing application endpoint...'
         sleep 5
         curl -f http://localhost:8080/health || echo 'Health check endpoint not available, but container is running'
-      "
+      " || (echo "Deploy SSH command failed" && exit 1)
   tags:
     - cicd
