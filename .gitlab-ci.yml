@@ -6,18 +6,12 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration - disable TLS for simplicity
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
-  
-  # Package Registry configuration
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
-  
-  # Git configuration
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
 
-# Default configuration for all jobs
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
 
@@ -28,7 +22,6 @@ prepare:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   script:
     - apt-get update && apt-get install -y git curl jq
-    # Configure Git authentication with personal token
     - echo "Configuring Git credentials..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
@@ -47,37 +40,28 @@ build:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
     - apt-get update && apt-get install -y git curl openssh-client tar gzip
-    # Configure Git authentication
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
     - git config --global user.name "$GIT_USERNAME"
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    
-    # Clone the repository
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
-    
-    # Setup SSH for server connection
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    # Write SSH key with proper line breaks using printf
     - echo "Creating SSH key file with proper format..."
     - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    # Debug SSH key content
     - echo "Debug - SSH key file first 3 lines:"
     - head -3 ~/.ssh/id_rsa
     - echo "Debug - SSH key file last 3 lines:"
     - tail -3 ~/.ssh/id_rsa
     - echo "Debug - SSH key line count:"
     - wc -l ~/.ssh/id_rsa
-    # Verify SSH key format
     - head -1 ~/.ssh/id_rsa | grep -q "BEGIN" || (echo "SSH key format error - first line:" && head -1 ~/.ssh/id_rsa && exit 1)
     - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
-    # Generate and show public key for comparison
     - echo "Generating public key from private key:"
     - ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
     - echo "Public key content:"
@@ -100,7 +84,6 @@ build:
     - ssh -vvv -o ConnectTimeout=30 -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || echo "SSH key auth failed - need to check server authorized_keys"
     - echo "Copying project file to server..."
     - scp -v -o ConnectTimeout=30 project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed - ensure SSH public key is installed on server" && exit 1)
-    
     - echo "Building Docker image on server..."
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
@@ -135,18 +118,15 @@ deploy:
     - apt-get update && apt-get install -y openssh-client curl
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    # Write SSH key with proper line breaks using printf
     - echo "Creating SSH key file with proper format..."
     - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    # Debug SSH key content
     - echo "Debug - SSH key file first 3 lines:"
     - head -3 ~/.ssh/id_rsa
     - echo "Debug - SSH key file last 3 lines:"
     - tail -3 ~/.ssh/id_rsa
     - echo "Debug - SSH key line count:"
     - wc -l ~/.ssh/id_rsa
-    # Verify SSH key format
     - head -1 ~/.ssh/id_rsa | grep -q "BEGIN" || (echo "SSH key format error - first line:" && head -1 ~/.ssh/id_rsa && exit 1)
     - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
     - eval $(ssh-agent -s)
