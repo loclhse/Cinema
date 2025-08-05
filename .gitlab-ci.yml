@@ -6,9 +6,11 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration - disable TLS for simplicity
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
+  # Docker configuration with TLS
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
   
   # Package Registry configuration
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
