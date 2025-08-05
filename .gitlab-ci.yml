@@ -6,7 +6,7 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
+  IMAGE_NAME: "git.fa.edu.vn/hcm25_cpl_net_06/team03_be/team03-webapi"
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
 
@@ -99,7 +99,7 @@ build:
         fi
         
         echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
+        echo '$CI_JOB_TOKEN' | docker login 'git.fa.edu.vn:5050' --username gitlab-ci-token --password-stdin
         
         echo 'Building Docker image...'
         docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
@@ -185,7 +185,7 @@ deploy:
         fi
         
         echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
+        echo '$CI_JOB_TOKEN' | docker login 'git.fa.edu.vn:5050' --username gitlab-ci-token --password-stdin
         
         echo 'Pulling latest image from registry...'
         docker pull '$IMAGE_NAME:latest'
