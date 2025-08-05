@@ -9,8 +9,8 @@ COPY ["WebAPI/Infrastructure/Infrastructure.csproj", "WebAPI/Infrastructure/"]
 COPY ["WebAPI/Application/Application.csproj", "WebAPI/Application/"]
 COPY ["WebAPI/Domain/Domain.csproj", "WebAPI/Domain/"]
 
-# Restore as distinct layers
-RUN dotnet restore "WebAPI/WebAPI/WebAPI.csproj"
+# Restore as distinct layers with runtime identifier
+RUN dotnet restore "WebAPI/WebAPI/WebAPI.csproj" -r linux-x64
 
 # Copy and build source
 COPY . .
@@ -18,13 +18,10 @@ WORKDIR "/src/WebAPI/WebAPI"
 RUN dotnet build "WebAPI.csproj" -c Release -o /app/build
 
 FROM build AS publish
-# Publish with self-contained for better startup performance in Azure Container Apps
+# Publish with framework-dependent deployment (lighter image)
 RUN dotnet publish "WebAPI.csproj" -c Release -o /app/publish \
     --no-restore \
-    --self-contained true \
-    -r linux-x64 \
-    /p:PublishTrimmed=false \
-    /p:PublishSingleFile=false
+    --self-contained false
 
 # Build runtime image
 FROM base AS final
