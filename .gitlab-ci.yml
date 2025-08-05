@@ -2,10 +2,25 @@ stages:
   - prepare
   - test
   - build
+  - deploy
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration - disable TLS globally
+  # Docker configuration - d  before_script:
+    # Install SSH client
+    - apk add --no-cache openssh-client
+    
+    # Setup SSH with private key
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    
+    # Test SSH connection
+    - echo "Testing SSH connection..."
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful!'"globally
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
@@ -38,8 +53,8 @@ prepare:
     - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
     - echo "Prepare stage completed successfully"
   tags:
-    - dockervps
-    
+    - cicd
+
 build:
   stage: build
   image: docker:24.0.5
@@ -105,3 +120,47 @@ build:
     - dockervps
   after_script:
     - docker logout $CI_REGISTRY || true
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  dependencies:
+    - build
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+    # Install SSH client
+    - apk add --no-cache openssh-client
+    
+    # Setup SSH with private key
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to server..."
+    - echo "Docker image: $IMAGE_NAME:$CI_COMMIT_SHA"
+    
+    # Deploy commands via SSH with private key
+    - |
+      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        echo 'Logging into GitLab Container Registry on server...'
+        echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+        
+        echo 'Pulling latest Docker image...'
+        docker pull $IMAGE_NAME:latest
+        
+        echo 'Stopping existing container...'
+        docker stop team03-webapi || true
+        docker rm team03-webapi || true
+        
+        echo 'Starting new container...'
+        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped $IMAGE_NAME:latest
+        
+        echo 'Deployment completed!'
+        docker ps | grep team03-webapi
+      "
+  tags:
+    - cicd
