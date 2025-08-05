@@ -108,16 +108,34 @@ build:
           echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
           echo 'Deploying immediately...'
-          echo 'Stopping old container if exists...'
-          docker stop team03-webapi 2>/dev/null || echo 'No existing container to stop'
-          docker rm team03-webapi 2>/dev/null || echo 'No existing container to remove'
+          echo 'Cleanup existing containers and processes...'
+          
+          # Force stop and remove any existing containers
+          docker ps -a | grep team03-webapi | awk '{print \$1}' | xargs -r docker kill 2>/dev/null || echo 'No containers to kill'
+          docker ps -a | grep team03-webapi | awk '{print \$1}' | xargs -r docker rm -f 2>/dev/null || echo 'No containers to remove'
+          
+          # Alternative port cleanup for rootless Docker
+          docker ps -a | grep ':8080->' | awk '{print \$1}' | xargs -r docker kill 2>/dev/null || echo 'No containers using port 8080'
+          docker ps -a | grep ':8080->' | awk '{print \$1}' | xargs -r docker rm -f 2>/dev/null || echo 'No containers to remove on port 8080'
+          
+          # Wait a moment for cleanup
+          sleep 3
+          
+          echo 'Checking port availability...'
+          if netstat -ln 2>/dev/null | grep ':8080 ' || ss -ln 2>/dev/null | grep ':8080 '; then
+            echo 'Warning: Port 8080 still in use, attempting force cleanup...'
+            docker ps | grep ':8080->' | awk '{print \$1}' | xargs -r docker kill 2>/dev/null || echo 'No running containers on port 8080'
+            sleep 2
+          else
+            echo 'Port 8080 is available'
+          fi
           
           echo 'Starting new container...'
           docker run -d \
             --name team03-webapi \
             -p 8080:8080 \
             --restart unless-stopped \
-            'team03-webapi:latest'
+            team03-webapi:latest
           
           echo 'Verifying deployment...'
           sleep 5
