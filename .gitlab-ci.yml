@@ -54,24 +54,21 @@ build:
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
     - echo "Transferring source code to server for Docker build..."
-    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        mkdir -p ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S)
-        echo ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S) > ~/.last-build-dir
-      "
-    - BUILD_DIR=$(ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/.last-build-dir")
-    - echo "Build directory $BUILD_DIR"
-    - echo "Transferring source code to server..."
+    - echo "Preparing source code archive..."
     - cd project_source
     - tar -czf ../project.tar.gz .
     - cd ..
-    - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:$BUILD_DIR/
+    - echo "Uploading source code to server..."
+    - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        BUILD_DIR=\$(ls -d ~/docker-builds/team03-build-* | tail -1)
-        echo \"Using build directory: \$BUILD_DIR\"
+        echo 'Creating build directory...'
+        BUILD_DIR=~/docker-builds/team03-build-\$(date +%Y%m%d-%H%M%S)
+        mkdir -p \$BUILD_DIR
+        echo \"Build directory: \$BUILD_DIR\"
         
+        echo 'Moving source code to build directory...'
         cd \$BUILD_DIR
-        echo 'Moving and extracting source code...'
         mv ~/project.tar.gz .
         tar -xzf project.tar.gz
         rm project.tar.gz
