@@ -6,48 +6,12 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  IMAGE_NAME: "$CI_REGISTRY        echo \"Docker accessible: \$DOCKER_ACCESSIBLE\"
-        echo \"User in docker group: \$USER_IN_DOCKER_GROUP\"
-        echo \"Rootless Docker available: \$ROOTLESS_DOCKER\"
-        
-        if [ "\$DOCKER_ACCESSIBLE" = "true" ]; then
-          echo 'Docker is accessible, proceeding with build...'
-        elif [ "\$ROOTLESS_DOCKER" = "true" ]; then
-          echo 'Using rootless Docker...'
-          export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock
-          DOCKER_ACCESSIBLE=true
-        fi
-        
-        if [ "\$DOCKER_ACCESSIBLE" = "true" ]; thenE/team03-webapi"
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
   # Docker variables for DinD
-  DOC        elif [ "\$BUILD_STATUS" = "DOCKER_PERMISSION_ERROR" ]; then
-          echo '=== DOCKER PERMISSION ERROR ==='
-          echo 'Build failed due to Docker permission issues.'
-          echo 'User fsoftguy does not have Docker access or sudo privileges.'
-          echo ''
-          echo 'SOLUTION OPTIONS:'
-          echo '================================'
-          echo 'Option 1 - Ask system administrator to run:'
-          echo 'sudo usermod -aG docker fsoftguy'
-          echo 'sudo systemctl restart docker'
-          echo ''
-          echo 'Option 2 - Try rootless Docker (run as fsoftguy):'
-          echo 'dockerd-rootless-setuptool.sh install'
-          echo 'systemctl --user enable docker'
-          echo 'systemctl --user start docker'
-          echo 'export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock'
-          echo ''
-          echo 'Option 3 - Use different SSH user with Docker access'
-          echo ''
-          echo 'Option 4 - Ask admin to grant sudo access to fsoftguy'
-          echo '================================'
-          echo 'Then re-run the pipeline.'
-          exit 1R: "/certs"
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "/certs/client"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
 
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -72,11 +36,16 @@ prepare:
 
 build:
   stage: build
-  image: mcr.microsoft.com/dotnet/sdk:8.0
+  image: docker:24.0.5
+  services:
+    - name: docker:24.0.5-dind
+      alias: docker
+      command: ["--tls=false"]
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apt-get update && apt-get install -y git curl openssh-client tar gzip
+    # Install git and other tools in Alpine
+    - apk add --no-cache git openssh-client
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
@@ -84,6 +53,48 @@ build:
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
+    - cd project_source
+    # Wait for Docker daemon to be ready
+    - until docker info; do echo "Waiting for Docker daemon..."; sleep 1; done
+  script:
+    - echo "Building Docker image in GitLab CI/CD (no server build needed)..."
+    - echo "Current directory contents:"
+    - ls -la
+    - echo "Dockerfile content:"
+    - cat Dockerfile
+    
+    # Login to GitLab Container Registry
+    - echo "Logging into GitLab Container Registry..."
+    - echo "$CI_JOB_TOKEN" | docker login "$CI_REGISTRY" --username gitlab-ci-token --password-stdin
+    
+    # Build Docker image using Dockerfile
+    - echo "Building Docker image with Dockerfile..."
+    - docker build -t "$IMAGE_NAME:latest" -t "$IMAGE_NAME:$CI_COMMIT_SHA" .
+    
+    # Push images to registry
+    - echo "Pushing images to registry..."
+    - docker push "$IMAGE_NAME:latest"
+    - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
+    
+    # Verify images
+    - echo "Build completed successfully!"
+    - docker images | grep team03-webapi
+    - echo "BUILD_STATUS=SUCCESS" > build_status.txt
+    
+  artifacts:
+    reports:
+      dotenv: project_source/build_status.txt
+    expire_in: 1 hour
+  tags:
+    - cicd
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+    - apk add --no-cache openssh-client curl
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "Creating SSH key file..."
@@ -91,201 +102,63 @@ build:
     - chmod 600 ~/.ssh/id_rsa
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
+    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed, using StrictHostKeyChecking=no"
   script:
-    - echo "Preparing source code for server build..."
-    - cd project_source
-    - tar -czf ../project.tar.gz .
-    - cd ..
-    - echo "Transferring and building on server..."
+    - echo "Deploying pre-built Docker image to server..."
+    - echo "Testing SSH connection..."
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'"
+    
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        echo 'Setting up build directory...'
-        mkdir -p /tmp/team03_build
-        cd /tmp/team03_build
-        echo 'Extracting source...'
-      " || echo "SSH setup failed"
-    - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/team03_build/ || echo "File transfer failed"
-    - |
-      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        cd /tmp/team03_build
-        tar -xzf project.tar.gz
+        echo 'Starting deployment process...'
         
-        echo 'Checking Docker status and permissions...'
-        docker version 2>/dev/null && DOCKER_ACCESSIBLE=true || DOCKER_ACCESSIBLE=false
-        
-        echo 'Checking if user is in docker group...'
-        groups \$USER | grep docker && USER_IN_DOCKER_GROUP=true || USER_IN_DOCKER_GROUP=false
-        
-        echo 'Checking for rootless Docker...'
-        if [ -S "\$XDG_RUNTIME_DIR/docker.sock" ]; then
-          echo 'Rootless Docker socket found, trying...'
-          DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock docker version 2>/dev/null && ROOTLESS_DOCKER=true || ROOTLESS_DOCKER=false
-        else
-          ROOTLESS_DOCKER=false
-        fi
-        
-        echo \"Docker accessible: \$DOCKER_ACCESSIBLE\"
-        echo \"User in docker group: \$USER_IN_DOCKER_GROUP\"
-        echo \"Rootless Docker available: \$ROOTLESS_DOCKER\"
-        
-        if [ \"\$DOCKER_ACCESSIBLE\" = \"true\" ]; then
-          echo 'Docker is accessible, proceeding with build...'
-          
-          echo 'Logging into GitLab Container Registry...'
-          echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Docker login failed'
-          
-          echo 'Building Docker image...'
-          docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' . && BUILD_SUCCESS=true || BUILD_SUCCESS=false
-          
-          if [ \"\$BUILD_SUCCESS\" = \"true\" ]; then
-            echo 'Build succeeded! Pushing to registry...'
-            docker push '$IMAGE_NAME:latest' && echo 'Push latest succeeded' || echo 'Push latest failed'
-            docker push '$IMAGE_NAME:$CI_COMMIT_SHA' && echo 'Push SHA succeeded' || echo 'Push SHA failed'
-            echo 'BUILD_STATUS=SUCCESS' > /tmp/build_status
-          else
-            echo 'Build failed!'
-            echo 'BUILD_STATUS=FAILED' > /tmp/build_status
-          fi
-        else
-          echo '=== DOCKER PERMISSION ERROR ==='
-          echo 'Docker is not accessible. This is because:'
-          echo '1. User fsoftguy is not in the docker group'
-          echo '2. Docker may be running in rootless mode'
-          echo '3. Docker daemon permissions are not configured properly'
-          echo ''
-          echo 'SOLUTION OPTIONS:'
-          echo '================================'
-          echo 'Option 1 - Admin adds user to docker group:'
-          echo 'Ask your system administrator to run:'
-          echo 'sudo usermod -aG docker fsoftguy'
-          echo 'sudo systemctl restart docker'
-          echo ''
-          echo 'Option 2 - Use rootless Docker:'
-          echo 'systemctl --user enable docker'
-          echo 'systemctl --user start docker'
-          echo 'export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock'
-          echo ''
-          echo 'Option 3 - Grant sudo access:'
-          echo 'Ask admin to add fsoftguy to sudoers file'
-          echo ''
-          echo 'Option 4 - Use different user:'
-          echo 'Use a user that already has Docker access'
-          echo '================================'
-          echo 'BUILD_STATUS=DOCKER_PERMISSION_ERROR' > /tmp/build_status
-        fi
-        
-        echo 'Cleaning up...'
-        cd /tmp && rm -rf team03_build
-        
-        echo 'Build process completed - check messages above for success/failure'
-      " || echo "Build process had issues but continuing"
-  tags:
-    - cicd
-
-deploy:
-  stage: deploy
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  before_script:
-    - apt-get update && apt-get install -y openssh-client curl
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo "Creating SSH key file with proper format..."
-    - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo "Debug - SSH key file first 3 lines:"
-    - head -3 ~/.ssh/id_rsa
-    - echo "Debug - SSH key file last 3 lines:"
-    - tail -3 ~/.ssh/id_rsa
-    - echo "Debug - SSH key line count:"
-    - wc -l ~/.ssh/id_rsa
-    - head -1 ~/.ssh/id_rsa | grep -q "BEGIN" || (echo "SSH key format error - first line:" && head -1 ~/.ssh/id_rsa && exit 1)
-    - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
-    - eval $(ssh-agent -s)
-    - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
-    - echo "Adding server to known_hosts"
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Warning ssh-keyscan failed, but continuing"
-    - echo "Alternatively adding server to known_hosts with timeout"
-    - timeout 10 ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Host key scan failed, will use StrictHostKeyChecking=no"
-  script:
-    - echo "Deploying application on server"
-    - echo "Testing SSH connection for deploy"
-    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful for deploy'"
-    - |
-      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        echo 'Checking build status from previous stage...'
-        if [ -f /tmp/build_status ]; then
-          BUILD_STATUS=\$(cat /tmp/build_status | cut -d'=' -f2)
-          rm -f /tmp/build_status
-        else
-          BUILD_STATUS='UNKNOWN'
-        fi
-        
-        echo \"Build status: \$BUILD_STATUS\"
-        
-        if [ \"\$BUILD_STATUS\" = \"SUCCESS\" ]; then
-          echo 'Build was successful, proceeding with deployment...'
-          
-          echo 'Logging into GitLab Container Registry...'
-          echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Registry login failed'
-          
-          echo 'Checking if image exists in registry...'
-          docker pull '$IMAGE_NAME:latest' && IMAGE_AVAILABLE=true || IMAGE_AVAILABLE=false
-          
-          if [ \"\$IMAGE_AVAILABLE\" = \"true\" ]; then
-            echo 'Image found in registry, proceeding with deployment...'
-            
-            echo 'Stopping and removing old container...'
-            docker stop team03-webapi || true
-            docker rm team03-webapi || true
-            
-            echo 'Starting new container with latest image...'
-            docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
-            
-            echo 'Checking deployment status...'
-            docker ps | grep team03-webapi && echo 'Container is running!' || echo 'Container failed to start'
-            
-            echo 'Testing application endpoint...'
-            sleep 10
-            curl -f http://localhost:8080/health && echo 'Health check passed!' || echo 'Health check failed or endpoint not available'
-            
-            echo '=== DEPLOYMENT SUCCESSFUL ==='
-            echo 'Application URL: http://vps.purintech.id.vn:8080'
-            echo 'Health Check: http://vps.purintech.id.vn:8080/health'
-            echo '============================='
-          else
-            echo '=== IMAGE NOT FOUND ==='
-            echo 'Docker image was not found in the registry after successful build.'
-            echo 'This could be due to push failures.'
-            echo '======================='
-            exit 1
-          fi
-          
-        elif [ \"\$BUILD_STATUS\" = \"DOCKER_PERMISSION_ERROR\" ]; then
-          echo '=== DOCKER PERMISSION ERROR ==='
-          echo 'Build failed due to Docker permission issues.'
-          echo 'User fsoftguy needs to be added to the docker group.'
-          echo ''
-          echo 'Please run these commands on the server:'
-          echo 'sudo usermod -aG docker fsoftguy'
-          echo 'sudo systemctl restart docker'
-          echo 'sudo su - fsoftguy'  # Log out and back in
-          echo 'docker ps'  # Test Docker access
-          echo ''
-          echo 'Then re-run the pipeline.'
-          echo '================================'
-          exit 1
-          
-        else
-          echo '=== BUILD FAILED ==='
-          echo 'The build stage failed or status is unknown.'
-          echo 'Check the build stage logs for more details.'
-          echo 'Cannot proceed with deployment.'
-          echo '==================='
+        # Check if Docker is accessible (read-only commands, no sudo needed)
+        if ! docker version > /dev/null 2>&1; then
+          echo '=== DOCKER ACCESS ERROR ==='
+          echo 'Docker is not accessible. User needs to be in docker group.'
+          echo 'Please ask admin to run: usermod -aG docker fsoftguy'
+          echo 'Then logout/login and try again.'
+          echo '=========================='
           exit 1
         fi
-      " || (echo "Deploy SSH command failed" && exit 1)
+        
+        echo 'Docker is accessible, proceeding with deployment...'
+        
+        # Login to registry (no sudo needed if user in docker group)
+        echo 'Logging into GitLab Container Registry...'
+        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
+        
+        # Pull the pre-built image from registry
+        echo 'Pulling latest image from registry...'
+        docker pull '$IMAGE_NAME:latest'
+        
+        # Stop and remove old container
+        echo 'Stopping old container if exists...'
+        docker stop team03-webapi 2>/dev/null || echo 'No existing container to stop'
+        docker rm team03-webapi 2>/dev/null || echo 'No existing container to remove'
+        
+        # Start new container with the pre-built image
+        echo 'Starting new container...'
+        docker run -d \
+          --name team03-webapi \
+          -p 8080:8080 \
+          --restart unless-stopped \
+          '$IMAGE_NAME:latest'
+        
+        # Verify deployment
+        echo 'Checking container status...'
+        docker ps | grep team03-webapi
+        
+        # Health check
+        echo 'Waiting for application to start...'
+        sleep 10
+        curl -f http://localhost:8080/health || echo 'Health endpoint not available yet'
+        
+        echo '=== DEPLOYMENT SUCCESSFUL ==='
+        echo 'Application is running at: http://vps.purintech.id.vn:8080'
+        echo 'Container status:'
+        docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
+        echo '=========================='
+      "
   tags:
     - cicd
