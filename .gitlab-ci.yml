@@ -23,9 +23,7 @@ default:
 
 prepare:
   stage: prepare
-  image: 
-    name: alpine:latest
-    pull_policy: if-not-present
+  image: node:18-alpine
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   script:
@@ -44,9 +42,7 @@ prepare:
 
 build:
   stage: build
-  image: 
-    name: alpine:latest
-    pull_policy: if-not-present
+  image: node:18-alpine
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
@@ -102,9 +98,7 @@ build:
 
 deploy:
   stage: deploy
-  image: 
-    name: alpine:latest
-    pull_policy: if-not-present
+  image: node:18-alpine
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
