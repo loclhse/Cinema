@@ -58,7 +58,7 @@ build:
     - echo "Excluding unnecessary files from archive..."
     - tar --exclude='*.git*' --exclude='bin' --exclude='obj' --exclude='*.vs*' --exclude='node_modules' -czf ../project.tar.gz .
     - cd ..
-    - echo "Archive size: $(du -h project.tar.gz | cut -f1)"
+    - echo "Archive size $(du -h project.tar.gz | cut -f1)"
     - echo "Checking server disk space and uploading source code..."
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "df -h ~/ && echo 'Available space checked'"
     - echo "Uploading source code (with retry logic)..."
