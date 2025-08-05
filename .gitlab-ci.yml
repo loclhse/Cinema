@@ -96,15 +96,18 @@ build:
         cd /tmp/team03_build
         tar -xzf /tmp/project.tar.gz
         
+        echo 'Check Docker daemon status...'
+        sudo systemctl status docker || sudo systemctl start docker
+        
         echo 'Login to GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
+        echo '$CI_JOB_TOKEN' | sudo docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
         
         echo 'Building Docker image on server...'
-        docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
+        sudo docker build --no-cache --pull -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
         
         echo 'Pushing to GitLab Container Registry...'
-        docker push '$IMAGE_NAME:latest'
-        docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
+        sudo docker push '$IMAGE_NAME:latest'
+        sudo docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
         
         echo 'Cleaning up build files...'
         cd /tmp
@@ -146,18 +149,23 @@ deploy:
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Stopping and removing old container...'
-        docker stop team03-webapi || true
-        docker rm team03-webapi || true
+        sudo docker stop team03-webapi || true
+        sudo docker rm team03-webapi || true
         
         echo 'Starting new container with latest image...'
-        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
+        sudo docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
         
         echo 'Checking deployment status...'
-        docker ps | grep team03-webapi
+        sudo docker ps | grep team03-webapi
         
         echo 'Testing application endpoint...'
         sleep 5
         curl -f http://localhost:8080/health || echo 'Health check endpoint not available, but container is running'
+        
+        echo '=== DEPLOYMENT SUCCESSFUL ==='
+        echo 'Application URL: http://vps.purintech.id.vn:8080'
+        echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+        echo '============================='
       " || (echo "Deploy SSH command failed" && exit 1)
   tags:
     - cicd
