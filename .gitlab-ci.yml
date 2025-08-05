@@ -6,21 +6,6 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration - d  before_script:
-    # Install SSH client
-    - apk add --no-cache openssh-client
-    
-    # Setup SSH with private key
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    
-    # Test SSH connection
-    - echo "Testing SSH connection..."
-    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful!'"globally
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
