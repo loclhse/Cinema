@@ -182,7 +182,7 @@ namespace Application.Services
             return analytics;
         }
 
-        private async Task<List<MovieRanking>> GetMovieRankingsDataAsync(int? limit = null)
+        public async Task<List<MovieRanking>> GetMovieRankingsDataAsync(int? limit = null)
         {
             // Get all successful payments
             var payments = await _uow.PaymentRepo.GetAllAsync(
@@ -225,7 +225,7 @@ namespace Application.Services
             return movieRankings;
         }
 
-        private async Task<decimal> GetRevenueForDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<decimal> GetRevenueForDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             // Ensure UTC DateTime
             var utcStartDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
@@ -241,7 +241,7 @@ namespace Application.Services
             return payments.Sum(p => p.AmountPaid ?? 0);
         }
 
-        private async Task<int> GetTicketCountForDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<int> GetTicketCountForDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             // Ensure UTC DateTime
             var utcStartDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);

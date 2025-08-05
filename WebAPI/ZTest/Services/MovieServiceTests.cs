@@ -544,5 +544,119 @@ public async Task ElasticSearchMovie_ShouldReturnBadRequest_WhenExceptionOccurs(
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
         Assert.Equal("Database error", result.ErrorMessage);
     }
+    [Fact]
+    public async Task GetShowtimeByMovieId_ShouldReturnNotFound_WhenMovieDoesNotExist()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync((Movie)null); // Giả lập không tìm thấy movie
+
+        // Act
+        var result = await _movieService.GetShowtimeByMovieId(movieId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal("Movie not found!", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetShowtimeByMovieId_ShouldReturnNotFound_WhenNoShowtimesFound()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movie = new Movie
+        {
+            Id = movieId,
+            Showtimes = new List<Showtime>() // Không có showtime
+        };
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie); // Giả lập tìm thấy movie
+
+        // Act
+        var result = await _movieService.GetShowtimeByMovieId(movieId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal("Movie not found!", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetShowtimeByMovieId_ShouldReturnOk_WhenShowtimesFound()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var showtime = new Showtime { Id = Guid.NewGuid(), MovieId = movieId, StartTime = DateTime.Now };
+        var movie = new Movie
+        {
+            Id = movieId,
+            Showtimes = new List<Showtime> { showtime } // Có showtimes
+        };
+
+        var showtimeResponse = new ShowtimeResponse { Id = showtime.Id, EndTime = showtime.EndTime }; // Giả lập response
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie); // Giả lập tìm thấy movie
+        _mockMapper.Setup(m => m.Map<List<ShowtimeResponse>>(movie.Showtimes)).Returns(new List<ShowtimeResponse> { showtimeResponse });
+
+        // Act
+        var result = await _movieService.GetShowtimeByMovieId(movieId);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        Assert.NotNull(result.Result);
+        var showtimeResults = result.Result as List<ShowtimeResponse>;
+        Assert.Single(showtimeResults); // Kiểm tra có đúng 1 showtime
+        Assert.Equal(showtimeResponse.Id, showtimeResults[0].Id); // Kiểm tra dữ liệu showtime
+    }
+    [Fact]
+    public async Task GetShowtimeByMovieId_ShouldReturnNotFound_WhenShowtimesIsNull()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movie = new Movie
+        {
+            Id = movieId,
+            Showtimes = null // Giả lập showtimes là null
+        };
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie); // Giả lập tìm thấy movie
+
+        // Act
+        var result = await _movieService.GetShowtimeByMovieId(movieId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal("Movie not found!", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task GetShowtimeByMovieId_ShouldReturnNotFound_WhenShowtimesIsEmpty()
+    {
+        // Arrange
+        var movieId = Guid.NewGuid();
+        var movie = new Movie
+        {
+            Id = movieId,
+            Showtimes = new List<Showtime>() // Giả lập showtimes là danh sách rỗng
+        };
+
+        _mockUnitOfWork.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(movie); // Giả lập tìm thấy movie
+
+        // Act
+        var result = await _movieService.GetShowtimeByMovieId(movieId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal("Movie not found!", result.ErrorMessage);
+    }
 }
 
