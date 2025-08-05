@@ -31,13 +31,13 @@ prepare:
   tags:
     - cicd
 
-build:
-  stage: build
+test:
+  stage: test
   image: mcr.microsoft.com/dotnet/sdk:8.0
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apt-get update && apt-get install -y openssh-client curl tar gzip
+    - apt-get update && apt-get install -y git
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
@@ -45,8 +45,30 @@ build:
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
-    
-    # Setup SSH for server connection
+    - cd project_source
+  script:
+    - echo "Running tests..."
+    - dotnet restore WebAPI/WebAPI.sln
+    - dotnet build WebAPI/WebAPI.sln --configuration Release --no-restore
+    - dotnet test WebAPI/WebAPI.sln --configuration Release --no-build --verbosity normal
+    - echo "Tests completed successfully"
+  tags:
+    - cicd
+
+build:
+  stage: build
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  before_script:
+    - apk add --no-cache openssh-client curl tar gzip git
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Cloning repository..."
+    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
@@ -55,26 +77,18 @@ build:
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Building Docker image on server (no sudo required)..."
-    
-    # Create build directory on server
+    - echo "Building Docker image on server using rootless Docker..."
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         mkdir -p ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S)
         echo ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S) > ~/.last-build-dir
       "
-    
-    # Get the build directory path
     - BUILD_DIR=$(ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/.last-build-dir")
     - echo "Build directory $BUILD_DIR"
-    
-    # Transfer source code to server
     - echo "Transferring source code to server..."
     - cd project_source
     - tar -czf ../project.tar.gz .
     - cd ..
     - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:$BUILD_DIR/
-    
-    # Build Docker image on server without sudo
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         cd $BUILD_DIR
@@ -82,19 +96,23 @@ build:
         tar -xzf project.tar.gz
         rm project.tar.gz
         
-        echo 'Checking Docker permissions...'
-        if ! docker version > /dev/null 2>&1; then
-          echo 'ERROR: Docker is not accessible without sudo!'
-          echo 'Please ask system administrator to run:'
-          echo 'sudo usermod -aG docker fsoftguy'
-          echo 'sudo systemctl restart docker'
-          echo 'Then logout and login again.'
+        echo 'Setting up Docker environment...'
+        export PATH=\"\$HOME/bin:\$PATH\"
+        export DOCKER_HOST=\"unix:///run/user/\$(id -u)/docker.sock\"
+        
+        systemctl --user start docker.service 2>/dev/null || echo 'Docker service already running'
+        sleep 3
+        
+        echo 'Testing Docker access...'
+        if docker version > /dev/null 2>&1; then
+          echo 'Rootless Docker accessible!'
+          echo \"Docker version: \$(docker version --format '{{.Server.Version}}')\"
+        else
+          echo 'Docker not accessible!'
+          echo 'Checking Docker service status:'
+          systemctl --user status docker.service
           exit 1
         fi
-        
-        echo '✅ Docker is accessible without sudo!'
-        echo 'User groups:'
-        groups
         
         echo 'Checking Dockerfile...'
         if [ ! -f Dockerfile ]; then
@@ -103,9 +121,6 @@ build:
           exit 1
         fi
         
-        echo 'Dockerfile content:'
-        cat Dockerfile
-        
         echo 'Logging into GitLab Container Registry...'
         echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
         
@@ -113,7 +128,7 @@ build:
         docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
         
         if [ \$? -eq 0 ]; then
-          echo ' Docker build successful!'
+          echo 'Docker build successful!'
           
           echo 'Pushing images to registry...'
           docker push '$IMAGE_NAME:latest'
@@ -123,11 +138,11 @@ build:
             echo 'Push successful!'
             echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           else
-            echo ' Push failed!'
+            echo 'Push failed!'
             echo 'BUILD_STATUS=PUSH_FAILED' > ~/build_status.txt
           fi
         else
-          echo ' Docker build failed!'
+          echo 'Docker build failed!'
           echo 'BUILD_STATUS=BUILD_FAILED' > ~/build_status.txt
         fi
         
@@ -137,11 +152,8 @@ build:
         
         echo 'Build process completed!'
       "
-    
-    # Download build status
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/build_status.txt 2>/dev/null || echo 'BUILD_STATUS=UNKNOWN'" > build_status.txt
     - cat build_status.txt
-    
   artifacts:
     reports:
       dotenv: build_status.txt
@@ -166,47 +178,45 @@ deploy:
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed, using StrictHostKeyChecking=no"
   script:
     - echo "Deploying Docker image to server..."
-    
-    # Check build status first
     - |
       if [ "${BUILD_STATUS:-UNKNOWN}" != "SUCCESS" ]; then
-        echo " Cannot deploy - build was not successful!"
+        echo "Cannot deploy - build was not successful!"
         echo "Build status: ${BUILD_STATUS:-UNKNOWN}"
         echo "Please check build stage logs and fix any issues."
         exit 1
       fi
-    
     - echo "Build was successful, proceeding with deployment..."
     - echo "Testing SSH connection..."
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'"
-    
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Starting deployment process...'
         
-        # Verify Docker access
-        if ! docker version > /dev/null 2>&1; then
-          echo ' ERROR: Docker is not accessible!'
-          echo 'Please ask admin to run: sudo usermod -aG docker fsoftguy'
+        export PATH=\"\$HOME/bin:\$PATH\"
+        export DOCKER_HOST=\"unix:///run/user/\$(id -u)/docker.sock\"
+        
+        systemctl --user start docker.service 2>/dev/null || echo 'Docker service already running'
+        sleep 2
+        
+        if docker version > /dev/null 2>&1; then
+          echo 'Rootless Docker accessible!'
+        else
+          echo 'Docker not accessible!'
+          echo 'Checking Docker service status:'
+          systemctl --user status docker.service
           exit 1
         fi
         
-        echo ' Docker is accessible, proceeding with deployment...'
-        
-        # Login to registry
         echo 'Logging into GitLab Container Registry...'
         echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
         
-        # Pull the pre-built image
         echo 'Pulling latest image from registry...'
         docker pull '$IMAGE_NAME:latest'
         
-        # Stop and remove old container
         echo 'Stopping old container if exists...'
         docker stop team03-webapi 2>/dev/null || echo 'No existing container to stop'
         docker rm team03-webapi 2>/dev/null || echo 'No existing container to remove'
         
-        # Start new container
         echo 'Starting new container...'
         docker run -d \
           --name team03-webapi \
@@ -214,25 +224,27 @@ deploy:
           --restart unless-stopped \
           '$IMAGE_NAME:latest'
         
-        # Verify deployment
         echo 'Verifying deployment...'
         sleep 5
         if docker ps | grep team03-webapi > /dev/null; then
-          echo ' Container is running successfully!'
+          echo 'Container is running successfully!'
           docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
           
-          # Health check
           echo 'Checking application health...'
           sleep 10
-          curl -f http://localhost:8080 > /dev/null 2>&1 && echo '✅ Application is responding!' || echo '⚠️ Application endpoint not available yet'
+          curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
           
-          echo '=== DEPLOYMENT SUCCESSFUL ==='
-          echo ' Application is running at: http://vps.purintech.id.vn:8080'
+          echo ''
+          echo '===== DEPLOYMENT SUCCESSFUL ====='
+          echo 'Application URL: http://vps.purintech.id.vn:8080'
           echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
           echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
-          echo '=========================='
+          echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+          echo '=================================='
+          echo 'Your application is now live and accessible!'
+          echo ''
         else
-          echo ' Container failed to start!'
+          echo 'Container failed to start!'
           echo 'Docker logs:'
           docker logs team03-webapi 2>/dev/null || echo 'No logs available'
           exit 1
