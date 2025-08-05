@@ -42,9 +42,10 @@ prepare:
 
 build:
   stage: build
-  image: docker:latest
+  image: docker:20.10.16
   services:
-    - docker:dind
+    - name: docker:20.10.16-dind
+      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -99,7 +100,7 @@ deploy:
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Login to GitLab Container Registry...'
         echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
-        
+
         echo 'Pull latest image...'
         docker pull $IMAGE_NAME:latest
         
