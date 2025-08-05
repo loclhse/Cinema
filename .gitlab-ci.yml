@@ -42,18 +42,11 @@ prepare:
 
 build:
   stage: build
-  image: docker:latest
-  services:
-    - name: docker:dind
-      command: ["--tls=false", "--host=tcp://0.0.0.0:2375"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
+  image: alpine:latest
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apk add --no-cache git curl
+    - apk add --no-cache git curl openssh-client
     # Configure Git authentication
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
@@ -63,29 +56,45 @@ build:
     
     # Clone the repository
     - echo "Cloning repository..."
-    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
+    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
     
-    # Wait for Docker daemon to be ready
-    - echo "Waiting for Docker daemon..."
-    - for i in $(seq 1 30); do docker info >/dev/null 2>&1 && break || sleep 2; done
-    - docker info || (echo "Docker daemon failed to start" && exit 1)
-    
-    # Login to GitLab Container Registry
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+    # Setup SSH for server connection
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
   script:
-    - echo "Building Docker image..."
-    - echo "Building Docker image for $IMAGE_NAME"
-    - echo "Current directory contents:"
-    - ls -la
-    - docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$CI_COMMIT_SHA .
-    - echo "Pushing to GitLab Container Registry..."
-    - docker push $IMAGE_NAME:latest
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - echo "Transferring source code to server..."
+    - cd project_source
+    - tar -czf ../project.tar.gz .
+    - cd ..
+    - scp project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/
+    
+    - echo "Building Docker image on server..."
+    - |
+      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        echo 'Extracting source code...'
+        mkdir -p /tmp/team03_build
+        cd /tmp/team03_build
+        tar -xzf /tmp/project.tar.gz
+        
+        echo 'Login to GitLab Container Registry...'
+        echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+        
+        echo 'Building Docker image on server...'
+        docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$CI_COMMIT_SHA .
+        
+        echo 'Pushing to GitLab Container Registry...'
+        docker push $IMAGE_NAME:latest
+        docker push $IMAGE_NAME:$CI_COMMIT_SHA
+        
+        echo 'Cleaning up build files...'
+        cd /tmp
+        rm -rf team03_build project.tar.gz
+      "
   tags:
     - cicd
-  after_script:
-    - docker logout $CI_REGISTRY || true
 
 deploy:
   stage: deploy
@@ -100,24 +109,22 @@ deploy:
     - chmod 700 ~/.ssh
     - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
   script:
-    - echo "Deploying to server..."
+    - echo "Deploying application on server..."
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        echo 'Login to GitLab Container Registry...'
-        echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
-
-        echo 'Pull latest image...'
-        docker pull $IMAGE_NAME:latest
-        
-        echo 'Stop and remove old container...'
+        echo 'Stopping and removing old container...'
         docker stop team03-webapi || true
         docker rm team03-webapi || true
         
-        echo 'Start new container...'
+        echo 'Starting new container with latest image...'
         docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped $IMAGE_NAME:latest
         
-        echo 'Check deployment...'
+        echo 'Checking deployment status...'
         docker ps | grep team03-webapi
+        
+        echo 'Testing application endpoint...'
+        sleep 5
+        curl -f http://localhost:8080/health || echo 'Health check endpoint not available, but container is running'
       "
   tags:
     - cicd
