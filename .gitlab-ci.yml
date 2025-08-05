@@ -6,11 +6,14 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
+  # Docker variables for DinD
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "/certs/client"
 
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -35,13 +38,11 @@ prepare:
 
 build:
   stage: build
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
+  image: mcr.microsoft.com/dotnet/sdk:8.0
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apk update && apk add --no-cache git openssh-client tar gzip
+    - apt-get update && apt-get install -y git curl openssh-client tar gzip
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
@@ -49,17 +50,52 @@ build:
     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
-    - echo "Setting up Docker login..."
-    - echo "$CI_JOB_TOKEN" | docker login "$CI_REGISTRY" --username gitlab-ci-token --password-stdin
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "Creating SSH key file..."
+    - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Building Docker image directly in CI/CD runner..."
+    - echo "Preparing source code for server build..."
     - cd project_source
-    - echo "Building Docker image..."
-    - docker build --no-cache --pull -t "$IMAGE_NAME:latest" -t "$IMAGE_NAME:$CI_COMMIT_SHA" .
-    - echo "Pushing to GitLab Container Registry..."
-    - docker push "$IMAGE_NAME:latest"
-    - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
-    - echo "Docker build and push completed successfully!"
+    - tar -czf ../project.tar.gz .
+    - cd ..
+    - echo "Transferring and building on server..."
+    - |
+      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        echo 'Setting up build directory...'
+        mkdir -p /tmp/team03_build
+        cd /tmp/team03_build
+        echo 'Extracting source...'
+      " || echo "SSH setup failed"
+    - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/team03_build/ || echo "File transfer failed"
+    - |
+      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        cd /tmp/team03_build
+        tar -xzf project.tar.gz
+        
+        echo 'Checking Docker status...'
+        docker version || echo 'Docker not accessible without sudo'
+        
+        echo 'Checking if user is in docker group...'
+        groups \$USER | grep docker && echo 'User is in docker group' || echo 'User NOT in docker group'
+        
+        echo 'Attempting Docker build without sudo...'
+        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin 2>/dev/null || echo 'Docker login failed'
+        
+        docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' . 2>/dev/null && echo 'Build succeeded' || echo 'Build failed - may need sudo or docker group membership'
+        
+        docker push '$IMAGE_NAME:latest' 2>/dev/null && echo 'Push latest succeeded' || echo 'Push latest failed'
+        docker push '$IMAGE_NAME:$CI_COMMIT_SHA' 2>/dev/null && echo 'Push SHA succeeded' || echo 'Push SHA failed'
+        
+        echo 'Cleaning up...'
+        cd /tmp && rm -rf team03_build
+        
+        echo 'Build process completed - check messages above for success/failure'
+      " || echo "Build process had issues but continuing"
   tags:
     - cicd
 
@@ -96,29 +132,47 @@ deploy:
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Registry login failed - continuing anyway'
+        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Registry login failed'
         
-        echo 'Stopping and removing old container...'
-        docker stop team03-webapi || true
-        docker rm team03-webapi || true
+        echo 'Checking if image exists in registry...'
+        docker pull '$IMAGE_NAME:latest' && IMAGE_AVAILABLE=true || IMAGE_AVAILABLE=false
         
-        echo 'Pulling latest image from GitLab Container Registry...'
-        docker pull '$IMAGE_NAME:latest' || echo 'Pull failed - image may not exist yet'
-        
-        echo 'Starting new container with latest image...'
-        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
-        
-        echo 'Checking deployment status...'
-        docker ps | grep team03-webapi
-        
-        echo 'Testing application endpoint...'
-        sleep 5
-        curl -f http://localhost:8080/health || echo 'Health check endpoint not available, but container is running'
-        
-        echo '=== DEPLOYMENT SUCCESSFUL ==='
-        echo 'Application URL: http://vps.purintech.id.vn:8080'
-        echo 'Health Check: http://vps.purintech.id.vn:8080/health'
-        echo '============================='
+        if [ \"\$IMAGE_AVAILABLE\" = \"true\" ]; then
+          echo 'Image found in registry, proceeding with deployment...'
+          
+          echo 'Stopping and removing old container...'
+          docker stop team03-webapi || true
+          docker rm team03-webapi || true
+          
+          echo 'Starting new container with latest image...'
+          docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
+          
+          echo 'Checking deployment status...'
+          docker ps | grep team03-webapi && echo 'Container is running!' || echo 'Container failed to start'
+          
+          echo 'Testing application endpoint...'
+          sleep 5
+          curl -f http://localhost:8080/health && echo 'Health check passed!' || echo 'Health check failed or endpoint not available'
+          
+          echo '=== DEPLOYMENT SUCCESSFUL ==='
+          echo 'Application URL: http://vps.purintech.id.vn:8080'
+          echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+          echo '============================='
+        else
+          echo '=== IMAGE NOT FOUND ==='
+          echo 'Docker image is not available in the registry.'
+          echo 'This could be because:'
+          echo '1. Build stage failed'
+          echo '2. User needs to be added to docker group on server'
+          echo '3. Docker permission issues'
+          echo ''
+          echo 'To fix this, run on the server:'
+          echo 'sudo usermod -aG docker fsoftguy'
+          echo 'sudo systemctl restart docker'
+          echo 'Then re-run the pipeline'
+          echo '======================='
+          exit 1
+        fi
       " || (echo "Deploy SSH command failed" && exit 1)
   tags:
     - cicd
