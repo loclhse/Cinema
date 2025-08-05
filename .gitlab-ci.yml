@@ -61,11 +61,17 @@ build:
     # Setup SSH for server connection
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    # Write SSH key with proper formatting
+    - |
+      cat > ~/.ssh/id_rsa << 'EOF'
+      $SSH_PRIVATE_KEY
+      EOF
     - chmod 600 ~/.ssh/id_rsa
+    # Verify SSH key format
+    - head -1 ~/.ssh/id_rsa | grep -q "BEGIN" || (echo "SSH key format error" && exit 1)
     - eval $(ssh-agent -s)
-    - ssh-add ~/.ssh/id_rsa
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
+    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts
   script:
     - echo "Transferring source code to server..."
     - cd project_source
@@ -107,11 +113,17 @@ deploy:
     - apt-get update && apt-get install -y openssh-client curl
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    # Write SSH key with proper formatting
+    - |
+      cat > ~/.ssh/id_rsa << 'EOF'
+      $SSH_PRIVATE_KEY
+      EOF
     - chmod 600 ~/.ssh/id_rsa
+    # Verify SSH key format
+    - head -1 ~/.ssh/id_rsa | grep -q "BEGIN" || (echo "SSH key format error" && exit 1)
     - eval $(ssh-agent -s)
-    - ssh-add ~/.ssh/id_rsa
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
+    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts
   script:
     - echo "Deploying application on server..."
     - |
