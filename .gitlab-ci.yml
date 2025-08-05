@@ -65,7 +65,7 @@ build:
     
     # Get the build directory path
     - BUILD_DIR=$(ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/.last-build-dir")
-    - echo "Build directory: $BUILD_DIR"
+    - echo "Build directory $BUILD_DIR"
     
     # Transfer source code to server
     - echo "Transferring source code to server..."
@@ -84,7 +84,7 @@ build:
         
         echo 'Checking Docker permissions...'
         if ! docker version > /dev/null 2>&1; then
-          echo '❌ ERROR: Docker is not accessible without sudo!'
+          echo 'ERROR: Docker is not accessible without sudo!'
           echo 'Please ask system administrator to run:'
           echo 'sudo usermod -aG docker fsoftguy'
           echo 'sudo systemctl restart docker'
@@ -98,7 +98,7 @@ build:
         
         echo 'Checking Dockerfile...'
         if [ ! -f Dockerfile ]; then
-          echo '❌ ERROR: Dockerfile not found!'
+          echo 'ERROR: Dockerfile not found!'
           ls -la
           exit 1
         fi
@@ -113,22 +113,22 @@ build:
         docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
         
         if [ \$? -eq 0 ]; then
-          echo '✅ Docker build successful!'
+          echo ' Docker build successful!'
           
           echo 'Pushing images to registry...'
           docker push '$IMAGE_NAME:latest'
           docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
           
           if [ \$? -eq 0 ]; then
-            echo '✅ Push successful!'
-            echo 'BUILD_STATUS=SUCCESS' > build_status.txt
+            echo 'Push successful!'
+            echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           else
-            echo '❌ Push failed!'
-            echo 'BUILD_STATUS=PUSH_FAILED' > build_status.txt
+            echo ' Push failed!'
+            echo 'BUILD_STATUS=PUSH_FAILED' > ~/build_status.txt
           fi
         else
-          echo '❌ Docker build failed!'
-          echo 'BUILD_STATUS=BUILD_FAILED' > build_status.txt
+          echo ' Docker build failed!'
+          echo 'BUILD_STATUS=BUILD_FAILED' > ~/build_status.txt
         fi
         
         echo 'Cleaning up build directory...'
@@ -170,13 +170,13 @@ deploy:
     # Check build status first
     - |
       if [ "${BUILD_STATUS:-UNKNOWN}" != "SUCCESS" ]; then
-        echo "❌ Cannot deploy - build was not successful!"
+        echo " Cannot deploy - build was not successful!"
         echo "Build status: ${BUILD_STATUS:-UNKNOWN}"
         echo "Please check build stage logs and fix any issues."
         exit 1
       fi
     
-    - echo "✅ Build was successful, proceeding with deployment..."
+    - echo "Build was successful, proceeding with deployment..."
     - echo "Testing SSH connection..."
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'"
     
@@ -186,12 +186,12 @@ deploy:
         
         # Verify Docker access
         if ! docker version > /dev/null 2>&1; then
-          echo '❌ ERROR: Docker is not accessible!'
+          echo ' ERROR: Docker is not accessible!'
           echo 'Please ask admin to run: sudo usermod -aG docker fsoftguy'
           exit 1
         fi
         
-        echo '✅ Docker is accessible, proceeding with deployment...'
+        echo ' Docker is accessible, proceeding with deployment...'
         
         # Login to registry
         echo 'Logging into GitLab Container Registry...'
@@ -218,19 +218,21 @@ deploy:
         echo 'Verifying deployment...'
         sleep 5
         if docker ps | grep team03-webapi > /dev/null; then
-          echo '✅ Container is running successfully!'
+          echo ' Container is running successfully!'
           docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
           
           # Health check
           echo 'Checking application health...'
           sleep 10
-          curl -f http://localhost:8080/health > /dev/null 2>&1 && echo '✅ Health check passed!' || echo '⚠️ Health endpoint not available yet'
+          curl -f http://localhost:8080 > /dev/null 2>&1 && echo '✅ Application is responding!' || echo '⚠️ Application endpoint not available yet'
           
           echo '=== DEPLOYMENT SUCCESSFUL ==='
-          echo '🚀 Application is running at: http://vps.purintech.id.vn:8080'
+          echo ' Application is running at: http://vps.purintech.id.vn:8080'
+          echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
+          echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
           echo '=========================='
         else
-          echo '❌ Container failed to start!'
+          echo ' Container failed to start!'
           echo 'Docker logs:'
           docker logs team03-webapi 2>/dev/null || echo 'No logs available'
           exit 1
