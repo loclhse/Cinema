@@ -6,11 +6,9 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration with TLS
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  # Docker configuration - disable TLS for simplicity
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
   
   # Package Registry configuration
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
@@ -46,7 +44,8 @@ build:
   stage: build
   image: docker:latest
   services:
-    - docker:dind
+    - name: docker:dind
+      command: ["--tls=false"]
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -65,8 +64,10 @@ build:
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
     
-    # Wait for Docker daemon
-    - until docker info; do sleep 1; done
+    # Wait for Docker daemon to be ready
+    - echo "Waiting for Docker daemon..."
+    - for i in $(seq 1 30); do docker info >/dev/null 2>&1 && break || sleep 2; done
+    - docker info || (echo "Docker daemon failed to start" && exit 1)
     
     # Login to GitLab Container Registry
     - echo "Logging into GitLab Container Registry..."
