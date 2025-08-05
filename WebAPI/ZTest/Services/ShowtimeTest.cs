@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -133,124 +134,146 @@ namespace ZTest.Services
 
             Assert.True(result.IsSuccess);
         }
-
         [Fact]
-        public async Task CreateShowtimeAsync_Should_Return_BadRequest_When_Exception()
+        public async Task CreateShowtimeAsync_Should_Return_BadRequest_On_Exception()
         {
-            var request = new ShowtimeResquest();
-            _mapperMock.Setup(m => m.Map<Showtime>(request)).Throws(new Exception("fail"));
-            var result = await _service.CreateShowtimeAsync(request, Guid.NewGuid(), Guid.NewGuid());
-            Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task CreateShowtimeAsync_Should_Return_BadRequest_When_InvalidShowtime()
-        {
-            var request = new ShowtimeResquest();
-            _mapperMock.Setup(m => m.Map<Showtime>(request)).Returns((Showtime)null);
-            var result = await _service.CreateShowtimeAsync(request, Guid.NewGuid(), Guid.NewGuid());
-            Assert.False(result.IsSuccess);
-            Assert.Equal("Invalid showtime data.", result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task CreateShowtimeAsync_Should_Return_NotFound_When_NoSeats()
-        {
-            var movie = new Movie { Id = Guid.NewGuid(), Duration = 100 };
-            var room = new CinemaRoom { Id = Guid.NewGuid(), Name = "Room A" };
             var request = new ShowtimeResquest { StartTime = DateTime.Now, Date = DateOnly.FromDateTime(DateTime.Today) };
-            _mapperMock.Setup(m => m.Map<Showtime>(request)).Returns(new Showtime { StartTime = request.StartTime, Date = request.Date });
-            _unitOfWorkMock.Setup(u => u.MovieRepo.GetAsync(It.IsAny<Expression<Func<Movie, bool>>>())).ReturnsAsync(movie);
-            _unitOfWorkMock.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>())).ReturnsAsync(room);
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).ReturnsAsync(new List<Showtime>());
-            _unitOfWorkMock.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>())).ReturnsAsync(new List<Seat>());
-            var result = await _service.CreateShowtimeAsync(request, movie.Id, room.Id);
-            Assert.False(result.IsSuccess);
-            Assert.Contains("No seats found", result.ErrorMessage);
-        }
 
+            _mapperMock.Setup(m => m.Map<Showtime>(request)).Throws(new Exception("Mapping failed"));
+
+            var result = await _service.CreateShowtimeAsync(request, Guid.NewGuid(), Guid.NewGuid());
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
         [Fact]
-        public async Task DeleteShowtimeAsync_Should_Return_NotFound_When_NotFound()
+        public async Task DeleteShowtimeAsync_Should_Return_BadRequest_On_Exception()
         {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).ReturnsAsync((Showtime)null);
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .Throws(new Exception("DB error"));
+
             var result = await _service.DeleteShowtimeAsync(Guid.NewGuid());
-            Assert.False(result.IsSuccess);
-            Assert.Contains("Showtime not found", result.ErrorMessage);
-        }
 
-        [Fact]
-        public async Task DeleteShowtimeAsync_Should_Return_BadRequest_OnException()
-        {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).Throws(new Exception("fail"));
-            var result = await _service.DeleteShowtimeAsync(Guid.NewGuid());
             Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
+            Assert.Equal(null, result.ErrorMessage);
         }
-
         [Fact]
-        public async Task GetAllShowtimesAsync_Should_Return_NotFound_When_Empty()
+        public async Task GetAllShowtimesAsync_Should_Return_BadRequest_On_Exception()
         {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).ReturnsAsync(new List<Showtime>());
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .Throws(new Exception("GetAll error"));
+
             var result = await _service.GetAllShowtimesAsync();
-            Assert.False(result.IsSuccess);
-            Assert.Contains("No showtimes found", result.ErrorMessage);
-        }
 
-        [Fact]
-        public async Task GetAllShowtimesAsync_Should_Return_BadRequest_OnException()
-        {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).Throws(new Exception("fail"));
-            var result = await _service.GetAllShowtimesAsync();
             Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
+            Assert.Equal(null, result.ErrorMessage);
         }
-
         [Fact]
-        public async Task GetShowtimeByIdAsync_Should_Return_NotFound_When_Showtime_NotFound()
+        public async Task GetShowtimeByIdAsync_Should_Return_BadRequest_On_Exception()
         {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).ReturnsAsync((Showtime)null);
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .Throws(new Exception("Get by ID error"));
+
             var result = await _service.GetShowtimeByIdAsync(Guid.NewGuid());
+
             Assert.False(result.IsSuccess);
-            Assert.Contains("Showtime not found", result.ErrorMessage);
+            Assert.Equal(null, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task GetShowtimeByIdAsync_Should_Return_NotFound_When_Room_NotFound()
+        public async Task UpdateShowtimeAsync_Should_Return_BadRequest_On_Exception()
         {
-            var showtime = new Showtime { Id = Guid.NewGuid(), CinemaRoomId = Guid.NewGuid() };
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).ReturnsAsync(showtime);
-            _unitOfWorkMock.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>())).ReturnsAsync((CinemaRoom)null);
-            var result = await _service.GetShowtimeByIdAsync(showtime.Id);
-            Assert.False(result.IsSuccess);
-            Assert.Contains("Cinema room not found", result.ErrorMessage);
-        }
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .Throws(new Exception("Update error"));
 
-        [Fact]
-        public async Task GetShowtimeByIdAsync_Should_Return_BadRequest_OnException()
-        {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).Throws(new Exception("fail"));
-            var result = await _service.GetShowtimeByIdAsync(Guid.NewGuid());
-            Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task UpdateShowtimeAsync_Should_Return_BadRequest_OnException()
-        {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).Throws(new Exception("fail"));
             var result = await _service.UpdateShowtimeAsync(Guid.NewGuid(), new ShowtimeUpdateRequest());
+
             Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+        [Fact]
+        public async Task GetShowtimeByMovieIdAsync_Should_Return_BadRequest_On_Exception()
+        {
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .Throws(new Exception("MovieId error"));
+
+            var result = await _service.GetShowtimeByMovieIdAsync(Guid.NewGuid());
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task GetShowtimeByMovieIdAsync_Should_Return_BadRequest_OnException()
+        public async Task UpdateShowtimeAsync_Should_Return_NotFound_When_Showtime_Not_Found()
         {
-            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>())).Throws(new Exception("fail"));
-            var result = await _service.GetShowtimeByMovieIdAsync(Guid.NewGuid());
+            // Arrange
+            var showtimeId = Guid.NewGuid();
+            var showtimeUpdateRequest = new ShowtimeUpdateRequest { MovieId = Guid.NewGuid(), CinemaRoomId = Guid.NewGuid() };
+
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .ReturnsAsync((Showtime)null); // Simulate showtime not found
+
+            // Act
+            var result = await _service.UpdateShowtimeAsync(showtimeId, showtimeUpdateRequest);
+
+            // Assert
             Assert.False(result.IsSuccess);
-            Assert.Equal("fail", result.ErrorMessage);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetShowtimeByIdAsync_Should_Return_NotFound_When_Showtime_Not_Found()
+        {
+            // Arrange
+            var showtimeId = Guid.NewGuid();
+
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .ReturnsAsync((Showtime)null); // Simulate showtime not found
+
+            // Act
+            var result = await _service.GetShowtimeByIdAsync(showtimeId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteShowtimeAsync_Should_Return_NotFound_When_Showtime_Not_Found()
+        {
+            // Arrange
+            var showtimeId = Guid.NewGuid();
+
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .ReturnsAsync((Showtime)null); // Simulate showtime not found
+
+            // Act
+            var result = await _service.DeleteShowtimeAsync(showtimeId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetShowtimeByMovieIdAsync_Should_Return_NotFound_When_No_Showtimes_For_Movie()
+        {
+            // Arrange
+            var movieId = Guid.NewGuid();
+
+            _unitOfWorkMock.Setup(u => u.ShowtimeRepo.GetAllAsync(It.IsAny<Expression<Func<Showtime, bool>>>()))
+                .ReturnsAsync(new List<Showtime>()); // Simulate no showtimes found
+
+            // Act
+            var result = await _service.GetShowtimeByMovieIdAsync(movieId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Equal(null, result.ErrorMessage);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace WebAPI.Controllers
 
         public MovieController(IMovieService movieService)
         {
-            
+
             _movieService = movieService ?? throw new ArgumentNullException(nameof(movieService));
         }
 
@@ -53,7 +53,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpGet("GetMovieById{id}")]
+        [HttpGet("GetMovieById/{id}")]
         public async Task<IActionResult> GetMovieById(Guid id)
         {
             var response = await _movieService.GetMovieByIdAsync(id);
@@ -63,7 +63,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpPut("UpdateMovie{id}")]
+        [HttpPut("UpdateMovie/{id}")]
         public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] MovieRequest movieRequest)
         {
             var response = await _movieService.UpdateMovieAsync(id, movieRequest);
@@ -73,7 +73,7 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-        [HttpDelete("DeleteMovie{id}")]
+        [HttpDelete("DeleteMovie/{id}")]
         public async Task<IActionResult> DeleteMovie(Guid id)
         {
             var response = await _movieService.DeleteMovieAsync(id);
@@ -93,9 +93,25 @@ namespace WebAPI.Controllers
             }
             return response.IsSuccess ? Ok(response) : BadRequest(response);
         }
-
-
-
-
+        [HttpGet("FindGenresNameByMovieName")]
+        public async Task<IActionResult> FindGenresNameByMovieName(string movieName)
+        {
+            var response = await _movieService.FindGenresNameByMovieNameAsync(movieName);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
+        [HttpGet("GetShowtimeByMovieId/{id}")]
+        public async Task<IActionResult> GetShowtimeByMovieId(Guid id)
+        {
+            var response = await _movieService.GetShowtimeByMovieId(id);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return response.IsSuccess ? Ok(response) : BadRequest(response);
+        }
     }
 }

@@ -19,7 +19,7 @@ namespace Infrastructure.Repos
         }
 
         //Elastic Search
-        public async Task<IEnumerable<MovieElasticSearchRequest>> elasticSearchMoviesAsync(string keyword, int limit = 5)
+        public async Task<IEnumerable<MovieElasticSearchRequest>> elasticSearchMoviesAsync(string keyword, int? limit = 5)
         {
             var searchResponse = await _elasticClient.SearchAsync<MovieElasticSearchRequest>(s => s
                 .Indices("movies")

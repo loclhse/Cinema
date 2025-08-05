@@ -181,5 +181,88 @@ namespace ZTest.Services
             Assert.True(result.IsSuccess);
             Assert.Equal(System.Net.HttpStatusCode.OK, result.StatusCode);
         }
+        [Fact]
+        public async Task CreateNewItemAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var request = new ItemRequest { Quantity = 5 };
+            _mockScoreItemRepo.Setup(r => r.AddAsync(It.IsAny<ScoreItem>()))
+                .ThrowsAsync(new Exception("Database error")); // Giả lập ngoại lệ
+
+            // Act
+            var result = await _service.CreateNewItemAsync(request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task DeleteItemAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var itemId = Guid.NewGuid();
+            _mockScoreItemRepo.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ScoreItem, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Giả lập ngoại lệ
+
+            // Act
+            var result = await _service.DeleteItemAsync(itemId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllItemsAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            _mockScoreItemRepo.Setup(r => r.GetAllAsync(
+                It.IsAny<System.Linq.Expressions.Expression<Func<ScoreItem, bool>>>(), null, 1, 5))
+                .ThrowsAsync(new Exception("Database error")); // Giả lập ngoại lệ
+
+            // Act
+            var result = await _service.GetAllItemsAsync(1, 5);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetItemByIdAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var itemId = Guid.NewGuid();
+            _mockScoreItemRepo.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ScoreItem, bool>>>()))
+                .ThrowsAsync(new Exception("Database error")); // Giả lập ngoại lệ
+
+            // Act
+            var result = await _service.GetItemByIdAsync(itemId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateItemAsync_ReturnsBadRequest_WhenExceptionOccurs()
+        {
+            // Arrange
+            var itemId = Guid.NewGuid();
+            var item = new ScoreItem { Id = itemId };
+            _mockScoreItemRepo.Setup(r => r.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ScoreItem, bool>>>()))
+                .ReturnsAsync(item);
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ThrowsAsync(new Exception("Database error")); // Giả lập ngoại lệ
+
+            var request = new ItemRequest { Quantity = 5 };
+
+            // Act
+            var result = await _service.UpdateItemAsync(itemId, request);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(null, result.ErrorMessage);
+        }
     }
 }

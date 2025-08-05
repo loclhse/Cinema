@@ -147,22 +147,35 @@ namespace Application.Services
                         order.Status = OrderEnum.Success;
                         await _uow.OrderRepo.UpdateAsync(order);
 
-                        // Award score to user and log it
+                        
                         if (order.UserId.HasValue && payment.AmountPaid.HasValue)
                         {
                             try
-                        
                             {
                                 var user = await _uow.UserRepo.GetByIdAsync(order.UserId.Value);
                                 if (user != null)
                                 {
-                                    int points = (int)payment.AmountPaid.Value ;
-                                    user.Score += points;
+                                  
+                                    var (domainUser, appUser, roles) = await _authRepo.GetUserWithRolesAndProfileByIdAsync(order.UserId.Value);
+                                    
+                                    int basePoints = (int)payment.AmountPaid.Value;
+                                    int bonusPoints = 0;
+                                    
+                                    
+                                    if (roles.Contains("Member"))
+                                    {
+                                        bonusPoints = 100; 
+                                    }
+                                   
+                                    
+                                    int totalPoints = basePoints + bonusPoints;
+                                    user.Score += totalPoints;
+                                    
                                     var scoreLog = new ScoreLog
                                     {
                                         UserId = user.Id,
-                                        PointsChanged = points,
-                                        ActionType = "PaymentReward"
+                                        PointsChanged = $"+{totalPoints}",
+                                        ActionType = $"Payment Reward{(bonusPoints > 0 ? " (Member Bonus)" : "")}"
                                     };
                                     await _uow.ScoreLogRepo.AddAsync(scoreLog);
                                     await _uow.UserRepo.UpdateAsync(user);
@@ -252,12 +265,12 @@ namespace Application.Services
                                 var user = await _uow.UserRepo.GetByIdAsync(sub.UserId.Value);
                                 if (user != null)
                                 {
-                                    int points = (int)payment.AmountPaid.Value;
+                                    int points = (int)payment.AmountPaid.Value/100;
                                     user.Score += points;
                                     var scoreLog = new ScoreLog
                                     {
                                         UserId = user.Id,
-                                        PointsChanged = points,
+                                        PointsChanged = points.ToString(),
                                         ActionType = "PaymentReward"
                                     };
                                     await _uow.ScoreLogRepo.AddAsync(scoreLog);

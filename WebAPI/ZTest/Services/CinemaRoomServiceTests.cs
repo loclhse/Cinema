@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Application.Common;
+using Application.IRepos;
+using Application.IServices;
+using Application.Services;
+using Application.ViewModel.Request;
+using Application.ViewModel.Response;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
@@ -12,13 +11,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
-using Application.Common;
-using Application.IServices;
-using Application.Services;
-using Application.ViewModel.Request;
-using Application.ViewModel.Response;
-using Application.IRepos;
 using static Dapper.SqlMapper;
 
 namespace Application.Tests.Services
@@ -395,6 +396,180 @@ namespace Application.Tests.Services
             Assert.False(result.Succeeded);
             _tx.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
             _uow.Verify(u => u.SaveChangesAsync(), Times.Never);
+        }
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_ShouldReturnFailed_WhenRoomNotFound()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var json = JsonDocument.Parse("{\"layout\": [[1]]}");
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync((CinemaRoom)null!);
+
+            // Act
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("does not exist", result.Errors.First());
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_ShouldReturnFailed_WhenLayoutFieldMissing()
+        {
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 10, TotalCols = 10 };
+            var json = JsonDocument.Parse("{}");
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            Assert.False(result.Succeeded);
+            Assert.Contains("LayoutJson is missing", result.Errors.First());
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_ShouldReturnFailed_WhenLayoutIsEmpty()
+        {
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 10, TotalCols = 10 };
+            var json = JsonDocument.Parse("{\"layout\": []}");
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+            Assert.False(result.Succeeded);
+            Assert.Contains("must be a non-empty", result.Errors.First());
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_ShouldReturnSuccess_WhenLayoutIsValid()
+        {
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 5, TotalCols = 5 };
+            var json = JsonDocument.Parse("{\"layout\": [[1, 1], [3, 4]]}");
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            _uow.Setup(u => u.SeatRepo.RemoveRangeAsync(It.IsAny<IEnumerable<Seat>>()))
+                .Returns(Task.CompletedTask);
+            _uow.Setup(u => u.SeatRepo.AddRangeAsync(It.IsAny<List<Seat>>()))
+                .Returns(Task.CompletedTask);
+            _uow.Setup(uow => uow.SaveChangesAsync()).ReturnsAsync(1);
+            var transactionMock = new Mock<IDbContextTransaction>();
+            transactionMock.Setup(t => t.Commit());
+            _uow.Setup(uow => uow.BeginTransaction()).Returns(transactionMock.Object);
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+            Assert.True(result.Succeeded);
+        }
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_Should_Return_Failed_When_CoupleLeft_Without_CoupleRight()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 5, TotalCols = 5 };
+            var json = JsonDocument.Parse("{\"layout\": [[1, 2], [3, 4]]}"); // 1 = CoupleLeft, 2 = CoupleRight
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+
+            // Act
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("CoupleLeft at row 1 col 1 has no following", result.Errors.First());
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_Should_Return_Failed_When_CoupleRight_Lacks_Preceding_CoupleLeft()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 5, TotalCols = 5 };
+            var json = JsonDocument.Parse("{\"layout\": [[2, 1]]}"); // 1 = CoupleLeft, 2 = CoupleRight
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+
+            // Act
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("CoupleRight at row 1 col 1 lacks preceding CoupleLeft", result.Errors.First());
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_Should_Create_Seats_Properly_When_Layout_Contains_Couples()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 5, TotalCols = 5 };
+            var json = JsonDocument.Parse("{\"layout\": [[1, 2], [3, 4]]}"); // 1 = CoupleLeft, 2 = CoupleRight, 3 = SeatTypes.Standard, 4 = SeatTypes.None
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            _uow.Setup(u => u.SeatRepo.AddRangeAsync(It.IsAny<List<Seat>>()))
+                .Returns(Task.CompletedTask);
+            _uow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+
+            // Act
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            // Assert
+            Assert.True(result.Succeeded);
+            // You may want to assert specific seat counts or types based on what you expect.
+        }
+
+        [Fact]
+        public async Task GenerateSeatsFromLayoutAsync_Should_Create_Seats_Properly_When_Layout_Contains_Only_None_And_Standard()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var room = new CinemaRoom { Id = roomId, TotalRows = 5, TotalCols = 5 };
+            var json = JsonDocument.Parse("{\"layout\": [[3, 0, 3], [0, 3, 0]]}"); // 3 = SeatTypes.Standard, 0 = SeatTypes.None
+
+            _uow.Setup(u => u.CinemaRoomRepo.GetAsync(It.IsAny<Expression<Func<CinemaRoom, bool>>>()))
+                .ReturnsAsync(room);
+            _uow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<Expression<Func<Seat, bool>>>()))
+                .ReturnsAsync(new List<Seat>());
+            _uow.Setup(u => u.SeatRepo.AddRangeAsync(It.IsAny<List<Seat>>()))
+                .Returns(Task.CompletedTask);
+            _uow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            var transactionMock = new Mock<IDbContextTransaction>();
+            _uow.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(transactionMock.Object);
+
+            // Act
+            var result = await _sut.GenerateSeatsFromLayoutAsync(roomId, json);
+
+            // Assert
+            Assert.True(result.Succeeded);
+            // Assert the correct number of seats are created and their types
         }
     }
 }

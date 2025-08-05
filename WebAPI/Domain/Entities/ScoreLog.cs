@@ -9,8 +9,9 @@ namespace Domain.Entities;
 public partial class ScoreLog : BaseEntity
 {
     public Guid UserId { get; set; }              // Bắt buộc có UserId
-    public int PointsChanged { get; set; }        // Điểm được cộng/trừ
-    public string? ActionType { get; set; } 
-
+    public Guid? MovieId { get; set; }
+    public string? PointsChanged { get; set; } = null;      // Điểm được cộng/trừ
+    public string? ActionType { get; set; }
+    public string? ItemName { get; set; }
     public virtual AppUser? AppUser { get; set; } // Navigation đến người dùng
 }
