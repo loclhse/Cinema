@@ -6,7 +6,15 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  # Docker configuration - disable TLS for simplicity
+  # Docker configurat  before_script:
+    - apt-get update && apt-get install -y openssh-client curl
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hostsable TLS for simplicity
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
   
@@ -61,7 +69,7 @@ build:
     # Setup SSH for server connection
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa
@@ -107,7 +115,7 @@ deploy:
     - apt-get update && apt-get install -y openssh-client curl
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa
