@@ -2,7 +2,6 @@ stages:
   - prepare
   - test
   - build
-  - deploy
 
 variables:
   TARGET_BRANCH: "CICD_2"
@@ -99,24 +98,51 @@ build:
         fi
         
         echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login 'git.fa.edu.vn:5050' --username gitlab-ci-token --password-stdin
+        echo 'Skipping registry login - using local images only'
         
         echo 'Building Docker image...'
-        docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
+        docker build -t 'team03-webapi:latest' -t 'team03-webapi:$CI_COMMIT_SHA' .
         
         if [ \$? -eq 0 ]; then
           echo 'Docker build successful!'
+          echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
-          echo 'Pushing images to registry...'
-          docker push '$IMAGE_NAME:latest'
-          docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
+          echo 'Deploying immediately...'
+          echo 'Stopping old container if exists...'
+          docker stop team03-webapi 2>/dev/null || echo 'No existing container to stop'
+          docker rm team03-webapi 2>/dev/null || echo 'No existing container to remove'
           
-          if [ \$? -eq 0 ]; then
-            echo 'Push successful!'
-            echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+          echo 'Starting new container...'
+          docker run -d \
+            --name team03-webapi \
+            -p 8080:8080 \
+            --restart unless-stopped \
+            'team03-webapi:latest'
+          
+          echo 'Verifying deployment...'
+          sleep 5
+          if docker ps | grep team03-webapi > /dev/null; then
+            echo 'Container is running successfully!'
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
+            
+            echo 'Checking application health...'
+            sleep 10
+            curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
+            
+            echo ''
+            echo '===== DEPLOYMENT SUCCESSFUL ====='
+            echo 'Application URL: http://vps.purintech.id.vn:8080'
+            echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
+            echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
+            echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+            echo '=================================='
+            echo 'Your application is now live and accessible!'
+            echo ''
           else
-            echo 'Push failed!'
-            echo 'BUILD_STATUS=PUSH_FAILED' > ~/build_status.txt
+            echo 'Container failed to start!'
+            echo 'Docker logs:'
+            docker logs team03-webapi 2>/dev/null || echo 'No logs available'
+            echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
           fi
         else
           echo 'Docker build failed!'
@@ -135,97 +161,5 @@ build:
     reports:
       dotenv: build_status.txt
     expire_in: 1 hour
-  tags:
-    - cicd
-
-deploy:
-  stage: deploy
-  image: alpine:latest
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  before_script:
-    - apk add --no-cache openssh-client curl
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo "Creating SSH key file..."
-    - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - eval $(ssh-agent -s)
-    - ssh-add ~/.ssh/id_rsa
-    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed, using StrictHostKeyChecking=no"
-  script:
-    - echo "Deploying Docker image to server..."
-    - |
-      if [ "${BUILD_STATUS:-UNKNOWN}" != "SUCCESS" ]; then
-        echo "Cannot deploy - build was not successful!"
-        echo "Build status: ${BUILD_STATUS:-UNKNOWN}"
-        echo "Please check build stage logs and fix any issues."
-        exit 1
-      fi
-    - echo "Build was successful, proceeding with deployment..."
-    - echo "Testing SSH connection..."
-    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'"
-    - |
-      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        echo 'Starting deployment process...'
-        
-        export PATH=\"\$HOME/bin:\$PATH\"
-        export DOCKER_HOST=\"unix:///run/user/\$(id -u)/docker.sock\"
-        
-        systemctl --user start docker.service 2>/dev/null || echo 'Docker service already running'
-        sleep 2
-        
-        if docker version > /dev/null 2>&1; then
-          echo 'Rootless Docker accessible!'
-        else
-          echo 'Docker not accessible!'
-          echo 'Checking Docker service status:'
-          systemctl --user status docker.service
-          exit 1
-        fi
-        
-        echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login 'git.fa.edu.vn:5050' --username gitlab-ci-token --password-stdin
-        
-        echo 'Pulling latest image from registry...'
-        docker pull '$IMAGE_NAME:latest'
-        
-        echo 'Stopping old container if exists...'
-        docker stop team03-webapi 2>/dev/null || echo 'No existing container to stop'
-        docker rm team03-webapi 2>/dev/null || echo 'No existing container to remove'
-        
-        echo 'Starting new container...'
-        docker run -d \
-          --name team03-webapi \
-          -p 8080:8080 \
-          --restart unless-stopped \
-          '$IMAGE_NAME:latest'
-        
-        echo 'Verifying deployment...'
-        sleep 5
-        if docker ps | grep team03-webapi > /dev/null; then
-          echo 'Container is running successfully!'
-          docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
-          
-          echo 'Checking application health...'
-          sleep 10
-          curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
-          
-          echo ''
-          echo '===== DEPLOYMENT SUCCESSFUL ====='
-          echo 'Application URL: http://vps.purintech.id.vn:8080'
-          echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
-          echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
-          echo 'Health Check: http://vps.purintech.id.vn:8080/health'
-          echo '=================================='
-          echo 'Your application is now live and accessible!'
-          echo ''
-        else
-          echo 'Container failed to start!'
-          echo 'Docker logs:'
-          docker logs team03-webapi 2>/dev/null || echo 'No logs available'
-          exit 1
-        fi
-      "
   tags:
     - cicd
