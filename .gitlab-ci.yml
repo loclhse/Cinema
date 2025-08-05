@@ -44,15 +44,9 @@ prepare:
 
 build:
   stage: build
-  image: docker:20.10.16
-  services:
-    - name: docker:20.10.16-dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
@@ -68,25 +62,22 @@ build:
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
     
-    # Wait for Docker daemon to be ready
-    - echo "Waiting for Docker daemon..."
-    - for i in $(seq 1 30); do docker info >/dev/null 2>&1 && break || sleep 2; done
-    - docker info
-    
-    # Login to GitLab Container Registry
-    - echo "Logging into GitLab Container Registry..."
-    - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+    # Setup Kaniko authentication for GitLab Container Registry
+    - echo "Setting up Kaniko authentication..."
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "gitlab-ci-token" "$CI_JOB_TOKEN" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
   script:
-    - echo "Building Docker image..."
-    - docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$CI_COMMIT_SHA .
-    
-    - echo "Pushing to GitLab Container Registry..."
-    - docker push $IMAGE_NAME:latest
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - echo "Building and pushing with Kaniko..."
+    - echo "Building Docker image for $IMAGE_NAME"
+    - /kaniko/executor 
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $IMAGE_NAME:latest
+      --destination $IMAGE_NAME:$CI_COMMIT_SHA
+      --cache=true
+      --cache-ttl=24h
   tags:
     - cicd
-  after_script:
-    - docker logout $CI_REGISTRY || true
 
 deploy:
   stage: deploy
