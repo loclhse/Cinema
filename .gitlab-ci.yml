@@ -52,13 +52,31 @@ build:
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Transferring source code to server for Docker build..."
-    - echo "Preparing source code archive..."
+    - echo "Transferring source code to server for Docker build and database deployment..."
+    - echo "Preparing optimized source code archive..."
     - cd project_source
-    - tar -czf ../project.tar.gz .
+    - echo "Excluding unnecessary files from archive..."
+    - tar --exclude='*.git*' --exclude='bin' --exclude='obj' --exclude='*.vs*' --exclude='node_modules' -czf ../project.tar.gz .
     - cd ..
-    - echo "Uploading source code to server..."
-    - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz
+    - echo "Archive size: $(du -h project.tar.gz | cut -f1)"
+    - echo "Checking server disk space and uploading source code..."
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "df -h ~/ && echo 'Available space checked'"
+    - echo "Uploading source code (with retry logic)..."
+    - |
+      for i in {1..3}; do
+        echo "Upload attempt $i/3..."
+        if scp -o StrictHostKeyChecking=no -o ConnectTimeout=60 project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz; then
+          echo "Upload successful!"
+          break
+        else
+          echo "Upload failed on attempt $i"
+          if [ $i -eq 3 ]; then
+            echo "All upload attempts failed!"
+            exit 1
+          fi
+          sleep 5
+        fi
+      done
     - |
       timeout 600 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 fsoftguy@vps.purintech.id.vn "
         set -e
@@ -108,121 +126,74 @@ build:
           echo 'Docker build successful!'
           echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
-          echo 'Deploying immediately...'
-          echo 'Simple deployment to port 8081...'
+          echo 'Deploying full stack (API + Database + Elasticsearch)...'
+          echo 'Setting up production environment variables...'
           
-          # Step 1: Stop and remove containers by name
-          echo 'Stopping containers by name...'
-          docker stop team03-webapi 2>/dev/null || echo 'Container not running'
-          docker rm -f team03-webapi 2>/dev/null || echo 'Container not found'
+          # Export environment variables for production
+          export DB_PASSWORD='team03_secure_pass_2024'
+          export JWT_SECRET_KEY='GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt'
+          export VNPAY_TMN_CODE='7QRTMNBH'
+          export VNPAY_HASH_SECRET='4046G9C8YY9H8WFSJG8AVB9VZNTT1D68'
+          export EMAIL_PASSWORD='jurk cvow hmtg dovz'
           
-          # Step 2: Clean up any remaining containers on port 8081
-          echo 'Finding containers with port 8081 mapping...'
-          CONTAINERS_WITH_8081=\$(docker ps -a --format '{{.ID}} {{.Ports}}' | grep '8081' | awk '{print \$1}' || echo '')
-          if [ -n \"\$CONTAINERS_WITH_8081\" ]; then
-            echo \"Found containers with port 8081: \$CONTAINERS_WITH_8081\"
-            echo \$CONTAINERS_WITH_8081 | xargs -r docker stop 2>/dev/null || echo 'Stop containers failed'
-            echo \$CONTAINERS_WITH_8081 | xargs -r docker rm -f 2>/dev/null || echo 'Remove containers failed'
-          else
-            echo 'No containers found with port 8081 mapping'
-          fi
+          # Step 1: Stop existing services
+          echo 'Stopping existing services...'
+          docker-compose -f docker-compose.production.yml down 2>/dev/null || echo 'No existing services running'
           
-          # Step 3: Quick port check
-          sleep 2
-          echo 'Port 8081 status:'
-          if netstat -ln | grep ':8081' > /dev/null 2>&1; then
-            echo 'WARNING: Port 8081 in use!'
-            netstat -ln | grep ':8081'
-          else
-            echo 'Port 8081 is free'
-          fi
+          # Step 2: Clean up old containers and volumes if needed
+          echo 'Cleaning up old containers...'
+          docker container prune -f 2>/dev/null || echo 'Container cleanup completed'
           
-          echo 'Starting new container on port 8081 with Production environment...'
-          CONTAINER_ID=\$(docker run -d \\
-            --name team03-webapi \\
-            -p 8081:8081 \\
-            --restart unless-stopped \\
-            -e ASPNETCORE_ENVIRONMENT=Production \\
-            -e \"ConnectionStrings__Local=Host=database.purintech.id.vn;Port=5432;Database=MovieTheater;Username=postgres;Password=<Hu@nH0aH0n9>;\" \\
-            -e \"JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt\" \\
-            -e \"JwtSettings__Issuer=YourAppName\" \\
-            -e \"JwtSettings__Audience=YourAppAudience\" \\
-            -e \"JwtSettings__AccessTokenExpiryMinutes=15\" \\
-            -e \"JwtSettings__RefreshTokenExpiryDays=7\" \\
-            -e \"VnPay__TmnCode=7QRTMNBH\" \\
-            -e \"VnPay__HashSecret=4046G9C8YY9H8WFSJG8AVB9VZNTT1D68\" \\
-            -e \"VnPay__PayUrl=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html\" \\
-            -e \"VnPay__Version=2.1.0\" \\
-            -e \"VnPay__Command=pay\" \\
-            -e \"VnPay__CurrCode=VND\" \\
-            -e \"VnPay__Locale=vn\" \\
-            -e \"VnPay__PaymentBackReturnUrl=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/order\" \\
-            -e \"VnPay__PaymentBackReturnUrll=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/subscription\" \\
-            -e \"EmailSettings__SmtpServer=smtp.gmail.com\" \\
-            -e \"EmailSettings__SmtpPort=587\" \\
-            -e \"EmailSettings__SenderName=FCinema\" \\
-            -e \"EmailSettings__SenderEmail=fmoviecinema@gmail.com\" \\
-            -e \"EmailSettings__Username=fmoviecinema@gmail.com\" \\
-            -e \"EmailSettings__Password=jurk cvow hmtg dovz\" \\
-            -e \"EmailSettings__EnableSsl=true\" \\
-            team03-webapi:latest 2>&1)
+          # Step 3: Deploy full stack
+          echo 'Starting full stack deployment...'
+          docker-compose -f docker-compose.production.yml up -d
           
-          echo \"Container creation result: \$CONTAINER_ID\"
-          
-          if echo \"\$CONTAINER_ID\" | grep -E '^[a-f0-9]{12,}' > /dev/null; then
-            echo \"Container started successfully with ID: \$CONTAINER_ID\"
+          if [ \$? -eq 0 ]; then
+            echo 'Full stack deployment successful!'
             
-            echo 'Waiting for container to stabilize...'
+            echo 'Waiting for services to initialize...'
+            sleep 20
+            
+            echo 'Checking service status...'
+            docker-compose -f docker-compose.production.yml ps
+            
+            echo 'Testing database connection...'
+            DB_STATUS=\$(docker exec team03-db pg_isready -U postgres -d team03_db 2>/dev/null || echo 'NOT_READY')
+            echo \"Database status: \$DB_STATUS\"
+            
+            echo 'Testing elasticsearch...'
+            ES_STATUS=\$(docker exec team03-elasticsearch curl -f http://localhost:9200/_cluster/health 2>/dev/null || echo 'NOT_READY')
+            echo \"Elasticsearch status: \$ES_STATUS\"
+            
+            echo 'Testing API application...'
             sleep 10
+            API_HEALTH=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081 2>/dev/null || echo '000')
+            echo \"API health check response: \$API_HEALTH\"
             
-            echo 'Checking container status...'
-            CONTAINER_STATUS=\$(docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi || echo 'NOT_FOUND')
-            if [ \"\$CONTAINER_STATUS\" != \"NOT_FOUND\" ]; then
-              echo 'Container is running successfully!'
-              echo \"\$CONTAINER_STATUS\"
-              
-              echo 'Testing application health...'
-              sleep 8
-              
-              # Test application endpoint
-              echo 'Testing localhost:8081 connection...'
-              HEALTH_CHECK=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081 2>/dev/null || echo '000')
-              echo \"Health check response code: \$HEALTH_CHECK\"
-              
-              if [ \"\$HEALTH_CHECK\" != \"000\" ] && [ \"\$HEALTH_CHECK\" != \"404\" ]; then
-                echo 'Application is responding!'
-              else
-                echo 'Application not responding yet, checking logs...'
-                docker logs team03-webapi 2>/dev/null | tail -15 || echo 'No logs available'
-              fi
-              
-              # Display final URLs
-              echo ''
-              echo '===== DEPLOYMENT SUCCESSFUL ====='
-              echo 'Application URL: http://vps.purintech.id.vn:8081'
-              echo 'API Base URL: http://vps.purintech.id.vn:8081/api'
-              echo 'Swagger UI: http://vps.purintech.id.vn:8081/swagger'
-              echo 'Health Check: http://vps.purintech.id.vn:8081/health'
-              echo '=================================='
-              echo 'Your application is now live and accessible!'
-              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+            if [ \"\$API_HEALTH\" != \"000\" ]; then
+              echo 'API is responding!'
             else
-              echo 'ERROR: Container failed to start or crashed!'
-              echo 'Container logs:'
-              docker logs team03-webapi 2>/dev/null | tail -25 || echo 'No logs available'
-              echo 'Container inspect:'
-              docker inspect team03-webapi 2>/dev/null | jq '.[] | {State, Config.Env, NetworkSettings.Ports}' || echo 'Inspect failed'
-              echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
+              echo 'API not responding yet, checking logs...'
+              docker logs team03-webapi 2>/dev/null | tail -20 || echo 'No API logs available'
             fi
+            
+            # Display service URLs
+            echo ''
+            echo '======= FULL STACK DEPLOYMENT SUCCESSFUL ======='
+            echo '🌐 Application URL: http://vps.purintech.id.vn:8081'
+            echo '📚 API Base URL: http://vps.purintech.id.vn:8081/api'
+            echo '📖 Swagger UI: http://vps.purintech.id.vn:8081/swagger'
+            echo '❤️ Health Check: http://vps.purintech.id.vn:8081/health'
+            echo '🗄️ Database: PostgreSQL on port 5432 (internal)'
+            echo '🔍 Elasticsearch: http://vps.purintech.id.vn:9200'
+            echo '================================================='
+            echo 'Full stack is now live and accessible!'
+            echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           else
-            echo \"CRITICAL ERROR: Failed to start container!\"
-            echo \"Docker run output: \$CONTAINER_ID\"
-            echo 'Checking Docker status:'
-            docker ps -a | grep team03 || echo 'No team03 containers found'
-            echo 'Checking port 8081 availability:'
-            netstat -ln | grep ':8081' || echo 'Port 8081 appears free'
+            echo 'ERROR: Full stack deployment failed!'
+            echo 'Checking docker-compose logs...'
+            docker-compose -f docker-compose.production.yml logs --tail=50 || echo 'No compose logs available'
             echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
-            exit 1
           fi
         else
           echo 'Docker build failed!'
