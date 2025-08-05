@@ -6,11 +6,45 @@ stages:
 
 variables:
   TARGET_BRANCH: "CICD_2"
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
+  IMAGE_NAME: "$CI_REGISTRY        echo \"Docker accessible: \$DOCKER_ACCESSIBLE\"
+        echo \"User in docker group: \$USER_IN_DOCKER_GROUP\"
+        echo \"Rootless Docker available: \$ROOTLESS_DOCKER\"
+        
+        if [ "\$DOCKER_ACCESSIBLE" = "true" ]; then
+          echo 'Docker is accessible, proceeding with build...'
+        elif [ "\$ROOTLESS_DOCKER" = "true" ]; then
+          echo 'Using rootless Docker...'
+          export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock
+          DOCKER_ACCESSIBLE=true
+        fi
+        
+        if [ "\$DOCKER_ACCESSIBLE" = "true" ]; thenE/team03-webapi"
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
   # Docker variables for DinD
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOC        elif [ "\$BUILD_STATUS" = "DOCKER_PERMISSION_ERROR" ]; then
+          echo '=== DOCKER PERMISSION ERROR ==='
+          echo 'Build failed due to Docker permission issues.'
+          echo 'User fsoftguy does not have Docker access or sudo privileges.'
+          echo ''
+          echo 'SOLUTION OPTIONS:'
+          echo '================================'
+          echo 'Option 1 - Ask system administrator to run:'
+          echo 'sudo usermod -aG docker fsoftguy'
+          echo 'sudo systemctl restart docker'
+          echo ''
+          echo 'Option 2 - Try rootless Docker (run as fsoftguy):'
+          echo 'dockerd-rootless-setuptool.sh install'
+          echo 'systemctl --user enable docker'
+          echo 'systemctl --user start docker'
+          echo 'export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock'
+          echo ''
+          echo 'Option 3 - Use different SSH user with Docker access'
+          echo ''
+          echo 'Option 4 - Ask admin to grant sudo access to fsoftguy'
+          echo '================================'
+          echo 'Then re-run the pipeline.'
+          exit 1R: "/certs"
   DOCKER_HOST: tcp://docker:2376
   DOCKER_TLS_VERIFY: 1
   DOCKER_CERT_PATH: "/certs/client"
@@ -77,19 +111,69 @@ build:
         cd /tmp/team03_build
         tar -xzf project.tar.gz
         
-        echo 'Checking Docker status...'
-        docker version || echo 'Docker not accessible without sudo'
+        echo 'Checking Docker status and permissions...'
+        docker version 2>/dev/null && DOCKER_ACCESSIBLE=true || DOCKER_ACCESSIBLE=false
         
         echo 'Checking if user is in docker group...'
-        groups \$USER | grep docker && echo 'User is in docker group' || echo 'User NOT in docker group'
+        groups \$USER | grep docker && USER_IN_DOCKER_GROUP=true || USER_IN_DOCKER_GROUP=false
         
-        echo 'Attempting Docker build without sudo...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin 2>/dev/null || echo 'Docker login failed'
+        echo 'Checking for rootless Docker...'
+        if [ -S "\$XDG_RUNTIME_DIR/docker.sock" ]; then
+          echo 'Rootless Docker socket found, trying...'
+          DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock docker version 2>/dev/null && ROOTLESS_DOCKER=true || ROOTLESS_DOCKER=false
+        else
+          ROOTLESS_DOCKER=false
+        fi
         
-        docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' . 2>/dev/null && echo 'Build succeeded' || echo 'Build failed - may need sudo or docker group membership'
+        echo \"Docker accessible: \$DOCKER_ACCESSIBLE\"
+        echo \"User in docker group: \$USER_IN_DOCKER_GROUP\"
+        echo \"Rootless Docker available: \$ROOTLESS_DOCKER\"
         
-        docker push '$IMAGE_NAME:latest' 2>/dev/null && echo 'Push latest succeeded' || echo 'Push latest failed'
-        docker push '$IMAGE_NAME:$CI_COMMIT_SHA' 2>/dev/null && echo 'Push SHA succeeded' || echo 'Push SHA failed'
+        if [ \"\$DOCKER_ACCESSIBLE\" = \"true\" ]; then
+          echo 'Docker is accessible, proceeding with build...'
+          
+          echo 'Logging into GitLab Container Registry...'
+          echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Docker login failed'
+          
+          echo 'Building Docker image...'
+          docker build -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' . && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+          
+          if [ \"\$BUILD_SUCCESS\" = \"true\" ]; then
+            echo 'Build succeeded! Pushing to registry...'
+            docker push '$IMAGE_NAME:latest' && echo 'Push latest succeeded' || echo 'Push latest failed'
+            docker push '$IMAGE_NAME:$CI_COMMIT_SHA' && echo 'Push SHA succeeded' || echo 'Push SHA failed'
+            echo 'BUILD_STATUS=SUCCESS' > /tmp/build_status
+          else
+            echo 'Build failed!'
+            echo 'BUILD_STATUS=FAILED' > /tmp/build_status
+          fi
+        else
+          echo '=== DOCKER PERMISSION ERROR ==='
+          echo 'Docker is not accessible. This is because:'
+          echo '1. User fsoftguy is not in the docker group'
+          echo '2. Docker may be running in rootless mode'
+          echo '3. Docker daemon permissions are not configured properly'
+          echo ''
+          echo 'SOLUTION OPTIONS:'
+          echo '================================'
+          echo 'Option 1 - Admin adds user to docker group:'
+          echo 'Ask your system administrator to run:'
+          echo 'sudo usermod -aG docker fsoftguy'
+          echo 'sudo systemctl restart docker'
+          echo ''
+          echo 'Option 2 - Use rootless Docker:'
+          echo 'systemctl --user enable docker'
+          echo 'systemctl --user start docker'
+          echo 'export DOCKER_HOST=unix://\$XDG_RUNTIME_DIR/docker.sock'
+          echo ''
+          echo 'Option 3 - Grant sudo access:'
+          echo 'Ask admin to add fsoftguy to sudoers file'
+          echo ''
+          echo 'Option 4 - Use different user:'
+          echo 'Use a user that already has Docker access'
+          echo '================================'
+          echo 'BUILD_STATUS=DOCKER_PERMISSION_ERROR' > /tmp/build_status
+        fi
         
         echo 'Cleaning up...'
         cd /tmp && rm -rf team03_build
@@ -131,46 +215,75 @@ deploy:
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful for deploy'"
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
-        echo 'Logging into GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Registry login failed'
-        
-        echo 'Checking if image exists in registry...'
-        docker pull '$IMAGE_NAME:latest' && IMAGE_AVAILABLE=true || IMAGE_AVAILABLE=false
-        
-        if [ \"\$IMAGE_AVAILABLE\" = \"true\" ]; then
-          echo 'Image found in registry, proceeding with deployment...'
-          
-          echo 'Stopping and removing old container...'
-          docker stop team03-webapi || true
-          docker rm team03-webapi || true
-          
-          echo 'Starting new container with latest image...'
-          docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
-          
-          echo 'Checking deployment status...'
-          docker ps | grep team03-webapi && echo 'Container is running!' || echo 'Container failed to start'
-          
-          echo 'Testing application endpoint...'
-          sleep 5
-          curl -f http://localhost:8080/health && echo 'Health check passed!' || echo 'Health check failed or endpoint not available'
-          
-          echo '=== DEPLOYMENT SUCCESSFUL ==='
-          echo 'Application URL: http://vps.purintech.id.vn:8080'
-          echo 'Health Check: http://vps.purintech.id.vn:8080/health'
-          echo '============================='
+        echo 'Checking build status from previous stage...'
+        if [ -f /tmp/build_status ]; then
+          BUILD_STATUS=\$(cat /tmp/build_status | cut -d'=' -f2)
+          rm -f /tmp/build_status
         else
-          echo '=== IMAGE NOT FOUND ==='
-          echo 'Docker image is not available in the registry.'
-          echo 'This could be because:'
-          echo '1. Build stage failed'
-          echo '2. User needs to be added to docker group on server'
-          echo '3. Docker permission issues'
+          BUILD_STATUS='UNKNOWN'
+        fi
+        
+        echo \"Build status: \$BUILD_STATUS\"
+        
+        if [ \"\$BUILD_STATUS\" = \"SUCCESS\" ]; then
+          echo 'Build was successful, proceeding with deployment...'
+          
+          echo 'Logging into GitLab Container Registry...'
+          echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin || echo 'Registry login failed'
+          
+          echo 'Checking if image exists in registry...'
+          docker pull '$IMAGE_NAME:latest' && IMAGE_AVAILABLE=true || IMAGE_AVAILABLE=false
+          
+          if [ \"\$IMAGE_AVAILABLE\" = \"true\" ]; then
+            echo 'Image found in registry, proceeding with deployment...'
+            
+            echo 'Stopping and removing old container...'
+            docker stop team03-webapi || true
+            docker rm team03-webapi || true
+            
+            echo 'Starting new container with latest image...'
+            docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
+            
+            echo 'Checking deployment status...'
+            docker ps | grep team03-webapi && echo 'Container is running!' || echo 'Container failed to start'
+            
+            echo 'Testing application endpoint...'
+            sleep 10
+            curl -f http://localhost:8080/health && echo 'Health check passed!' || echo 'Health check failed or endpoint not available'
+            
+            echo '=== DEPLOYMENT SUCCESSFUL ==='
+            echo 'Application URL: http://vps.purintech.id.vn:8080'
+            echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+            echo '============================='
+          else
+            echo '=== IMAGE NOT FOUND ==='
+            echo 'Docker image was not found in the registry after successful build.'
+            echo 'This could be due to push failures.'
+            echo '======================='
+            exit 1
+          fi
+          
+        elif [ \"\$BUILD_STATUS\" = \"DOCKER_PERMISSION_ERROR\" ]; then
+          echo '=== DOCKER PERMISSION ERROR ==='
+          echo 'Build failed due to Docker permission issues.'
+          echo 'User fsoftguy needs to be added to the docker group.'
           echo ''
-          echo 'To fix this, run on the server:'
+          echo 'Please run these commands on the server:'
           echo 'sudo usermod -aG docker fsoftguy'
           echo 'sudo systemctl restart docker'
-          echo 'Then re-run the pipeline'
-          echo '======================='
+          echo 'sudo su - fsoftguy'  # Log out and back in
+          echo 'docker ps'  # Test Docker access
+          echo ''
+          echo 'Then re-run the pipeline.'
+          echo '================================'
+          exit 1
+          
+        else
+          echo '=== BUILD FAILED ==='
+          echo 'The build stage failed or status is unknown.'
+          echo 'Check the build stage logs for more details.'
+          echo 'Cannot proceed with deployment.'
+          echo '==================='
           exit 1
         fi
       " || (echo "Deploy SSH command failed" && exit 1)
