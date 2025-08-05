@@ -44,7 +44,12 @@ prepare:
 
 build:
   stage: build
-  image: alpine:latest
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
@@ -60,28 +65,25 @@ build:
     - echo "Cloning repository..."
     - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" . || exit 1
     
-    # Install Kaniko
-    - echo "Downloading Kaniko..."
-    - wget -O /kaniko.tar.gz https://github.com/GoogleContainerTools/kaniko/releases/download/v1.9.0/kaniko-amd64.tar.gz
-    - tar -xzf /kaniko.tar.gz -C /usr/local/bin/
+    # Wait for Docker daemon
+    - until docker info; do sleep 1; done
     
-    # Setup Kaniko authentication
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "gitlab-ci-token" "$CI_JOB_TOKEN" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    # Login to GitLab Container Registry
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
   script:
-    - echo "Building and pushing with Kaniko..."
+    - echo "Building Docker image..."
     - echo "Building Docker image for $IMAGE_NAME"
     - echo "Current directory contents:"
     - ls -la
-    - /usr/local/bin/executor 
-      --context $CI_PROJECT_DIR
-      --dockerfile $CI_PROJECT_DIR/Dockerfile
-      --destination $IMAGE_NAME:latest
-      --destination $IMAGE_NAME:$CI_COMMIT_SHA
-      --cache=true
-      --cache-ttl=24h
+    - docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$CI_COMMIT_SHA .
+    - echo "Pushing to GitLab Container Registry..."
+    - docker push $IMAGE_NAME:latest
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
   tags:
     - cicd
+  after_script:
+    - docker logout $CI_REGISTRY || true
 
 deploy:
   stage: deploy
