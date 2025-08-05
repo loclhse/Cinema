@@ -84,17 +84,22 @@ build:
     - cat ~/.ssh/id_rsa.pub
     - echo "SSH key fingerprint:"
     - ssh-keygen -lf ~/.ssh/id_rsa.pub
-    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - echo "Adding server to known_hosts..."
+    - ssh-keyscan -H -T 10 vps.purintech.id.vn >> ~/.ssh/known_hosts || echo "Warning: ssh-keyscan failed, but continuing"
+    - echo "Alternatively adding server to known_hosts with timeout..."
+    - timeout 10 ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts || echo "Host key scan failed, will use StrictHostKeyChecking=no"
   script:
     - echo "Transferring source code to server..."
     - cd project_source
     - tar -czf ../project.tar.gz .
     - cd ..
     - echo "Testing SSH connection..."
+    - echo "First check if server is reachable..."
+    - ping -c 3 vps.purintech.id.vn || echo "Ping failed, but trying SSH anyway"
     - echo "Debug SSH connection with verbose output:"
-    - ssh -vvv -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || echo "SSH key auth failed - need to check server authorized_keys"
+    - ssh -vvv -o ConnectTimeout=30 -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || echo "SSH key auth failed - need to check server authorized_keys"
     - echo "Copying project file to server..."
-    - scp -v project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed - ensure SSH public key is installed on server" && exit 1)
+    - scp -v -o ConnectTimeout=30 project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed - ensure SSH public key is installed on server" && exit 1)
     
     - echo "Building Docker image on server..."
     - |
@@ -146,7 +151,10 @@ deploy:
     - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
-    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts
+    - echo "Adding server to known_hosts..."
+    - ssh-keyscan -H -T 10 vps.purintech.id.vn >> ~/.ssh/known_hosts || echo "Warning: ssh-keyscan failed, but continuing"
+    - echo "Alternatively adding server to known_hosts with timeout..."
+    - timeout 10 ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts || echo "Host key scan failed, will use StrictHostKeyChecking=no"
   script:
     - echo "Deploying application on server..."
     - echo "Testing SSH connection for deploy..."
