@@ -84,13 +84,8 @@ build:
     - echo "First check if server is reachable"
     - ping -c 3 vps.purintech.id.vn || echo "Ping failed, but trying SSH anyway"
     - echo "Debug SSH connection with verbose output"
-    - ssh -vvv -o ConnectTimeout=30 -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || echo "SSH key auth failed - need to check server authorized_keys"
-    - echo "=== SSH Key Authentication Failed ==="
-    - echo "Please add this public key to server's ~/.ssh/authorized_keys"
-    - cat ~/.ssh/id_rsa.pub
-    - echo "Run on server mkdir -p ~/.ssh && echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-    - echo "====================================="
-    - exit 1
+    - ssh -vvv -o ConnectTimeout=30 -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || (echo "=== SSH Key Authentication Failed ===" && echo "Please add this public key to server's ~/.ssh/authorized_keys" && cat ~/.ssh/id_rsa.pub && echo "Run on server mkdir -p ~/.ssh && echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys" && echo "=====================================" && exit 1)
+    - echo "SSH connection successful! Proceeding with deployment..."
     - echo "Copying project file to server"
     - scp -v -o ConnectTimeout=30 project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed - ensure SSH public key is installed on server" && exit 1)
     - echo "Building Docker image on server"
