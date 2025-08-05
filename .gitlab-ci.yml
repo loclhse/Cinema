@@ -33,11 +33,11 @@ prepare:
 
 build:
   stage: build
-  image: alpine:latest
+  image: mcr.microsoft.com/dotnet/sdk:8.0
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apk add --no-cache openssh-client curl tar gzip git
+    - apt-get update && apt-get install -y openssh-client curl tar gzip git
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
@@ -53,13 +53,13 @@ build:
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Building Docker image on server using rootless Docker..."
+    - echo "Transferring source code to server for Docker build..."
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         mkdir -p ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S)
         echo ~/docker-builds/team03-build-$(date +%Y%m%d-%H%M%S) > ~/.last-build-dir
       "
     - BUILD_DIR=$(ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/.last-build-dir")
-    - echo "Build directory $BUILD_DIR"
+    - echo "Build directory: $BUILD_DIR"
     - echo "Transferring source code to server..."
     - cd project_source
     - tar -czf ../project.tar.gz .
