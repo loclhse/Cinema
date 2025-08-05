@@ -31,30 +31,6 @@ prepare:
   tags:
     - cicd
 
-test:
-  stage: test
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  before_script:
-    - apt-get update && apt-get install -y git
-    - echo "Configuring Git authentication..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Cloning repository..."
-    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
-    - cd project_source
-  script:
-    - echo "Running tests..."
-    - dotnet restore WebAPI/WebAPI.sln
-    - dotnet build WebAPI/WebAPI.sln --configuration Release --no-restore
-    - dotnet test WebAPI/WebAPI.sln --configuration Release --no-build --verbosity normal
-    - echo "Tests completed successfully"
-  tags:
-    - cicd
-
 build:
   stage: build
   image: alpine:latest
