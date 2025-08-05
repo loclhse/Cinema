@@ -97,17 +97,17 @@ build:
         tar -xzf /tmp/project.tar.gz
         
         echo 'Check Docker daemon status...'
-        sudo systemctl status docker || sudo systemctl start docker
+        systemctl --user status docker 2>/dev/null || (echo 'Adding user to docker group and restarting session...' && sudo usermod -aG docker fsoftguy && newgrp docker) || echo 'Docker group setup attempted'
         
         echo 'Login to GitLab Container Registry...'
-        echo '$CI_JOB_TOKEN' | sudo docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
+        echo '$CI_JOB_TOKEN' | docker login '$CI_REGISTRY' --username gitlab-ci-token --password-stdin
         
         echo 'Building Docker image on server...'
-        sudo docker build --no-cache --pull -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
+        docker build --no-cache --pull -t '$IMAGE_NAME:latest' -t '$IMAGE_NAME:$CI_COMMIT_SHA' .
         
         echo 'Pushing to GitLab Container Registry...'
-        sudo docker push '$IMAGE_NAME:latest'
-        sudo docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
+        docker push '$IMAGE_NAME:latest'
+        docker push '$IMAGE_NAME:$CI_COMMIT_SHA'
         
         echo 'Cleaning up build files...'
         cd /tmp
@@ -149,14 +149,14 @@ deploy:
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Stopping and removing old container...'
-        sudo docker stop team03-webapi || true
-        sudo docker rm team03-webapi || true
+        docker stop team03-webapi || true
+        docker rm team03-webapi || true
         
         echo 'Starting new container with latest image...'
-        sudo docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
+        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped '$IMAGE_NAME:latest'
         
         echo 'Checking deployment status...'
-        sudo docker ps | grep team03-webapi
+        docker ps | grep team03-webapi
         
         echo 'Testing application endpoint...'
         sleep 5
