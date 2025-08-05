@@ -16,13 +16,6 @@ variables:
   # Git configuration
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
-  
-  # Package Registry configuration
-  IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
-  
-  # Git configuration
-  GIT_STRATEGY: none
-  GIT_USERNAME: "fsa_HongTL"
 
 # Default configuration for all jobs
 default:
