@@ -1,4 +1,5 @@
-﻿using Application.IServices;
+﻿using Application.IRepos;
+using Application.IServices;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,9 +13,11 @@ namespace Application.Services
     public class BackgroundService : IBackgroundService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public BackgroundService(IUnitOfWork unitOfWork)
+        private readonly IAuthRepo _authRepo;
+        public BackgroundService(IUnitOfWork unitOfWork, IAuthRepo authRepo)
         {
             _unitOfWork = unitOfWork;
+            _authRepo = authRepo;
         }
         public async Task ChangeSeatBookingStatus()
         {
@@ -46,6 +49,9 @@ namespace Application.Services
             var expiredSubscriptions = await _unitOfWork.SubscriptionRepo.GetAllAsync(s => s.Status == SubscriptionStatus.active && s.EndDate == currentTime);
             foreach (var subscription in expiredSubscriptions)
             {
+                var user = await _unitOfWork.UserRepo.GetByIdAsync(subscription.UserId.Value);
+                await _authRepo.RemoveUserFromRoleAsync(user.Id, "Customer");
+                await _authRepo.AddUserToRoleAsync(user.Id, "Member");
                 subscription.Status = SubscriptionStatus.expired;
             }
             try
