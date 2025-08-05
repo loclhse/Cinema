@@ -3,6 +3,7 @@ using Application.IRepos;
 using Domain.Entities;
 using Infrastructure.Identity;
 using Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
