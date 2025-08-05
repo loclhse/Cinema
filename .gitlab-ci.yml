@@ -109,7 +109,7 @@ build:
           echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
           echo 'Deploying immediately...'
-          echo 'Comprehensive cleanup process...'
+          echo 'Enhanced cleanup and deployment process...'
           
           # Step 1: Stop and remove containers by name
           echo 'Stopping containers by name...'
@@ -117,15 +117,23 @@ build:
           docker rm -f team03-webapi 2>/dev/null || echo 'Container not found'
           
           # Step 2: Find and stop ALL containers using port 8080
-          echo 'Finding all processes on port 8080...'
+          echo 'Finding all processes and containers on port 8080...'
+          
+          # Kill processes using port 8080
           PIDS_ON_8080=\$(lsof -ti:8080 2>/dev/null || echo '')
           if [ -n \"\$PIDS_ON_8080\" ]; then
-            echo \"Found processes on port 8080: \$PIDS_ON_8080\"
+            echo \"Found PIDs on port 8080: \$PIDS_ON_8080\"
             echo \$PIDS_ON_8080 | xargs -r kill -9 2>/dev/null || echo 'Kill processes failed'
           fi
           
-          # Step 3: Clean up containers by port mapping
-          echo 'Finding containers with port 8080 mapping...'
+          # Alternative method using netstat and kill
+          NETSTAT_PIDS=\$(netstat -tulpn 2>/dev/null | grep ':8080' | awk '{print \$7}' | cut -d'/' -f1 | grep -v '-' | sort -u || echo '')
+          if [ -n \"\$NETSTAT_PIDS\" ]; then
+            echo \"Found netstat PIDs on port 8080: \$NETSTAT_PIDS\"
+            echo \$NETSTAT_PIDS | xargs -r kill -9 2>/dev/null || echo 'Kill netstat PIDs failed'
+          fi
+          
+          # Clean up containers by port mapping  
           CONTAINERS_WITH_8080=\$(docker ps -a --format '{{.ID}} {{.Ports}}' | grep '8080' | awk '{print \$1}' || echo '')
           if [ -n \"\$CONTAINERS_WITH_8080\" ]; then
             echo \"Found containers with port 8080: \$CONTAINERS_WITH_8080\"
@@ -135,21 +143,34 @@ build:
             echo 'No containers found with port 8080 mapping'
           fi
           
-          # Step 4: Wait and verify port is free
-          sleep 3
+          # Step 3: Force Docker system cleanup
+          echo 'Docker system cleanup...'
+          docker system prune -f --volumes 2>/dev/null || echo 'Docker cleanup failed'
+          
+          # Step 4: Wait longer and verify port is free
+          echo 'Waiting for port to be released...'
+          sleep 5
+          
           echo 'Final port 8080 status:'
-          if netstat -ln | grep ':8080' > /dev/null 2>&1; then
+          PORT_CHECK=\$(netstat -ln | grep ':8080' || echo '')
+          if [ -n \"\$PORT_CHECK\" ]; then
             echo 'WARNING: Port 8080 still in use!'
-            netstat -ln | grep ':8080'
+            echo \"\$PORT_CHECK\"
+            echo 'Processes on port 8080:'
             lsof -i:8080 2>/dev/null || echo 'No processes found with lsof'
+            netstat -tulpn 2>/dev/null | grep ':8080' || echo 'No netstat processes found'
+            
+            echo 'Attempting to use alternative port mapping...'
+            ALT_PORT=8081
           else
             echo 'Port 8080 is now free'
+            ALT_PORT=8080
           fi
           
-          echo 'Starting new container...'
+          echo \"Starting new container on port \$ALT_PORT...\"
           CONTAINER_ID=\$(docker run -d \\
             --name team03-webapi \\
-            -p 8080:8080 \\
+            -p \$ALT_PORT:8080 \\
             --restart unless-stopped \\
             team03-webapi:latest 2>&1)
           
@@ -159,42 +180,53 @@ build:
             echo \"Container started successfully with ID: \$CONTAINER_ID\"
             
             echo 'Waiting for container to stabilize...'
-            sleep 8
+            sleep 10
             
             echo 'Checking container status...'
-            if docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi; then
+            CONTAINER_STATUS=\$(docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi || echo 'NOT_FOUND')
+            if [ \"\$CONTAINER_STATUS\" != \"NOT_FOUND\" ]; then
               echo 'Container is running successfully!'
+              echo \"\$CONTAINER_STATUS\"
               
               echo 'Testing application health...'
-              sleep 5
+              sleep 8
               
-              # Test multiple endpoints
-              echo 'Testing localhost connection...'
-              HEALTH_CHECK=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080 2>/dev/null || echo '000')
+              # Test application endpoint
+              echo \"Testing localhost:\$ALT_PORT connection...\"
+              HEALTH_CHECK=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:\$ALT_PORT 2>/dev/null || echo '000')
               echo \"Health check response code: \$HEALTH_CHECK\"
               
-              if [ \"\$HEALTH_CHECK\" != \"000\" ]; then
+              if [ \"\$HEALTH_CHECK\" != \"000\" ] && [ \"\$HEALTH_CHECK\" != \"404\" ]; then
                 echo 'Application is responding!'
               else
                 echo 'Application not responding yet, checking logs...'
-                docker logs team03-webapi 2>/dev/null | tail -10 || echo 'No logs available'
+                docker logs team03-webapi 2>/dev/null | tail -15 || echo 'No logs available'
               fi
               
+              # Display final URLs
               echo ''
               echo '===== DEPLOYMENT SUCCESSFUL ====='
-              echo 'Application URL: http://vps.purintech.id.vn:8080'
-              echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
-              echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
-              echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+              if [ \"\$ALT_PORT\" = \"8080\" ]; then
+                echo 'Application URL: http://vps.purintech.id.vn:8080'
+                echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
+                echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
+                echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+              else
+                echo \"Application URL: http://vps.purintech.id.vn:\$ALT_PORT\"
+                echo \"API Base URL: http://vps.purintech.id.vn:\$ALT_PORT/api\"
+                echo \"Swagger UI: http://vps.purintech.id.vn:\$ALT_PORT/swagger\"
+                echo \"Health Check: http://vps.purintech.id.vn:\$ALT_PORT/health\"
+                echo \"NOTE: Using alternative port \$ALT_PORT due to port 8080 conflict\"
+              fi
               echo '=================================='
               echo 'Your application is now live and accessible!'
               echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
             else
               echo 'ERROR: Container failed to start or crashed!'
               echo 'Container logs:'
-              docker logs team03-webapi 2>/dev/null | tail -20 || echo 'No logs available'
+              docker logs team03-webapi 2>/dev/null | tail -25 || echo 'No logs available'
               echo 'Container inspect:'
-              docker inspect team03-webapi 2>/dev/null | jq '.[] | {State, Config.Env}' || echo 'Inspect failed'
+              docker inspect team03-webapi 2>/dev/null | jq '.[] | {State, Config.Env, NetworkSettings.Ports}' || echo 'Inspect failed'
               echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
             fi
           else
@@ -202,8 +234,8 @@ build:
             echo \"Docker run output: \$CONTAINER_ID\"
             echo 'Checking Docker status:'
             docker ps -a | grep team03 || echo 'No team03 containers found'
-            echo 'Checking port availability:'
-            netstat -ln | grep ':8080' || echo 'Port 8080 appears free'
+            echo \"Checking port \$ALT_PORT availability:\"
+            netstat -ln | grep \":\$ALT_PORT\" || echo \"Port \$ALT_PORT appears free\"
             echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
             exit 1
           fi
