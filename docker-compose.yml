@@ -7,12 +7,33 @@ services:
       dockerfile: Dockerfile
     container_name: team03-webapi
     ports:
-      - "5250:8080"
+      - "8081:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Database=team03_db;Username=postgres;Password=12345
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Local=Host=db;Database=team03_db;Username=postgres;Password=12345
       - ElasticSearch__Uri=http://elasticsearch:9200
       - SWAGGER_ENABLED=true
+      - JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt
+      - JwtSettings__Issuer=YourAppName
+      - JwtSettings__Audience=YourAppAudience
+      - JwtSettings__AccessTokenExpiryMinutes=15
+      - JwtSettings__RefreshTokenExpiryDays=7
+      - VnPay__TmnCode=7QRTMNBH
+      - VnPay__HashSecret=4046G9C8YY9H8WFSJG8AVB9VZNTT1D68
+      - VnPay__PayUrl=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VnPay__Version=2.1.0
+      - VnPay__Command=pay
+      - VnPay__CurrCode=VND
+      - VnPay__Locale=vn
+      - VnPay__PaymentBackReturnUrl=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/order
+      - VnPay__PaymentBackReturnUrll=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/subscription
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__SenderName=FCinema
+      - EmailSettings__SenderEmail=fmoviecinema@gmail.com
+      - EmailSettings__Username=fmoviecinema@gmail.com
+      - EmailSettings__Password=jurk cvow hmtg dovz
+      - EmailSettings__EnableSsl=true
     depends_on:
       - db
       - elasticsearch

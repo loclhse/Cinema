@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8080
+EXPOSE 8081
 
 FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -29,7 +29,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Configure for Azure Container Apps environment
-ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_URLS=http://+:8081
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 
