@@ -5,7 +5,17 @@ stages:
   - deploy
 
 variables:
-  TARGET_BRANCH: "CICD_2"
+  TARG    - echo "SSH key finge    - echo "Please add this public key to server's ~/.ssh/authorized_keys"
+    - cat ~/.ssh/id_rsa.pub
+    - echo "Run on server mkdir -p ~/.ssh && echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+    - echo "====================================="
+    - exit 1
+    - echo "Copying project file to server""
+    - ssh-keygen -lf ~/.ssh/id_rsa.pub
+    - echo "=== IMPORTANT Copy this public key to server ==="
+    - echo "Run this on server echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
+    - echo "================================================"
+    - echo "Adding server to known_hosts"NCH: "CICD_2"
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
   IMAGE_NAME: "$CI_REGISTRY_IMAGE/team03-webapi"
@@ -62,29 +72,38 @@ build:
     - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
-    - echo "Generating public key from private key:"
+    - echo "Generating public key from private key"
     - ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
-    - echo "Public key content:"
+    - echo "Public key content"
     - cat ~/.ssh/id_rsa.pub
-    - echo "SSH key fingerprint:"
+    - echo "SSH key fingerprint"
     - ssh-keygen -lf ~/.ssh/id_rsa.pub
-    - echo "Adding server to known_hosts..."
-    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "warning ssh-keyscan failed, but continuing"
-    - echo "Alternatively adding server to known_hosts with timeout..."
+    - echo "=== IMPORTANT Copy this public key to server ==="
+    - echo "Run this on server echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
+    - echo "================================================"
+    - echo "Adding server to known_hosts"
+    - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Warning ssh-keyscan failed, but continuing"
+    - echo "Alternatively adding server to known_hosts with timeout"
     - timeout 10 ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Host key scan failed, will use StrictHostKeyChecking=no"
   script:
-    - echo "Transferring source code to server..."
+    - echo "Transferring source code to server"
     - cd project_source
     - tar -czf ../project.tar.gz .
     - cd ..
-    - echo "Testing SSH connection..."
-    - echo "First check if server is reachable..."
+    - echo "Testing SSH connection"
+    - echo "First check if server is reachable"
     - ping -c 3 vps.purintech.id.vn || echo "Ping failed, but trying SSH anyway"
-    - echo "Debug SSH connection with verbose output:"
+    - echo "Debug SSH connection with verbose output"
     - ssh -vvv -o ConnectTimeout=30 -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful'" || echo "SSH key auth failed - need to check server authorized_keys"
-    - echo "Copying project file to server..."
+    - echo "=== SSH Key Authentication Failed ==="
+    - echo "Please add this public key to server's ~/.ssh/authorized_keys"
+    - cat ~/.ssh/id_rsa.pub
+    - echo "Run on server mkdir -p ~/.ssh && echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+    - echo "====================================="
+    - exit 1
+    - echo "Copying project file to server"
     - scp -v -o ConnectTimeout=30 project.tar.gz fsoftguy@vps.purintech.id.vn:/tmp/ || (echo "SCP failed - ensure SSH public key is installed on server" && exit 1)
-    - echo "Building Docker image on server..."
+    - echo "Building Docker image on server"
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
         echo 'Extracting source code...'
@@ -131,13 +150,13 @@ deploy:
     - tail -1 ~/.ssh/id_rsa | grep -q "END" || (echo "SSH key format error - last line:" && tail -1 ~/.ssh/id_rsa && exit 1)
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa || (echo "Failed to add SSH key" && exit 1)
-    - echo "Adding server to known_hosts..."
+    - echo "Adding server to known_hosts"
     - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Warning ssh-keyscan failed, but continuing"
-    - echo "Alternatively adding server to known_hosts with timeout..."
+    - echo "Alternatively adding server to known_hosts with timeout"
     - timeout 10 ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "Host key scan failed, will use StrictHostKeyChecking=no"
   script:
-    - echo "Deploying application on server..."
-    - echo "Testing SSH connection for deploy..."
+    - echo "Deploying application on server"
+    - echo "Testing SSH connection for deploy"
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "echo 'SSH connection successful for deploy'"
     - |
       ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
