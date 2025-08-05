@@ -23,11 +23,11 @@ default:
 
 prepare:
   stage: prepare
-  image: alpine:latest
+  image: ubuntu:20.04
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   script:
-    - apk add --no-cache git curl jq
+    - apt-get update && apt-get install -y git curl jq
     # Configure Git authentication with personal token
     - echo "Configuring Git credentials..."
     - git config --global credential.helper store
@@ -42,11 +42,11 @@ prepare:
 
 build:
   stage: build
-  image: alpine:latest
+  image: ubuntu:20.04
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apk add --no-cache git curl openssh-client
+    - apt-get update && apt-get install -y git curl openssh-client tar gzip
     # Configure Git authentication
     - echo "Configuring Git authentication..."
     - git config --global credential.helper store
@@ -98,11 +98,11 @@ build:
 
 deploy:
   stage: deploy
-  image: alpine:latest
+  image: ubuntu:20.04
   rules:
     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - apk add --no-cache openssh-client
+    - apt-get update && apt-get install -y openssh-client curl
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
