@@ -60,7 +60,8 @@ build:
     - echo "Uploading source code to server..."
     - scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz
     - |
-      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+      timeout 600 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 fsoftguy@vps.purintech.id.vn "
+        set -e
         echo 'Creating build directory...'
         BUILD_DIR=~/docker-builds/team03-build-\$(date +%Y%m%d-%H%M%S)
         mkdir -p \$BUILD_DIR
@@ -108,104 +109,66 @@ build:
           echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
           echo 'Deploying immediately...'
-          echo 'Force cleanup all containers and ports...'
+          echo 'Simple but effective cleanup...'
           
-          # Aggressive container cleanup - multiple strategies
-          echo 'Step 1: Kill all containers with team03-webapi name...'
-          docker ps -aq --filter name=team03-webapi | xargs -r docker kill 2>/dev/null || echo 'No named containers to kill'
-          docker ps -aq --filter name=team03-webapi | xargs -r docker rm -f 2>/dev/null || echo 'No named containers to remove'
+          # Step 1: Stop and remove containers by name
+          echo 'Stopping containers by name...'
+          docker stop team03-webapi 2>/dev/null || echo 'Container not running'
+          docker rm -f team03-webapi 2>/dev/null || echo 'Container not found'
           
-          echo 'Step 2: Kill containers using port 8080...'
-          docker ps --format 'table {{.ID}}\t{{.Ports}}' | grep ':8080->' | awk '{print \$1}' | xargs -r docker kill 2>/dev/null || echo 'No port 8080 containers to kill'
-          docker ps -a --format 'table {{.ID}}\t{{.Ports}}' | grep ':8080->' | awk '{print \$1}' | xargs -r docker rm -f 2>/dev/null || echo 'No port 8080 containers to remove'
-          
-          echo 'Step 3: Prune stopped containers...'
-          docker container prune -f 2>/dev/null || echo 'Container prune completed'
-          
-          echo 'Step 4: Force cleanup any remaining processes...'
-          # Kill any docker processes that might be hanging
-          pkill -f 'docker.*team03-webapi' 2>/dev/null || echo 'No hanging docker processes'
-          
-          # Wait for cleanup to complete
-          sleep 5
-          
-          echo 'Step 5: Final port check and cleanup...'
-          if netstat -ln 2>/dev/null | grep ':8080 ' || ss -ln 2>/dev/null | grep ':8080 '; then
-            echo 'WARNING: Port 8080 still occupied, attempting final cleanup...'
-            # Find and kill any containers still using port 8080
-            docker ps -q | xargs -r -I {} sh -c 'docker port {} 2>/dev/null | grep 8080 && docker kill {} || true'
-            sleep 3
+          # Step 2: Clean up any remaining containers on port 8080
+          echo 'Finding containers on port 8080...'
+          CONTAINERS_ON_8080=\$(docker ps --format '{{.ID}} {{.Ports}}' | grep '8080' | awk '{print \$1}' || echo '')
+          if [ -n \"\$CONTAINERS_ON_8080\" ]; then
+            echo \"Found containers on port 8080: \$CONTAINERS_ON_8080\"
+            echo \$CONTAINERS_ON_8080 | xargs -r docker stop 2>/dev/null || echo 'Stop failed'
+            echo \$CONTAINERS_ON_8080 | xargs -r docker rm -f 2>/dev/null || echo 'Remove failed'
           else
-            echo 'SUCCESS: Port 8080 is now available'
+            echo 'No containers found on port 8080'
           fi
           
-          echo 'Starting new container with retry logic...'
-          CONTAINER_ID=\"\"
-          RETRY_COUNT=0
-          MAX_RETRIES=3
+          # Step 3: Quick port check
+          sleep 2
+          echo 'Port 8080 status:'
+          netstat -ln | grep ':8080' || echo 'Port 8080 is free'
           
-          while [ \$RETRY_COUNT -lt \$MAX_RETRIES ]; do
-            echo \"Attempt \$((\$RETRY_COUNT + 1)) of \$MAX_RETRIES...\"
+          echo 'Starting new container...'
+          CONTAINER_ID=\$(docker run -d \\
+            --name team03-webapi \\
+            -p 8080:8080 \\
+            --restart unless-stopped \\
+            team03-webapi:latest 2>&1)
+          
+          if echo \"\$CONTAINER_ID\" | grep -q '^[a-f0-9]\\{12\\}'; then
+            echo \"Container started successfully: \$CONTAINER_ID\"
             
-            CONTAINER_ID=\$(docker run -d \
-              --name team03-webapi \
-              -p 8080:8080 \
-              --restart unless-stopped \
-              team03-webapi:latest 2>/dev/null || echo \"\")
-            
-            if [ -n \"\$CONTAINER_ID\" ] && [ \"\$CONTAINER_ID\" != \"\" ]; then
-              echo \"Container started successfully: \$CONTAINER_ID\"
-              break
-            else
-              echo \"Failed to start container, attempt \$((\$RETRY_COUNT + 1)) failed\"
-              RETRY_COUNT=\$((\$RETRY_COUNT + 1))
+            echo 'Verifying deployment...'
+            sleep 5
+            if docker ps | grep team03-webapi > /dev/null; then
+              echo 'Container is running successfully!'
+              docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi
               
-              if [ \$RETRY_COUNT -lt \$MAX_RETRIES ]; then
-                echo \"Retrying in 5 seconds...\"
-                # Additional cleanup before retry
-                docker kill team03-webapi 2>/dev/null || true
-                docker rm team03-webapi 2>/dev/null || true
-                sleep 5
-              fi
+              echo 'Checking application health...'
+              sleep 10
+              curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
+              
+              echo ''
+              echo '===== DEPLOYMENT SUCCESSFUL ====='
+              echo 'Application URL: http://vps.purintech.id.vn:8080'
+              echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
+              echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
+              echo 'Health Check: http://vps.purintech.id.vn:8080/health'
+              echo '=================================='
+              echo 'Your application is now live and accessible!'
+              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+            else
+              echo 'Container failed to start properly!'
+              echo 'Container logs:'
+              docker logs team03-webapi 2>/dev/null | tail -20 || echo 'No logs available'
+              echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
             fi
-          done
-          
-          if [ -z \"\$CONTAINER_ID\" ] || [ \"\$CONTAINER_ID\" = \"\" ]; then
-            echo \"CRITICAL: Failed to start container after \$MAX_RETRIES attempts\"
-            echo \"Port status:\"
-            netstat -ln | grep 8080 || ss -ln | grep 8080 || echo \"No processes on port 8080\"
-            echo \"Docker processes:\"
-            docker ps -a
-            echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
-            exit 1
-          fi
-          
-          echo 'Verifying deployment...'
-          sleep 5
-          if docker ps | grep \$CONTAINER_ID > /dev/null; then
-            echo 'Container is running successfully!'
-            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep team03-webapi
-            
-            echo 'Checking application health...'
-            sleep 10
-            curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
-            
-            echo ''
-            echo '===== DEPLOYMENT SUCCESSFUL ====='
-            echo 'Application URL: http://vps.purintech.id.vn:8080'
-            echo 'API Base URL: http://vps.purintech.id.vn:8080/api'
-            echo 'Swagger UI: http://vps.purintech.id.vn:8080/swagger'
-            echo 'Health Check: http://vps.purintech.id.vn:8080/health'
-            echo '=================================='
-            echo 'Your application is now live and accessible!'
-            echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
-            echo ''
           else
-            echo 'Container failed to start!'
-            echo 'Docker logs:'
-            docker logs \$CONTAINER_ID 2>/dev/null || echo 'No logs available'
-            echo 'Container status:'
-            docker ps -a | grep team03-webapi || echo 'No container found'
+            echo \"Failed to start container. Error: \$CONTAINER_ID\"
             echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
           fi
         else
