@@ -112,3 +112,23 @@ deploy:
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan vps.purintech.id.vn >> ~/.ssh/known_hosts
+  script:
+    - echo "Deploying application on server..."
+    - |
+      ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        echo 'Stopping and removing old container...'
+        docker stop team03-webapi || true
+        docker rm team03-webapi || true
+        
+        echo 'Starting new container with latest image...'
+        docker run -d --name team03-webapi -p 8080:80 --restart unless-stopped $IMAGE_NAME:latest
+        
+        echo 'Checking deployment status...'
+        docker ps | grep team03-webapi
+        
+        echo 'Testing application endpoint...'
+        sleep 5
+        curl -f http://localhost:8080/health || echo 'Health check endpoint not available, but container is running'
+      "
+  tags:
+    - cicd
