@@ -109,28 +109,42 @@ build:
           echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           
           echo 'Deploying immediately...'
-          echo 'Simple but effective cleanup...'
+          echo 'Comprehensive cleanup process...'
           
           # Step 1: Stop and remove containers by name
           echo 'Stopping containers by name...'
           docker stop team03-webapi 2>/dev/null || echo 'Container not running'
           docker rm -f team03-webapi 2>/dev/null || echo 'Container not found'
           
-          # Step 2: Clean up any remaining containers on port 8080
-          echo 'Finding containers on port 8080...'
-          CONTAINERS_ON_8080=\$(docker ps --format '{{.ID}} {{.Ports}}' | grep '8080' | awk '{print \$1}' || echo '')
-          if [ -n \"\$CONTAINERS_ON_8080\" ]; then
-            echo \"Found containers on port 8080: \$CONTAINERS_ON_8080\"
-            echo \$CONTAINERS_ON_8080 | xargs -r docker stop 2>/dev/null || echo 'Stop failed'
-            echo \$CONTAINERS_ON_8080 | xargs -r docker rm -f 2>/dev/null || echo 'Remove failed'
-          else
-            echo 'No containers found on port 8080'
+          # Step 2: Find and stop ALL containers using port 8080
+          echo 'Finding all processes on port 8080...'
+          PIDS_ON_8080=\$(lsof -ti:8080 2>/dev/null || echo '')
+          if [ -n \"\$PIDS_ON_8080\" ]; then
+            echo \"Found processes on port 8080: \$PIDS_ON_8080\"
+            echo \$PIDS_ON_8080 | xargs -r kill -9 2>/dev/null || echo 'Kill processes failed'
           fi
           
-          # Step 3: Quick port check
-          sleep 2
-          echo 'Port 8080 status:'
-          netstat -ln | grep ':8080' || echo 'Port 8080 is free'
+          # Step 3: Clean up containers by port mapping
+          echo 'Finding containers with port 8080 mapping...'
+          CONTAINERS_WITH_8080=\$(docker ps -a --format '{{.ID}} {{.Ports}}' | grep '8080' | awk '{print \$1}' || echo '')
+          if [ -n \"\$CONTAINERS_WITH_8080\" ]; then
+            echo \"Found containers with port 8080: \$CONTAINERS_WITH_8080\"
+            echo \$CONTAINERS_WITH_8080 | xargs -r docker stop 2>/dev/null || echo 'Stop containers failed'
+            echo \$CONTAINERS_WITH_8080 | xargs -r docker rm -f 2>/dev/null || echo 'Remove containers failed'
+          else
+            echo 'No containers found with port 8080 mapping'
+          fi
+          
+          # Step 4: Wait and verify port is free
+          sleep 3
+          echo 'Final port 8080 status:'
+          if netstat -ln | grep ':8080' > /dev/null 2>&1; then
+            echo 'WARNING: Port 8080 still in use!'
+            netstat -ln | grep ':8080'
+            lsof -i:8080 2>/dev/null || echo 'No processes found with lsof'
+          else
+            echo 'Port 8080 is now free'
+          fi
           
           echo 'Starting new container...'
           CONTAINER_ID=\$(docker run -d \\
@@ -139,18 +153,32 @@ build:
             --restart unless-stopped \\
             team03-webapi:latest 2>&1)
           
-          if echo \"\$CONTAINER_ID\" | grep -q '^[a-f0-9]\\{12\\}'; then
-            echo \"Container started successfully: \$CONTAINER_ID\"
+          echo \"Container creation result: \$CONTAINER_ID\"
+          
+          if echo \"\$CONTAINER_ID\" | grep -E '^[a-f0-9]{12,}' > /dev/null; then
+            echo \"Container started successfully with ID: \$CONTAINER_ID\"
             
-            echo 'Verifying deployment...'
-            sleep 5
-            if docker ps | grep team03-webapi > /dev/null; then
+            echo 'Waiting for container to stabilize...'
+            sleep 8
+            
+            echo 'Checking container status...'
+            if docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi; then
               echo 'Container is running successfully!'
-              docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' | grep team03-webapi
               
-              echo 'Checking application health...'
-              sleep 10
-              curl -f http://localhost:8080 > /dev/null 2>&1 && echo 'Application is responding!' || echo 'Application endpoint not available yet'
+              echo 'Testing application health...'
+              sleep 5
+              
+              # Test multiple endpoints
+              echo 'Testing localhost connection...'
+              HEALTH_CHECK=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080 2>/dev/null || echo '000')
+              echo \"Health check response code: \$HEALTH_CHECK\"
+              
+              if [ \"\$HEALTH_CHECK\" != \"000\" ]; then
+                echo 'Application is responding!'
+              else
+                echo 'Application not responding yet, checking logs...'
+                docker logs team03-webapi 2>/dev/null | tail -10 || echo 'No logs available'
+              fi
               
               echo ''
               echo '===== DEPLOYMENT SUCCESSFUL ====='
@@ -162,14 +190,22 @@ build:
               echo 'Your application is now live and accessible!'
               echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
             else
-              echo 'Container failed to start properly!'
+              echo 'ERROR: Container failed to start or crashed!'
               echo 'Container logs:'
               docker logs team03-webapi 2>/dev/null | tail -20 || echo 'No logs available'
+              echo 'Container inspect:'
+              docker inspect team03-webapi 2>/dev/null | jq '.[] | {State, Config.Env}' || echo 'Inspect failed'
               echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
             fi
           else
-            echo \"Failed to start container. Error: \$CONTAINER_ID\"
+            echo \"CRITICAL ERROR: Failed to start container!\"
+            echo \"Docker run output: \$CONTAINER_ID\"
+            echo 'Checking Docker status:'
+            docker ps -a | grep team03 || echo 'No team03 containers found'
+            echo 'Checking port availability:'
+            netstat -ln | grep ':8080' || echo 'Port 8080 appears free'
             echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
+            exit 1
           fi
         else
           echo 'Docker build failed!'
