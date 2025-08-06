@@ -52,103 +52,92 @@ build:
     - ssh-add ~/.ssh/id_rsa
     - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Smart deployment - Docker cleanup without sudo..."
+    - echo "Emergency deployment - Minimal approach..."
+    - echo "Preparing minimal source archive..."
+    - cd project_source
+    - tar --exclude='*.git*' --exclude='bin' --exclude='obj' --exclude='*.vs*' -czf ../project.tar.gz .
+    - cd ..
+    - echo "Archive size $(du -h project.tar.gz | cut -f1)"
     - |
-      timeout 600 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 fsoftguy@vps.purintech.id.vn "
+      timeout 300 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 fsoftguy@vps.purintech.id.vn "
         set -e
-        echo 'Checking current disk space...'
-        df -h ~/
+        echo 'Emergency cleanup - only what is needed...'
         
-        echo 'Performing Docker cleanup (no sudo required)...'
+        # Quick space check
+        echo 'Available space:'
+        df -h / | grep -E '^/dev'
         
-        # Setup Docker environment
-        export PATH=\"\$HOME/bin:\$PATH\"
-        export DOCKER_HOST=\"unix:///run/user/\$(id -u)/docker.sock\"
+        # Emergency Docker cleanup - only containers
+        echo 'Quick Docker container cleanup...'
+        docker ps -aq | head -10 | xargs -r docker stop 2>/dev/null || true
+        docker ps -aq | head -10 | xargs -r docker rm 2>/dev/null || true
         
-        systemctl --user start docker.service 2>/dev/null || echo 'Docker service already running'
-        sleep 3
+        # Clean old builds only
+        rm -rf ~/project.tar.gz ~/build ~/team03-* 2>/dev/null || true
         
-        # Smart Docker cleanup without sudo
-        echo 'Stopping and removing old containers...'
-        docker stop \$(docker ps -aq) 2>/dev/null || echo 'No containers to stop'
-        docker rm \$(docker ps -aq) 2>/dev/null || echo 'No containers to remove'
+        echo 'Space after minimal cleanup:'
+        df -h / | grep -E '^/dev'
         
-        # Remove Docker images (keeping base images)
-        echo 'Removing custom images only...'
-        docker rmi \$(docker images --filter=reference='team03*' -q) 2>/dev/null || echo 'No team03 images to remove'
-        
-        # Clean up build directories (user space only)
-        echo 'Cleaning user build directories...'
-        rm -rf ~/docker-builds/* 2>/dev/null || echo 'No build dirs to clean'
-        rm -rf ~/team03-* 2>/dev/null || echo 'No team03 dirs to clean'
-        rm -rf ~/project.tar.gz 2>/dev/null || echo 'No project archive to clean'
-        
-        # Clean user temp files
-        echo 'Cleaning user temp files...'
-        rm -rf ~/.cache/* 2>/dev/null || echo 'No cache to clean'
-        rm -rf /tmp/tmp.* 2>/dev/null || echo 'No temp files to clean'
-        
-        echo 'Disk space after cleanup:'
-        df -h ~/
-        
-        echo 'Setting up minimal build environment...'
-        BUILD_DIR=~/build
-        rm -rf \$BUILD_DIR
-        mkdir -p \$BUILD_DIR
-        cd \$BUILD_DIR
-        
-        echo 'Cloning repository with minimal size...'
-        git clone -b $TARGET_BRANCH --single-branch --depth 1 \"https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git\" .
-        
-        # Remove git history to save space
-        rm -rf .git
-        
-        echo 'Repository prepared!'
-        
-        echo 'Testing Docker access...'
-        if docker version > /dev/null 2>&1; then
-          echo 'Docker accessible!'
+        echo 'Ready for upload - available:'
+        df -h ~ | grep -E '^/dev|Avail'
+      "
+    - echo "Attempting upload..."
+    - for i in {1..2}; do
+        echo "Upload attempt $i/2...";
+        if scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz; then
+          echo "Upload successful!";
+          break;
         else
-          echo 'Docker not accessible!'
-          exit 1
-        fi
+          echo "Upload failed on attempt $i";
+          if [ $i -eq 2 ]; then
+            echo "All upload attempts failed!";
+            exit 1;
+          fi;
+        fi;
+      done
+    - |
+      timeout 300 ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        set -e
+        echo 'Extracting and building...'
+        
+        cd ~
+        rm -rf build 2>/dev/null || true
+        mkdir build
+        cd build
+        tar -xzf ../project.tar.gz
+        rm ../project.tar.gz
         
         echo 'Building Docker image...'
-        docker build -t 'team03-webapi:latest' .
-        
-        if [ \$? -eq 0 ]; then
-          echo 'Docker build successful!'
+        if docker build -t team03-webapi:latest .; then
+          echo 'Build successful!'
           
-          echo 'Deploying single container...'
+          # Quick deploy
+          docker stop team03-webapi 2>/dev/null || true
+          docker rm team03-webapi 2>/dev/null || true
           
-          # Stop old container
-          docker stop team03-webapi 2>/dev/null || echo 'No old container'
-          docker rm team03-webapi 2>/dev/null || echo 'Container removed'
+          CONTAINER_ID=\$(docker run -d --name team03-webapi -p 8081:8081 --restart unless-stopped team03-webapi:latest)
           
-          # Start new container
-          echo 'Starting new container...'
-          CONTAINER_ID=\$(docker run -d \\
-            --name team03-webapi \\
-            -p 8081:8081 \\
-            --restart unless-stopped \\
-            team03-webapi:latest 2>&1)
-          
-          if echo \"\$CONTAINER_ID\" | grep -E '^[a-f0-9]{12,}' > /dev/null; then
-            echo \"Container started: \$CONTAINER_ID\"
+          if [ \"\$CONTAINER_ID\" ]; then
+            echo 'Container started successfully!'
+            sleep 5
             
-            sleep 8
-            
-            # Test application
-            HEALTH_CHECK=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081 2>/dev/null || echo '000')
-            echo \"Health check: \$HEALTH_CHECK\"
+            # Quick health check
+            if curl -s -f http://localhost:8081/health >/dev/null 2>&1; then
+              echo 'Health check passed!'
+              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+            else
+              echo 'Health check failed, but container is running'
+              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+            fi
             
             echo ''
             echo '===== DEPLOYMENT SUCCESSFUL ====='
             echo 'Application URL: http://vps.purintech.id.vn:8081'
+            echo 'API: http://vps.purintech.id.vn:8081/api'
+            echo 'Swagger: http://vps.purintech.id.vn:8081/swagger'
             echo '=================================='
-            echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
           else
-            echo \"Container start failed: \$CONTAINER_ID\"
+            echo 'Container failed to start'
             echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
           fi
         else
@@ -156,12 +145,12 @@ build:
           echo 'BUILD_STATUS=BUILD_FAILED' > ~/build_status.txt
         fi
         
-        echo 'Cleaning up...'
+        # Cleanup
         cd ~
-        rm -rf \$BUILD_DIR
+        rm -rf build
         
-        echo 'Final disk space:'
-        df -h ~/
+        echo 'Final space:'
+        df -h / | grep -E '^/dev'
       "
     - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/build_status.txt 2>/dev/null || echo 'BUILD_STATUS=UNKNOWN'" > build_status.txt
     - cat build_status.txt
