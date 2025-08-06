@@ -67,5 +67,15 @@ namespace WebAPI.Controllers
             }
             return rs.IsSuccess ? Ok(rs) : BadRequest(rs);
         }
+        [HttpPut("CustomerToMember/{CusId}")]
+        public async Task<IActionResult> CustomerToMember(Guid CusId)
+        {
+            var rs = await _memberService.CustomerToMember(CusId);
+            if (rs.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
+            }
+            return rs.IsSuccess ? Ok(rs) : BadRequest(rs);
+        }
     }
 }
