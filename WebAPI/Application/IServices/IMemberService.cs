@@ -15,5 +15,6 @@ namespace Application.IServices
         Task<ApiResp> SearchMembers(string value, SearchKey searchKey);
         Task<ApiResp> DeleteMemberAsync(Guid id);
         Task<ApiResp> UpdateMemberAsync(Guid id, CustomerUpdateResquest req);
+        Task<ApiResp> CustomerToMember(Guid CusId);
     }
 }

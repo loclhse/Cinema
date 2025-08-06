@@ -1,4 +1,5 @@
 ﻿using Application.Domain;
+using Application.IRepos;
 using Application.IServices;
 using Application.ViewModel;
 using Application.ViewModel.Request;
@@ -18,11 +19,12 @@ namespace Application.Services
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-
-        public MemberService(IUnitOfWork uow, IMapper mapper)
+        private readonly IAuthRepo _authRepo;
+        public MemberService(IUnitOfWork uow, IMapper mapper, IAuthRepo authRepo)
         {
             _uow = uow;
             _mapper = mapper;
+            _authRepo = authRepo;
         }
 
         private static IEnumerable<IdentityWithProfile> BuildJoin(
@@ -50,7 +52,8 @@ namespace Application.Services
                     return rp.SetNotFound("Not found any Member");
                 }
                 return rp.SetOk(dto);
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return rp.SetBadRequest(ex.Message);
             }
@@ -113,5 +116,19 @@ namespace Application.Services
             }
             catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
         }
-    }
+        public async Task<ApiResp> CustomerToMember(Guid CusId)
+        {
+            var resp = new ApiResp();
+            try
+            {
+                var customer = await _uow.UserRepo.GetCustomerAccountAsync(CusId);
+                if (customer == null) return resp.SetNotFound("Customer not found.");
+                await _authRepo.RemoveUserFromRoleAsync(customer.Id, "Customer");
+                await _authRepo.AddUserToRoleAsync(customer.Id, "Member");
+                await _uow.SaveChangesAsync();
+                return resp.SetOk("Customer converted to Member successfully.");
+            }
+            catch (Exception ex) { return resp.SetBadRequest(ex.Message); }
+        }
+    } 
 }
