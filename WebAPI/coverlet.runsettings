@@ -1,11 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <Format>opencover</Format>
-          <OutputDirectory>TestResults</OutputDirectory>
+          <Format>cobertura</Format>
+          <OutputDirectory>ZTest\TestResults</OutputDirectory>
+          <Include>
+            <ModulePath>.*Application.*</ModulePath>
+            <ClassName>Application.Services.*</ClassName>
+          </Include>
         </Configuration>
       </DataCollector>
     </DataCollectors>
