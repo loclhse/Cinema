@@ -10,7 +10,7 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__Local=HHost=database.purintech.id.vn;Port=5432;Database=MovieTheater;Username=postgres;Password=<Hu@nH0aH0n9>;
+      - ConnectionStrings__Local=Host=database.purintech.id.vn;Port=5432;Database=MovieTheater;Username=postgres;Password=<Hu@nH0aH0n9>;
       - ElasticSearch__Uri=http://elasticsearch:9200
       - SWAGGER_ENABLED=true
       - JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt
