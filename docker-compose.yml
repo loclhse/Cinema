@@ -10,7 +10,7 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__Local=Host=db;Database=team03_db;Username=postgres;Password=12345
+      - ConnectionStrings__Local=HHost=database.purintech.id.vn;Port=5432;Database=MovieTheater;Username=postgres;Password=<Hu@nH0aH0n9>;
       - ElasticSearch__Uri=http://elasticsearch:9200
       - SWAGGER_ENABLED=true
       - JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt
@@ -51,7 +51,7 @@ services:
       - POSTGRES_PASSWORD=12345
       - POSTGRES_DB=team03_db
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
