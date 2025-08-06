@@ -1,5 +1,6 @@
 ﻿using Application;
 using Application.IRepos;
+using Application.IServices;
 using Application.Services;
 using Application.ViewModel.Request;
 using Application.ViewModel.Response;
@@ -7,6 +8,8 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentAssertions;
+using Infrastructure;
+using MailKit.Search;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;
@@ -365,7 +368,7 @@ namespace ZTest.Services
         {
             _mockRedeemRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>())).ReturnsAsync((Redeem)null);
 
-            var result = await _service.redeemItem(Guid.NewGuid(), Guid.NewGuid());
+            var result = await _service.redeemItem(Guid.NewGuid());
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Redeem not found or already processed", result.ErrorMessage);
@@ -385,7 +388,7 @@ namespace ZTest.Services
             _mockRedeemRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>())).ReturnsAsync(redeem);
             _mockUserRepo.Setup(u => u.GetAsync(It.IsAny<Expression<Func<AppUser, bool>>>())).ReturnsAsync((AppUser)null);
 
-            var result = await _service.redeemItem(redeem.Id, Guid.NewGuid());
+            var result = await _service.redeemItem(redeem.Id);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Redeem not found or already processed", result.ErrorMessage);
@@ -400,7 +403,7 @@ namespace ZTest.Services
             _mockRedeemRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>())).ReturnsAsync(redeem);
             _mockUserRepo.Setup(u => u.GetAsync(It.IsAny<Expression<Func<AppUser, bool>>>())).ReturnsAsync(user);
 
-            var result = await _service.redeemItem(redeem.Id, user.Id);
+            var result = await _service.redeemItem(redeem.Id);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Your score is not enough!", result.ErrorMessage);
@@ -425,7 +428,7 @@ namespace ZTest.Services
             _mockUserRepo.Setup(u => u.GetAsync(It.IsAny<Expression<Func<AppUser, bool>>>())).ReturnsAsync(user);
             _mockScoreItemRepo.Setup(s => s.GetByIdAsync(scoreItemId)).ReturnsAsync((ScoreItem)null);
 
-            var result = await _service.redeemItem(redeem.Id, user.Id);
+            var result = await _service.redeemItem(redeem.Id);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Score item not found", result.ErrorMessage);
@@ -451,7 +454,7 @@ namespace ZTest.Services
             _mockUserRepo.Setup(u => u.GetAsync(It.IsAny<Expression<Func<AppUser, bool>>>())).ReturnsAsync(user);
             _mockScoreItemRepo.Setup(s => s.GetByIdAsync(scoreItemId)).ReturnsAsync(scoreItem);
 
-            var result = await _service.redeemItem(redeem.Id, user.Id);
+            var result = await _service.redeemItem(redeem.Id);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("The items are not enough for you to exchange!!!", result.ErrorMessage);
@@ -463,10 +466,11 @@ namespace ZTest.Services
             _mockRedeemRepo.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>()))
                            .ThrowsAsync(new Exception("Database error"));
 
-            var result = await _service.redeemItem(Guid.NewGuid(), Guid.NewGuid());
+            var result = await _service.redeemItem(Guid.NewGuid());
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Database error", result.ErrorMessage);
         }
+
     }
 }

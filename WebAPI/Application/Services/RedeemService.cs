@@ -6,6 +6,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,7 +59,7 @@ namespace Application.Services
                 
                 await _unitOfWork.redeemRepo.AddAsync(redeem);
                 await _unitOfWork.SaveChangesAsync();
-                return apiResp.SetOk("Redeem create successfully!");
+                return apiResp.SetOk($"Redeem create successfully with id: {redeem.Id}");
             }
             catch (Exception ex)
             {
@@ -223,18 +224,19 @@ namespace Application.Services
                 return apiResp.SetBadRequest(null, ex.Message);
             }
         }
-        public async Task<ApiResp> redeemItem(Guid id, Guid userId)
+        public async Task<ApiResp> redeemItem(Guid id)
         {
             ApiResp apiResp = new ApiResp();
             try
             {
                
-                var order = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == id && !x.IsDeleted && x.status == ScoreStatus.pending);
+                var order = await _unitOfWork.redeemRepo.GetAsync(x => x.Id == id && !x.IsDeleted && x.status == ScoreStatus.pending, include: q => q.Include(o => o.ScoreOrders));
                 if (order == null)
                 {
                     return apiResp.SetNotFound(null, "Redeem not found or already processed");
                 }
-                var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == userId && !u.IsDeleted);
+                
+                var userScore = await _unitOfWork.UserRepo.GetAsync(u => u.Id == order.UserId && !u.IsDeleted);
                 if (userScore == null)
                 {
                     return apiResp.SetNotFound(message: "Redeem not found or already processed");
@@ -252,18 +254,21 @@ namespace Application.Services
                         return apiResp.SetNotFound(message: "Score item not found");
                     }
                     scoreItem.Quantity -= item.Quantity;
+                    scoreItem.Sold += item.Quantity;
                     if (scoreItem.Quantity < 0)
                     {
                         return apiResp.SetBadRequest(message: "The items are not enough for you to exchange!!!");
                     }
                     await _unitOfWork.ScoreItemRepo.UpdateAsync(scoreItem);
                 }
+                var ItemNames = await _unitOfWork.redeemRepo.GetItemNamesByRedeemId(id);
                 userScore.Score -= order.TotalScore;
                 var ScoreLog = new ScoreLog
                 {
-                    UserId = userId,
+                    UserId = order.UserId,
                     PointsChanged = $"-{order.TotalScore}",
                     ActionType = "Redeemed items from shop",
+                    ItemName = string.Join(", ", ItemNames),
                 };
                 await _unitOfWork.ScoreLogRepo.AddAsync(ScoreLog);
                 await _unitOfWork.UserRepo.UpdateAsync(userScore);

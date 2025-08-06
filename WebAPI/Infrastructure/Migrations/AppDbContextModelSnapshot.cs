@@ -557,6 +557,12 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ItemName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("MovieId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PointsChanged")
                         .HasColumnType("text");
 

@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250729072524_init")]
+    [Migration("20250804054857_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -559,6 +559,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ItemName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("MovieId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("PointsChanged")
                         .HasColumnType("text");

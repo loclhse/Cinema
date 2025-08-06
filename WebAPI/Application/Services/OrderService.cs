@@ -264,7 +264,7 @@ namespace Application.Services
                 return apiResp.SetBadRequest(null, ex.Message);
             }
         }
-        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId)
+        public async Task<ApiResp> SuccessOrder(List<Guid> seatScheduleId, Guid orderId, Guid userId, Guid? movieId)
         {
             ApiResp apiResponse = new ApiResp();
             try
@@ -287,9 +287,14 @@ namespace Application.Services
                     await _uow.SeatScheduleRepo.UpdateAsync(seatSchedule);
                 }
 
+                if(userId == Guid.Empty)
+                {
+                    await _uow.SaveChangesAsync();
+                    return apiResponse.SetOk("Success");
+                }
                 int point = (int) (order.TotalAmount);
 
-                if(point > 0)
+                if (point > 0)
                 {
                     var user = await _uow.UserRepo.GetByIdAsync(userId);
                     if (user == null)
@@ -298,10 +303,13 @@ namespace Application.Services
                     }
                     user.Score += point;
                 }
+
                 var scoreLog = new ScoreLog
                 {
                     UserId = userId,
+                    MovieId = movieId,
                     PointsChanged = $"+{point}",
+                    ItemName = "Order paied",
                     ActionType = "Payment Reward"
                 };
                 await _uow.ScoreLogRepo.AddAsync(scoreLog);
