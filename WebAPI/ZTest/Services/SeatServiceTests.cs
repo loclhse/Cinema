@@ -67,4 +67,75 @@ public class SeatServiceTests
         await _seatService.UpdateSeatAvailabilityAsync(seatIds, true);
         Assert.All(seats, s => Assert.True(s.IsAvailable));
     }
-} 
+
+    [Fact]
+    public async Task GetSeatsByRoomAsync_ReturnsEmpty_WhenNoSeatsExist()
+    {
+        var roomId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ReturnsAsync(new List<Seat>());
+        var result = await _seatService.GetSeatsByRoomAsync(roomId);
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetSeatsByRoomAsync_ThrowsException_OnRepoError()
+    {
+        var roomId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ThrowsAsync(new Exception("fail"));
+        await Assert.ThrowsAsync<Exception>(() => _seatService.GetSeatsByRoomAsync(roomId));
+    }
+
+    [Fact]
+    public async Task GetSeatByIdAsync_ReturnsNull_WhenSeatNotFound()
+    {
+        var seatId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SeatRepo.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ReturnsAsync((Seat)null);
+        var result = await _seatService.GetSeatByIdAsync(seatId);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetSeatByIdAsync_ThrowsException_OnRepoError()
+    {
+        var seatId = Guid.NewGuid();
+        _mockUow.Setup(u => u.SeatRepo.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ThrowsAsync(new Exception("fail"));
+        await Assert.ThrowsAsync<Exception>(() => _seatService.GetSeatByIdAsync(seatId));
+    }
+
+    [Fact]
+    public async Task UpdateSeatTypeAsync_DoesNothing_WhenNoSeatsFound()
+    {
+        var seatIds = new List<Guid> { Guid.NewGuid() };
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ReturnsAsync(new List<Seat>());
+        _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        await _seatService.UpdateSeatTypeAsync(seatIds, SeatTypes.VIP);
+        // No exception, no update
+    }
+
+    [Fact]
+    public async Task UpdateSeatTypeAsync_ThrowsException_OnRepoError()
+    {
+        var seatIds = new List<Guid> { Guid.NewGuid() };
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ThrowsAsync(new Exception("fail"));
+        await Assert.ThrowsAsync<Exception>(() => _seatService.UpdateSeatTypeAsync(seatIds, SeatTypes.VIP));
+    }
+
+    [Fact]
+    public async Task UpdateSeatAvailabilityAsync_DoesNothing_WhenNoSeatsFound()
+    {
+        var seatIds = new List<Guid> { Guid.NewGuid() };
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ReturnsAsync(new List<Seat>());
+        _mockUow.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        await _seatService.UpdateSeatAvailabilityAsync(seatIds, true);
+        // No exception, no update
+    }
+
+    [Fact]
+    public async Task UpdateSeatAvailabilityAsync_ThrowsException_OnRepoError()
+    {
+        var seatIds = new List<Guid> { Guid.NewGuid() };
+        _mockUow.Setup(u => u.SeatRepo.GetAllAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Seat, bool>>>())).ThrowsAsync(new Exception("fail"));
+        await Assert.ThrowsAsync<Exception>(() => _seatService.UpdateSeatAvailabilityAsync(seatIds, true));
+    }
+}
