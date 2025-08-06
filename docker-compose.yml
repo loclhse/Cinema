@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: team03-webapi
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Local=Host=postgres-db;Port=5432;Database=MovieTheater;Username=postgres;Password=123456
+      - ElasticSearch__Uri=http://elasticsearch:9200
+      - SWAGGER_ENABLED=true
+      - JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt
+      - JwtSettings__Issuer=YourAppName
+      - JwtSettings__Audience=YourAppAudience
+      - JwtSettings__AccessTokenExpiryMinutes=15
+      - JwtSettings__RefreshTokenExpiryDays=7
+      - VnPay__TmnCode=7QRTMNBH
+      - VnPay__HashSecret=4046G9C8YY9H8WFSJG8AVB9VZNTT1D68
+      - VnPay__PayUrl=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VnPay__Version=2.1.0
+      - VnPay__Command=pay
+      - VnPay__CurrCode=VND
+      - VnPay__Locale=vn
+      - VnPay__PaymentBackReturnUrl=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/order
+      - VnPay__PaymentBackReturnUrll=http://vps.purintech.id.vn:8081/api/Payment/vnpay-return/subscription
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__SenderName=FCinema
+      - EmailSettings__SenderEmail=fmoviecinema@gmail.com
+      - EmailSettings__Username=fmoviecinema@gmail.com
+      - EmailSettings__Password=jurk cvow hmtg dovz
+      - EmailSettings__EnableSsl=true
+    depends_on:
+      - postgres-db
+      - elasticsearch
+    # Thêm cấu hình restart để container tự khởi động lại nếu gặp lỗi
+    restart: unless-stopped
+    # Thêm network để đảm bảo các containers kết nối được với nhau
+    networks:
+      - team03-network
+
+  postgres-db:
+    image: postgres:13
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=MovieTheater
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+    networks:
+      - team03-network
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: team03-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - team03-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  esdata:
+
+networks:
+  team03-network:
+    driver: bridge
