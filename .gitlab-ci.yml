@@ -1,6 +1,6 @@
 stages:
-  - prepare
-  - test
+  # - prepare
+  # - test
   - build
 
 variables:
@@ -12,23 +12,23 @@ variables:
 default:
   image: mcr.microsoft.com/dotnet/sdk:8.0
 
-prepare:
-  stage: prepare
-  image: mcr.microsoft.com/dotnet/sdk:8.0
-  rules:
-    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
-  script:
-    - apt-get update && apt-get install -y git curl jq
-    - echo "Configuring Git credentials..."
-    - git config --global credential.helper store
-    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
-    - git config --global user.name "$GIT_USERNAME"
-    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
-    - echo "Testing Git authentication..."
-    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
-    - echo "Prepare stage completed successfully"
-  tags:
-    - cicd
+# prepare:
+#   stage: prepare
+#   image: mcr.microsoft.com/dotnet/sdk:8.0
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+#   script:
+#     - apt-get update && apt-get install -y git curl jq
+#     - echo "Configuring Git credentials..."
+#     - git config --global credential.helper store
+#     - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+#     - git config --global user.name "$GIT_USERNAME"
+#     - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+#     - echo "Testing Git authentication..."
+#     - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+#     - echo "Prepare stage completed successfully"
+#   tags:
+#     - cicd
 
 build:
   stage: build
