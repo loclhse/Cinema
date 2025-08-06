@@ -117,11 +117,41 @@ namespace WebAPI
 
             var app = builder.Build();
 
-            // Apply migration + Seed data (Role + SeatTypePrice)
+            // Apply migration + Seed data (Role + SeatTypePrice) with comprehensive error handling
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                await SeedData.EnsureSeedDataAsync(services);
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                
+                try
+                {
+                    await SeedData.EnsureSeedDataAsync(services);
+                    logger.LogInformation("Database seeding completed successfully.");
+                }
+                catch (Npgsql.NpgsqlException ex)
+                {
+                    logger.LogError(ex, "PostgreSQL connection failed during seeding: {ErrorMessage}", ex.Message);
+                    Console.WriteLine($"DATABASE ERROR: Cannot connect to PostgreSQL - {ex.Message}");
+                    Console.WriteLine("Application will start without database seeding.");
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+                {
+                    logger.LogError(ex, "Database update failed during seeding: {ErrorMessage}", ex.Message);
+                    Console.WriteLine($"DATABASE UPDATE ERROR: {ex.Message}");
+                    Console.WriteLine("Application will start but database may be in inconsistent state.");
+                }
+                catch (TimeoutException ex)
+                {
+                    logger.LogError(ex, "Database connection timeout during seeding: {ErrorMessage}", ex.Message);
+                    Console.WriteLine($"TIMEOUT ERROR: Database connection timed out - {ex.Message}");
+                    Console.WriteLine("Application will start without database seeding.");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error during database seeding: {ErrorMessage}", ex.Message);
+                    Console.WriteLine($"GENERAL ERROR: Database seeding failed - {ex.Message}");
+                    Console.WriteLine("Application will continue running without initial data.");
+                }
             }
             //SignalR
             app.MapHub<SeatHub>("/seatHub");
