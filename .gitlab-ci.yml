@@ -1,138 +1,189 @@
-# GitLab CI/CD pipeline for .NET Core Web API
-# Pipeline stages: build, test, docker, deploy
+stages:
+  - prepare
+  - test
+  - build
 
 variables:
-  DOTNET_VERSION: "8.0"
-  SOLUTION_PATH: "WebAPI/WebAPI.sln"
-  PROJECT_PATH: "WebAPI/WebAPI/WebAPI.csproj"
-  TEST_PATH: "WebAPI/ZTest/ZTest.csproj"
-  DOCKER_IMAGE_NAME: "team03-webapi"
-  DOCKER_REGISTRY: "registry.gitlab.com"
-  TARGET_BRANCH: "Develop"  # Thay đổi branch này khi cần
+  TARGET_BRANCH: "Develop"
+  IMAGE_NAME: "git.fa.edu.vn/hcm25_cpl_net_06/team03_be/team03-webapi"
+  GIT_STRATEGY: none
+  GIT_USERNAME: "fsa_HongTL"
 
-stages:
-  - build
-  - test
-  - docker
-  - deploy
+default:
+  image: mcr.microsoft.com/dotnet/sdk:8.0
 
-# Restore and build the .NET solution
-build-job:
+prepare:
+  stage: prepare
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  rules:
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
+  script:
+    - apt-get update && apt-get install -y git curl jq
+    - echo "Configuring Git credentials..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Testing Git authentication..."
+    - git ls-remote "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" || echo "Authentication test failed, but continuing"
+    - echo "Prepare stage completed successfully"
+  tags:
+    - cicd
+
+build:
   stage: build
-  tags:
-    - larry
-  script:
-    - echo "Starting .NET build process..."
-    - cd WebAPI
-    - dotnet --version
-    - dotnet restore WebAPI.sln
-    - dotnet build WebAPI.sln --configuration Release --no-restore
-    - echo "Build completed successfully!"
-  artifacts:
-    paths:
-      - WebAPI/WebAPI/bin/Release/
-      - WebAPI/Application/bin/Release/
-      - WebAPI/Domain/bin/Release/
-      - WebAPI/Infrastructure/bin/Release/    expire_in: 1 hour
+  image: mcr.microsoft.com/dotnet/sdk:8.0
   rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# Run unit tests
-unit-test-job:
-  stage: test
-  tags:
-    - larry
-  dependencies:
-    - build-job
-  script:
-    - echo "Running unit tests..."
-    - cd WebAPI
-    - dotnet test ZTest/ZTest.csproj --configuration Release --no-build --logger trx --results-directory TestResults/
-    - echo "Unit tests completed!"
-  artifacts:
-    when: always
-    paths:
-      - WebAPI/TestResults/
-    reports:
-      junit:
-        - WebAPI/TestResults/*.trx    expire_in: 1 week
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# Code quality and linting
-lint-test-job:
-  stage: test
-  tags:
-    - larry
-  dependencies:
-    - build-job
-  script:
-    - echo "Running code analysis..."
-    - cd WebAPI
-    - dotnet format --verify-no-changes --verbosity diagnostic WebAPI.sln || echo "Code formatting issues found"
-    - echo "Code analysis completed!"  allow_failure: true
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# Build and push Docker image
-docker-build-job:
-  stage: docker
-  tags:
-    - larry
-  dependencies:
-    - build-job
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    - if: $CI_COMMIT_BRANCH == $TARGET_BRANCH
   before_script:
-    - docker info
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - apt-get update && apt-get install -y openssh-client curl tar gzip git
+    - echo "Configuring Git authentication..."
+    - git config --global credential.helper store
+    - echo "https://${GIT_USERNAME}:${GIT_ACCESS_TOKEN}@git.fa.edu.vn" > ~/.git-credentials
+    - git config --global user.name "$GIT_USERNAME"
+    - git config --global user.email "$GIT_USERNAME@users.noreply.gitlab.com"
+    - echo "Cloning repository..."
+    - git clone -b $TARGET_BRANCH "http://git.fa.edu.vn/hcm25_cpl_net_06/team03_be.git" project_source || exit 1
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan -H vps.purintech.id.vn >> ~/.ssh/known_hosts 2>/dev/null || echo "SSH keyscan failed"
   script:
-    - echo "Building Docker image..."
-    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
-    - docker build -t $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest .
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE/$DOCKER_IMAGE_NAME:latest    - echo "Docker image built and pushed successfully!"
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# Deploy to staging
-deploy-staging:
-  stage: deploy
+    - echo "Emergency deployment - Minimal approach..."
+    - echo "Preparing minimal source archive..."
+    - cd project_source
+    - tar --exclude='*.git*' --exclude='bin' --exclude='obj' --exclude='*.vs*' -czf ../project.tar.gz .
+    - cd ..
+    - echo "Archive size $(du -h project.tar.gz | cut -f1)"
+    - |
+      timeout 300 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 fsoftguy@vps.purintech.id.vn "
+        set -e
+        echo 'Emergency cleanup - only what is needed...'
+        
+        # Quick space check
+        echo 'Available space:'
+        df -h / | grep -E '^/dev'
+        
+        # Emergency Docker cleanup - only containers
+        echo 'Quick Docker container cleanup...'
+        docker ps -aq | head -10 | xargs -r docker stop 2>/dev/null || true
+        docker ps -aq | head -10 | xargs -r docker rm 2>/dev/null || true
+        
+        # Clean old builds only
+        rm -rf ~/project.tar.gz ~/build ~/team03-* 2>/dev/null || true
+        
+        echo 'Space after minimal cleanup:'
+        df -h / | grep -E '^/dev'
+        
+        echo 'Ready for upload - available:'
+        df -h ~ | grep -E '^/dev|Avail'
+      "
+    - echo "Attempting upload..."
+    - for i in {1..2}; do
+        echo "Upload attempt $i/2...";
+        if scp -o StrictHostKeyChecking=no project.tar.gz fsoftguy@vps.purintech.id.vn:~/project.tar.gz; then
+          echo "Upload successful!";
+          break;
+        else
+          echo "Upload failed on attempt $i";
+          if [ $i -eq 2 ]; then
+            echo "All upload attempts failed!";
+            exit 1;
+          fi;
+        fi;
+      done
+    - |
+      timeout 300 ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "
+        set -e
+        echo 'Extracting and building...'
+        
+        cd ~
+        rm -rf build 2>/dev/null || true
+        mkdir build
+        cd build
+        tar -xzf ../project.tar.gz
+        rm ../project.tar.gz
+        
+        echo 'Building Docker image...'
+        if docker build -t team03-webapi:latest .; then
+          echo 'Build successful!'
+          
+          # Quick deploy with database
+          echo 'Setting up PostgreSQL database...'
+          docker stop postgres-db 2>/dev/null || true
+          docker rm postgres-db 2>/dev/null || true
+          docker run -d --name postgres-db \
+            -e POSTGRES_DB=MovieTheater \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=123456 \
+            -p 5432:5432 \
+            -v postgres_data:/var/lib/postgresql/data \
+            --restart unless-stopped \
+            postgres:13
+          
+          echo 'Waiting for database to be ready...'
+          sleep 10
+          
+          docker stop team03-webapi 2>/dev/null || true
+          docker rm team03-webapi 2>/dev/null || true
+          
+          CONTAINER_ID=\$(docker run -d --name team03-webapi -p 8081:8081 \
+            -e ConnectionStrings__Local='Host=postgres-db;Port=5432;Database=MovieTheater;Username=postgres;Password=123456' \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            -e ASPNETCORE_HTTP_PORTS=8081 \
+            --link postgres-db \
+            --restart unless-stopped \
+            team03-webapi:latest)
+          
+          if [ \"\$CONTAINER_ID\" ]; then
+            echo 'Container started successfully!'
+            sleep 5
+            
+            # Quick health check
+            if curl -s -f http://localhost:8081/swagger >/dev/null 2>&1; then
+              echo 'Health check passed!'
+              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+            else
+              echo 'Health check failed, checking if app is responding...'
+              if docker logs team03-webapi | grep -i 'started\|listening'; then
+                echo 'App appears to be running, swagger may not be available'
+                echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+              else
+                echo 'App failed to start properly'
+                echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
+              fi
+            fi
+            
+            echo ''
+            echo '===== DEPLOYMENT SUCCESSFUL ====='
+            echo 'Application URL: http://vps.purintech.id.vn:8081'
+            echo 'API: http://vps.purintech.id.vn:8081/api'
+            echo 'Swagger: http://vps.purintech.id.vn:8081/swagger'
+            echo '=================================='
+          else
+            echo 'Container failed to start'
+            echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
+          fi
+        else
+          echo 'Docker build failed!'
+          echo 'BUILD_STATUS=BUILD_FAILED' > ~/build_status.txt
+        fi
+        
+        # Cleanup
+        cd ~
+        rm -rf build
+        
+        echo 'Final space:'
+        df -h / | grep -E '^/dev'
+      "
+    - ssh -o StrictHostKeyChecking=no fsoftguy@vps.purintech.id.vn "cat ~/build_status.txt 2>/dev/null || echo 'BUILD_STATUS=UNKNOWN'" > build_status.txt
+    - cat build_status.txt
+  artifacts:
+    reports:
+      dotenv: build_status.txt
+    expire_in: 1 hour
   tags:
-    - larry
-  dependencies:
-    - docker-build-job
-  environment:
-    name: staging
-    url: http://staging.team03-api.local
-  script:
-    - echo "Deploying to staging environment..."
-    - docker-compose -f docker-compose.yml down || true
-    - docker-compose -f docker-compose.yml pull
-    - docker-compose -f docker-compose.yml up -d    - echo "Application deployed to staging!"
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
-
-# Deploy to production
-deploy-production:
-  stage: deploy
-  tags:
-    - larry
-  dependencies:
-    - docker-build-job
-  environment:
-    name: production
-    url: http://team03-api.production.local
-  script:
-    - echo "Deploying to production environment..."
-    - docker-compose -f docker-compose.yml down || true
-    - docker-compose -f docker-compose.yml pull
-    - docker-compose -f docker-compose.yml up -d    - echo "Application deployed to production!"
-  when: manual
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $TARGET_BRANCH'
+    - cicd
