@@ -10,7 +10,7 @@ services:
       - "8081:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__Local=Host=database.purintech.id.vn;Port=5432;Database=MovieTheater;Username=postgres;Password=<Hu@nH0aH0n9>;
+      - ConnectionStrings__Local=Host=postgres-db;Port=5432;Database=MovieTheater;Username=postgres;Password=123456
       - ElasticSearch__Uri=http://elasticsearch:9200
       - SWAGGER_ENABLED=true
       - JwtSettings__SecretKey=GvlKp62o31vaP3WzWsQDO3hOQpZdbhtt
@@ -35,7 +35,7 @@ services:
       - EmailSettings__Password=jurk cvow hmtg dovz
       - EmailSettings__EnableSsl=true
     depends_on:
-      - db
+      - postgres-db
       - elasticsearch
     # Thêm cấu hình restart để container tự khởi động lại nếu gặp lỗi
     restart: unless-stopped
@@ -43,13 +43,13 @@ services:
     networks:
       - team03-network
 
-  db:
-    image: postgres:15
-    container_name: team03-db
+  postgres-db:
+    image: postgres:13
+    container_name: postgres-db
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
-      - POSTGRES_DB=team03_db
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=MovieTheater
     ports:
       - "5432:5432"
     volumes:

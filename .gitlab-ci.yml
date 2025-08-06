@@ -111,23 +111,50 @@ build:
         if docker build -t team03-webapi:latest .; then
           echo 'Build successful!'
           
-          # Quick deploy
+          # Quick deploy with database
+          echo 'Setting up PostgreSQL database...'
+          docker stop postgres-db 2>/dev/null || true
+          docker rm postgres-db 2>/dev/null || true
+          docker run -d --name postgres-db \
+            -e POSTGRES_DB=MovieTheater \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=123456 \
+            -p 5432:5432 \
+            -v postgres_data:/var/lib/postgresql/data \
+            --restart unless-stopped \
+            postgres:13
+          
+          echo 'Waiting for database to be ready...'
+          sleep 10
+          
           docker stop team03-webapi 2>/dev/null || true
           docker rm team03-webapi 2>/dev/null || true
           
-          CONTAINER_ID=\$(docker run -d --name team03-webapi -p 8081:8081 --restart unless-stopped team03-webapi:latest)
+          CONTAINER_ID=\$(docker run -d --name team03-webapi -p 8081:8081 \
+            -e ConnectionStrings__Local='Host=postgres-db;Port=5432;Database=MovieTheater;Username=postgres;Password=123456' \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            -e ASPNETCORE_HTTP_PORTS=8081 \
+            --link postgres-db \
+            --restart unless-stopped \
+            team03-webapi:latest)
           
           if [ \"\$CONTAINER_ID\" ]; then
             echo 'Container started successfully!'
             sleep 5
             
             # Quick health check
-            if curl -s -f http://localhost:8081/health >/dev/null 2>&1; then
+            if curl -s -f http://localhost:8081/swagger >/dev/null 2>&1; then
               echo 'Health check passed!'
               echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
             else
-              echo 'Health check failed, but container is running'
-              echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+              echo 'Health check failed, checking if app is responding...'
+              if docker logs team03-webapi | grep -i 'started\|listening'; then
+                echo 'App appears to be running, swagger may not be available'
+                echo 'BUILD_STATUS=SUCCESS' > ~/build_status.txt
+              else
+                echo 'App failed to start properly'
+                echo 'BUILD_STATUS=DEPLOY_FAILED' > ~/build_status.txt
+              fi
             fi
             
             echo ''
