@@ -11,6 +11,7 @@ using FluentAssertions;
 using Infrastructure;
 using MailKit.Search;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -470,6 +471,145 @@ namespace ZTest.Services
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Database error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetPendingRedeemsByAccountAsync_Should_Handle_Exception()
+        {
+            // Arrange
+            var accountId = Guid.NewGuid();
+            _mockRedeemRepo.Setup(x => x.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetPendingRedeemsByAccountAsync(accountId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Database error", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetPaidRedeemsByAccountAsync_Should_Return_Not_Found_When_No_Redeems()
+        {
+            // Arrange
+            var accountId = Guid.NewGuid();
+            _mockRedeemRepo.Setup(x => x.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>()))
+                .ReturnsAsync(new List<Redeem>());
+
+            // Act
+            var result = await _service.GetPaidRedeemsByAccountAsync(accountId);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal("No redeems found for this account", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetAllRedeemsAsync_Should_Return_Ok_When_Redeems_Exist()
+        {
+            // Arrange
+            var redeemId = Guid.NewGuid();
+            var redeems = new List<Redeem> 
+            { 
+                new Redeem { Id = redeemId, UserId = Guid.NewGuid() } 
+            };
+            var itemNames = new List<string> { "Item1" };
+            var redeemResponse = new RedeemResponse { Id = redeemId };
+
+            _mockRedeemRepo.Setup(x => x.GetAllAsync(It.IsAny<Expression<Func<Redeem, bool>>>()))
+                .ReturnsAsync(redeems);
+            _mockRedeemRepo.Setup(x => x.GetItemNamesByRedeemId(redeemId))
+                .ReturnsAsync(itemNames);
+            _mapperMock.Setup(x => x.Map<RedeemResponse>(It.IsAny<Redeem>()))
+                .Returns(redeemResponse);
+
+            // Act
+            var result = await _service.GetAllRedeemsAsync();
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var responses = result.Result as List<RedeemResponse>;
+            Assert.NotNull(responses);
+            Assert.Single(responses);
+        }
+
+        [Fact]
+        public async Task UpdateRedeemAsync_Should_Clear_Existing_Score_Orders()
+        {
+            // Arrange
+            var redeemId = Guid.NewGuid();
+            var scoreItemId = Guid.NewGuid();
+            var scoreItem = new ScoreItem { Id = scoreItemId, Score = 15, Quantity = 20 };
+            var existingScoreOrder = new ScoreOrder { ScoreItemId = Guid.NewGuid(), Quantity = 1 };
+            var redeem = new Redeem 
+            { 
+                Id = redeemId, 
+                ScoreOrders = new List<ScoreOrder> { existingScoreOrder },
+                TotalScore = 10 
+            };
+            var requests = new List<RedeemRequest> { new RedeemRequest { ScoreItemId = scoreItemId, Quantity = 2 } };
+
+            var mockScoreOrderRepo = new Mock<IScoreOrderRepo>();
+            _unitOfWorkMock.Setup(u => u.ScoreOrderRepo).Returns(mockScoreOrderRepo.Object);
+
+            _mockRedeemRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>()))
+                .ReturnsAsync(redeem);
+            _mockScoreItemRepo.Setup(x => x.GetByIdAsync(scoreItemId))
+                .ReturnsAsync(scoreItem);
+            _unitOfWorkMock.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _service.updateRedeemAsync(redeemId, requests);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Empty(redeem.ScoreOrders); // Should be cleared
+            Assert.Equal(30, redeem.TotalScore); // 15 * 2, reset from 10
+        }
+
+        [Fact]
+        public async Task RedeemItem_Should_Update_Score_Item_Correctly()
+        {
+            // Arrange
+            var redeemId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var scoreItemId = Guid.NewGuid();
+            var scoreItem = new ScoreItem { Id = scoreItemId, Quantity = 10, Sold = 5 };
+            var scoreOrder = new ScoreOrder { ScoreItemId = scoreItemId, Quantity = 3 };
+            var redeem = new Redeem 
+            { 
+                Id = redeemId, 
+                UserId = userId, 
+                status = ScoreStatus.pending, 
+                TotalScore = 30,
+                ScoreOrders = new List<ScoreOrder> { scoreOrder }
+            };
+            var user = new AppUser { Id = userId, Score = 100 };
+
+            _mockRedeemRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<Redeem, bool>>>(), It.IsAny<Func<IQueryable<Redeem>, IIncludableQueryable<Redeem, object>>>()))
+                .ReturnsAsync(redeem);
+            _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<AppUser, bool>>>()))
+                .ReturnsAsync(user);
+            _mockScoreItemRepo.Setup(x => x.GetByIdAsync(scoreItemId))
+                .ReturnsAsync(scoreItem);
+            _mockRedeemRepo.Setup(x => x.GetItemNamesByRedeemId(redeemId))
+                .ReturnsAsync(new List<string> { "Item1" });
+
+            var mockScoreLogRepo = new Mock<IScoreLogRepo>();
+            _unitOfWorkMock.Setup(u => u.ScoreLogRepo).Returns(mockScoreLogRepo.Object);
+
+            // Act
+            var result = await _service.redeemItem(redeemId);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal(7, scoreItem.Quantity); // 10 - 3
+            Assert.Equal(8, scoreItem.Sold); // 5 + 3
+            Assert.Equal(70, user.Score); // 100 - 30
+            _mockScoreItemRepo.Verify(x => x.UpdateAsync(scoreItem), Times.Once);
+            _mockUserRepo.Verify(x => x.UpdateAsync(user), Times.Once);
+            mockScoreLogRepo.Verify(x => x.AddAsync(It.IsAny<ScoreLog>()), Times.Once);
         }
 
     }

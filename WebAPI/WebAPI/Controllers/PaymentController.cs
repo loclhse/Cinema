@@ -109,47 +109,16 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet("vnpay-return/order")]
-        public async Task<IActionResult> PaymentReturnOrder()
-        {
-            var response = Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
-            Console.WriteLine("VNPay Return Data: " + string.Join(", ", response.Select(kvp => $"{kvp.Key}={kvp.Value}")));
-            var result = await _paymentService.HandleVnPayReturn(Request.Query);
-            Console.WriteLine($"VNPay Result: {result}");
-           
-            if (!result.IsSuccess)
-            {
-                // Redirect to frontend with error
-                var errorParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-                return Redirect($"http://localhost:5173/payment-error?{errorParams}");
-            }
-            
-            // Redirect to frontend with success
-            var successParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            return Redirect($"http://localhost:5173/payment-success?{successParams}");
-        }
+        
 
-        [HttpGet("vnpay-return/subscription")]
-        public async Task<IActionResult> PaymentReturnSubscription()
-        {
-            var response = Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
-            Console.WriteLine("VNPay Return Data: " + string.Join(", ", response.Select(kvp => $"{kvp.Key}={kvp.Value}")));
-            var result = await _paymentService.HandleVnPayReturnForSubscription(Request.Query);
-            Console.WriteLine($"VNPay Result: {result}");
-
-            if (!result.IsSuccess)
-            {
-                // Redirect to frontend with error
-                var errorParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-                return Redirect($"http://localhost:5173/payment-error?{errorParams}");
-            }
-            
-            // Redirect to frontend with success
-            var successParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            return Redirect($"http://localhost:5173/payment-success?{successParams}");
-        }
-
+        /// <summary>
+        /// Process VNPay callback for order payments
+        /// </summary>
+        /// <param name="callbackData">VNPay callback data containing payment information</param>
+        /// <returns>Payment processing result</returns>
         [HttpPost("process-vnpay-callback")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ProcessVnPayCallback([FromBody] Dictionary<string, string> callbackData)
         {
             try
@@ -174,7 +143,14 @@ namespace WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Process VNPay callback for subscription payments
+        /// </summary>
+        /// <param name="callbackData">VNPay callback data containing subscription payment information</param>
+        /// <returns>Subscription payment processing result</returns>
         [HttpPost("process-vnpay-callback-subscription")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ProcessVnPayCallbackSubscription([FromBody] Dictionary<string, string> callbackData)
         {
             try
