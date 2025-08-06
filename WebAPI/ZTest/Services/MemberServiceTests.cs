@@ -1,6 +1,7 @@
 ﻿using Application;
 using Application.Common;
 using Application.Domain;
+using Application.IRepos;
 using Application.IServices;
 using Application.Services;
 using Application.ViewModel.Request;
@@ -22,12 +23,13 @@ namespace ZTest.Services
         private readonly Mock<IUnitOfWork> _uow;
         private readonly Mock<IMapper> _mapper;
         private readonly MemberService _sut;
+        private readonly Mock<IAuthRepo> _authRepoMock;
 
         public MemberServiceTests()
         {
             _uow = new Mock<IUnitOfWork>();
             _mapper = new Mock<IMapper>();
-            _sut = new MemberService(_uow.Object, _mapper.Object);
+            _sut = new MemberService(_uow.Object, _mapper.Object, _authRepoMock.Object);
         }
 
         /* Test GetAllMember */

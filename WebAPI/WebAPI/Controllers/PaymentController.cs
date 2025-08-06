@@ -119,9 +119,14 @@ namespace WebAPI.Controllers
            
             if (!result.IsSuccess)
             {
-                return Content($"Payment failed: {result.ErrorMessage ?? "Unknown error"}", "text/html");
+                // Redirect to frontend with error
+                var errorParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+                return Redirect($"http://localhost:5173/payment-error?{errorParams}");
             }
-            return Content("Payment successful!", "text/html");
+            
+            // Redirect to frontend with success
+            var successParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            return Redirect($"http://localhost:5173/payment-success?{successParams}");
         }
 
         [HttpGet("vnpay-return/subscription")]
@@ -134,9 +139,64 @@ namespace WebAPI.Controllers
 
             if (!result.IsSuccess)
             {
-                return Content($"Payment failed. Pls checkout your process again!");
+                // Redirect to frontend with error
+                var errorParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+                return Redirect($"http://localhost:5173/payment-error?{errorParams}");
             }
-            return Content("Payment successful");
+            
+            // Redirect to frontend with success
+            var successParams = string.Join("&", response.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            return Redirect($"http://localhost:5173/payment-success?{successParams}");
+        }
+
+        [HttpPost("process-vnpay-callback")]
+        public async Task<IActionResult> ProcessVnPayCallback([FromBody] Dictionary<string, string> callbackData)
+        {
+            try
+            {
+                // Convert the dictionary back to IQueryCollection format
+                var queryCollection = new QueryCollection(callbackData.ToDictionary(x => x.Key, x => new Microsoft.Extensions.Primitives.StringValues(x.Value)));
+                
+                var result = await _paymentService.HandleVnPayReturn(queryCollection);
+                
+                if (result.IsSuccess)
+                {
+                    return Ok(new { success = true, message = "Payment processed successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = $"Error processing payment: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("process-vnpay-callback-subscription")]
+        public async Task<IActionResult> ProcessVnPayCallbackSubscription([FromBody] Dictionary<string, string> callbackData)
+        {
+            try
+            {
+                // Convert the dictionary back to IQueryCollection format
+                var queryCollection = new QueryCollection(callbackData.ToDictionary(x => x.Key, x => new Microsoft.Extensions.Primitives.StringValues(x.Value)));
+                
+                var result = await _paymentService.HandleVnPayReturnForSubscription(queryCollection);
+                
+                if (result.IsSuccess)
+                {
+                    return Ok(new { success = true, message = "Subscription payment processed successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = $"Error processing subscription payment: {ex.Message}" });
+            }
         }
     }
 } 

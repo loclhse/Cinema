@@ -18,6 +18,7 @@ namespace ZTest.Services
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<ISeatScheduleRepo> _seatScheduleRepoMock;
         private readonly Mock<ISubscriptionRepo> _subscriptionRepoMock;
+        private readonly Mock<IAuthRepo> _authRepoMock;
         private readonly BackgroundService _backgroundService;
 
         public BackgroundServiceTests()
@@ -30,7 +31,7 @@ namespace ZTest.Services
             _unitOfWorkMock.SetupGet(u => u.SeatScheduleRepo).Returns(_seatScheduleRepoMock.Object);
             _unitOfWorkMock.SetupGet(u => u.SubscriptionRepo).Returns(_subscriptionRepoMock.Object);
 
-            _backgroundService = new BackgroundService(_unitOfWorkMock.Object);
+            _backgroundService = new BackgroundService(_unitOfWorkMock.Object, _authRepoMock.Object);
         }
 
         [Fact]
