@@ -4,7 +4,7 @@ stages:
   - build
 
 variables:
-  TARGET_BRANCH: "CICD_2"
+  TARGET_BRANCH: "Develop"
   IMAGE_NAME: "git.fa.edu.vn/hcm25_cpl_net_06/team03_be/team03-webapi"
   GIT_STRATEGY: none
   GIT_USERNAME: "fsa_HongTL"
